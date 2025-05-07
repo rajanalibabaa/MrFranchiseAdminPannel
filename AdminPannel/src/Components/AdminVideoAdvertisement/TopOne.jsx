@@ -32,6 +32,7 @@ const TopOne = () => {
         try {
             const response = await axios.post(api.AdminVideoAdvertisement.topOne, { videoIds });
             console.log(response.data); 
+            setVideoIds([""])
     
         } catch (error) {
             console.error('Error submitting video IDs:', error);

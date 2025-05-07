@@ -28,7 +28,7 @@ const TopTwo = () => {
         setMessage(false);
       }, 3000); // Hide message after 3 seconds
     }
-    // setVideos(['', '']); 
+    setVideos(['', '']); 
   };
 
   const handleChange = (index, value) => {

@@ -7,6 +7,7 @@ import CreateVideoAdvertise from '../Components/AdminVideoAdvertisement/CreateVi
 import TopOne from '../Components/AdminVideoAdvertisement/TopOne'
 import TopTwo from '../Components/AdminVideoAdvertisement/TopTwo'
 import TopThree from '../Components/AdminVideoAdvertisement/TopThree'
+import Dashbord from '../Components/Dashbord/Dashbord'
 
 const Index = () => {
   return (
@@ -17,16 +18,13 @@ const Index = () => {
       <div style={{ margin:"10px", width:"100%",alignItems:"center"}}>
       <Routes>
             <Route path="/main" element={ <Main />} />
-            <Route path="/about" element={<h1>About</h1>} />
-            <Route path="/contact" element={<h1>Contact</h1>} />
-            <Route path="/contact" element={<h1>Contact</h1>} />
-            <Route path="/contact" element={<h1>Contact</h1>} />
             <Route path="/getAllVideoAdvertise" element={<GetAllVideoAdvertise />} />
 
             <Route path="/createVideoAdvertise" element={<CreateVideoAdvertise />} />
             <Route path="/topOneVideoAdvertise" element={<TopOne />} />
             <Route path="/topTwoVideoAdvertise" element={<TopTwo />} />
             <Route path="/topThreeVideoAdvertise" element={<TopThree />} />
+            <Route path="/dashboard" element={<Dashbord />} />
         </Routes>
       </div>
     </div>

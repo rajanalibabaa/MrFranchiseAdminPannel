@@ -1,14 +1,19 @@
-export const api = {
-    investors: {
-      getAllInvestor: "http://localhost:5000/api/v1/admin/getAllInvestors"
-    },
+const baseURL = "http://localhost:5000";
 
-    AdminVideoAdvertisement:{
-      createVideoAdvertisement: "http://localhost:5000/api/v1/admin/videoAdvertise/createAdminVideoAdvertise",
-      topOne: "http://localhost:5000/api/v1/admin/videoAdvertise/getAdminVideoAdvertiseTopOne",
-      topTwo: "http://localhost:5000/api/v1/admin/videoAdvertise/getAdminVideoAdvertiseTopTwo",
-      topThree: "http://localhost:5000/api/v1/admin/videoAdvertise/getAdminVideoAdvertiseTopThree",
-      getAllVideoAdvertise: "http://localhost:5000/api/v1/admin/videoAdvertise/getAdminVideoAdvertise",
-    }
-  };
-  
+export const api = {
+  investors: {
+    getAllInvestor: `${baseURL}/api/v1/admin/getAllInvestors`
+  },
+
+  AdminVideoAdvertisement: {
+    createVideoAdvertisement: `${baseURL}/api/v1/admin/videoAdvertise/createAdminVideoAdvertise`,
+    topOne: `${baseURL}/api/v1/admin/videoAdvertise/postAdminVideoAdvertiseTopOne`,
+    topTwo: `${baseURL}/api/v1/admin/videoAdvertise/postAdminVideoAdvertiseTopTwo`,
+    topThree: `${baseURL}/api/v1/admin/videoAdvertise/postAdminVideoAdvertiseTopThree`,
+    getAllVideoAdvertise: `${baseURL}/api/v1/admin/videoAdvertise/getAdminVideoAdvertise`,
+  },
+
+  AdminDashboard: {
+    getAllClient: `${baseURL}/api/v1/admin/dashboard/getAdminDashBoardClient`
+  }
+};
