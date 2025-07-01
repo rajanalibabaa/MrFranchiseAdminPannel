@@ -1,10 +1,33 @@
-import React from 'react'
-import { Box, List, ListItem, ListItemIcon, ListItemText, Typography, Divider } from '@mui/material';
-import { Dashboard, People, Settings, Logout, BarChart, AccountCircle } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Divider,
+  Collapse,
+  Avatar,
+  Stack
+} from '@mui/material';
+import {
+  Dashboard,
+  People,
+  Logout,
+} from '@mui/icons-material';
+import ViewAllBrands  from './ViewAll Brands/ViewAllBrands';
 
 const SidebarAdmin = () => {
+  const [openBrandHandling, setOpenBrandHandling] = useState(false);
+  const navigate = useNavigate(); 
+
+  const handleBrandClick = () => {
+    setOpenBrandHandling((prev) => !prev);
+  };
+
   return (
-    <>
     <Box
       sx={{
         width: 250,
@@ -17,42 +40,60 @@ const SidebarAdmin = () => {
         p: 2,
       }}
     >
-      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, textAlign: 'center' }}>
-        Admin Panel
-      </Typography>
+      {/* User Profile */}
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ mb: 2 }}
+      >
+        <Avatar alt="John Doe" src="/path/to/avatar.jpg" />
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          John Doe
+        </Typography>
+      </Stack>
+
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
+
+
       <List>
-        <ListItem button>
+ 
+        <ListItem button onClick={() => navigate('/dashboard')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Dashboard />
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
         </ListItem>
-        <ListItem button>
+
+       
+        <ListItem button onClick={handleBrandClick} sx={{cursor: 'pointer'}}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <People />
           </ListItemIcon>
-          <ListItemText primary="Users" />
+          <ListItemText primary="Brand Handling" />
         </ListItem>
-        <ListItem button>
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <BarChart />
-          </ListItemIcon>
-          <ListItemText primary="Analytics" />
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <AccountCircle />
-          </ListItemIcon>
-          <ListItemText primary="Profile" />
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon sx={{ color: '#fff' }}>
-            <Settings />
-          </ListItemIcon>
-          <ListItemText primary="Settings" />
-        </ListItem>
-        <ListItem button>
+
+      
+        <Collapse in={openBrandHandling} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+           <ListItem
+              button
+              onClick={() => navigate('/ViewAllBrands') }
+              sx={{
+                pl: 6,
+                cursor: 'pointer',
+                color: '#cbd5e1',
+                '&:hover': { bgcolor: '#334155' },
+              }}
+            >
+              <ListItemText primary="View All Brands" />
+            </ListItem>
+          </List>
+        </Collapse>
+
+      
+        <ListItem button onClick={() => console.log('Logout clicked')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Logout />
           </ListItemIcon>
@@ -60,9 +101,7 @@ const SidebarAdmin = () => {
         </ListItem>
       </List>
     </Box>
-  
-</>
-  )
-}
+  );
+};
 
-export default SidebarAdmin
+export default SidebarAdmin;

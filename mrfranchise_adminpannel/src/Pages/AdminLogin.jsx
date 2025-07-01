@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import {
   CheckCircleOutline,
-  Lock
+  Lock,
 } from '@mui/icons-material';
 import InvestorImage from "../assets/Images/LoginRightContent.jpg";
 import Logo from "../assets/Images/logo.png"; 
