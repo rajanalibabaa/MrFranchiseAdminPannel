@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {  useState ,useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -20,12 +20,27 @@ import {
 import ViewAllBrands  from './ViewAll Brands/ViewAllBrands';
 
 const SidebarAdmin = () => {
+   const navigate = useNavigate(); 
   const [openBrandHandling, setOpenBrandHandling] = useState(false);
-  const navigate = useNavigate(); 
-
+  const [openInvestorHandling, setOpenInvestorHandling] = useState(false);
+const [adminContact, setAdminContact] = useState(localStorage.getItem('adminContact') || 'Admin');
   const handleBrandClick = () => {
     setOpenBrandHandling((prev) => !prev);
   };
+  const handleInvestorClick =() =>{
+    setOpenInvestorHandling((prev) => !prev);
+  };
+
+ useEffect(() => {
+    // Listen for changes to localStorage (e.g., after login)
+    const handleStorage = () => {
+      setAdminContact(localStorage.getItem('adminContact') || 'Admin');
+    };
+    window.addEventListener('storage', handleStorage);
+    // Also update on mount in case login just happened
+    handleStorage();
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   return (
     <Box
@@ -48,9 +63,9 @@ const SidebarAdmin = () => {
         justifyContent="center"
         sx={{ mb: 2 }}
       >
-        <Avatar alt="John Doe" src="/path/to/avatar.jpg" />
+        <Avatar alt={adminContact} src="/path/to/avatar.jpg" />
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          John Doe
+          {adminContact}
         </Typography>
       </Stack>
 
@@ -59,7 +74,7 @@ const SidebarAdmin = () => {
 
       <List>
  
-        <ListItem button onClick={() => navigate('/dashboard')}>
+        <ListItem button="true" onClick={() => navigate('/dashboard')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Dashboard />
           </ListItemIcon>
@@ -67,7 +82,7 @@ const SidebarAdmin = () => {
         </ListItem>
 
        
-        <ListItem button onClick={handleBrandClick} sx={{cursor: 'pointer'}}>
+        <ListItem button="true" onClick={handleBrandClick} sx={{cursor: 'pointer'}}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <People />
           </ListItemIcon>
@@ -78,7 +93,7 @@ const SidebarAdmin = () => {
         <Collapse in={openBrandHandling} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
            <ListItem
-              button
+              button="true"
               onClick={() => navigate('/ViewAllBrands') }
               sx={{
                 pl: 6,
@@ -92,8 +107,31 @@ const SidebarAdmin = () => {
           </List>
         </Collapse>
 
+         <ListItem button="true" onClick={handleInvestorClick} sx={{cursor: 'pointer'}}>
+          <ListItemIcon sx={{ color: '#fff' }}>
+            <People />
+          </ListItemIcon>
+          <ListItemText primary="Investor Handling" />
+        </ListItem>
+        <Collapse in={openInvestorHandling} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+           <ListItem
+              button="true"
+              onClick={() => navigate('/investormanage') }
+              sx={{
+                pl: 6,
+                cursor: 'pointer',
+                color: '#cbd5e1',
+                '&:hover': { bgcolor: '#334155' },
+              }}
+            >
+              <ListItemText primary="View All Investors" />
+            </ListItem>
+          </List>
+        </Collapse>
+
       
-        <ListItem button onClick={() => console.log('Logout clicked')}>
+        <ListItem button="true" onClick={() => console.log('Logout clicked')}>
           <ListItemIcon sx={{ color: '#fff' }}>
             <Logout />
           </ListItemIcon>

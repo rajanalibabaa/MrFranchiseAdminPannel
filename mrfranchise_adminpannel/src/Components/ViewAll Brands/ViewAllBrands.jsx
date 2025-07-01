@@ -10,6 +10,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import SidebarAdmin from '../SidebarAdmin';
 
 const ViewAllBrands = () => {
     const [brands, setBrands] = useState([]);
@@ -18,8 +19,8 @@ const ViewAllBrands = () => {
 
   const fetchBrands = async () => {
     try {
-      const response = await axios.get('/api/v1/brandlisting/getAllBrandListing');
-      setBrands(response.data?.data || []); // adjust based on actual response shape
+      const response = await axios.get('https://franchise-backend-wgp6.onrender.com/api/v1/brandlisting/getAllBrandListing');
+      setBrands(response.data?.data || []); 
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch brands');
@@ -48,6 +49,11 @@ const ViewAllBrands = () => {
   }
 
   return (
+    <Box display="flex">
+      {/* Sidebar */}
+      <SidebarAdmin />
+
+     
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
         All Brands
@@ -77,6 +83,7 @@ const ViewAllBrands = () => {
           </Grid>
         ))}
       </Grid>
+    </Box>
     </Box>
   );
 };
