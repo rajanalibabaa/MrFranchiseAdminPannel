@@ -14,7 +14,11 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.1.2",
     "@mui/material": "^7.1.2",
+    "@tinymce/tinymce-react": "^6.2.1",
     "axios": "^1.10.0",
+    "lodash.debounce": "^4.0.8",
+    "lucide-react": "^0.525.0",
+    "notistack": "^3.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3"
