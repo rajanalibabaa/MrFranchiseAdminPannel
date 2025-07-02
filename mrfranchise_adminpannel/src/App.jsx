@@ -4,6 +4,8 @@ import SidebarAdmin from './Components/SidebarAdmin';
 import AdminLogin from './Pages/AdminLogin';
 import ViewAllBrands from './Components/ViewAll Brands/ViewAllBrands';
 import BrandRegisterForm from './Components/Brands/BrandLIstingRegister/BrandRegisterForm';
+import InvestorManage from './Components/ManageInvestor/InvestorManage';
+import MainPageDashboard from './Pages/MainPageDashboard';
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
         <Route path="/sidebar" element={<SidebarAdmin />} />
         <Route path="/viewallbrands" element={<ViewAllBrands />} />
         <Route path='/createbrand' element={<BrandRegisterForm />} />
+        <Route path="/investormanage" element={<InvestorManage />} />
+        <Route path="/dashboard" element={<MainPageDashboard/>}/>
       </Routes>
     </>
   )

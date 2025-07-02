@@ -1,13 +1,12 @@
 import { Typography } from '@mui/material'
 import React from 'react'
-import AdminSidebar from './SidebarAdmin'
+import SidebarAdmin from '../Components/SidebarAdmin'
 
 function MainPageDashboard() {
   return (
-   <>
-   <AdminSidebar/>
-   
-   </>
+    <div>
+      <SidebarAdmin />
+    </div>
   )
 }
 

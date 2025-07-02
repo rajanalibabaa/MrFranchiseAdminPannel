@@ -16,16 +16,18 @@ import {
 } from '@mui/icons-material';
 import InvestorImage from "../assets/Images/LoginRightContent.jpg";
 import Logo from "../assets/Images/logo.png"; 
+import { useNavigate } from 'react-router-dom';
 
 const AdminLogin = () => {
+  const navigate = useNavigate();
   const [contact, setContact] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const [adminContact, setAdminContact] = useState(localStorage.getItem('adminContact') || 'Admin');
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   const phoneRegex = /^[6-9]\d{9}$/;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -50,10 +52,6 @@ const AdminLogin = () => {
     const otpValue = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(otpValue);
     setOtpSent(true);
-
-    // console.log(`OTP for ${contact}: ${otpValue}`);
-    
-    // alert(`OTP sent to ${contact}`);
     alert (`Your OTP is: ${otpValue}`);
   };
 
@@ -66,10 +64,21 @@ const AdminLogin = () => {
     if (otp === generatedOtp) {
       setIsVerified(true);
       setError('');
+      localStorage.setItem('adminCotact', contact); 
     } else {
       setError('Invalid OTP. Please try again.');
     }
   };
+
+  React.useEffect(() => {
+  if (isVerified) {
+    const timer = setTimeout(() => {
+      navigate('/dashboard');
+    }, 1500); 
+    return () => clearTimeout(timer);
+  }
+}, [isVerified, navigate]);
+
 
   return (
     <Box 
