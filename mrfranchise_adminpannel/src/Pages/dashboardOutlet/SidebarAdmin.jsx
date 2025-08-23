@@ -87,7 +87,7 @@ const SidebarAdmin = () => {
         toggleKey: "brand",
         submenu: [
           { label: "Create Brand", path: "/dashboard/createbrand" },
-          { label: "All Brands", path: "/dashboard/viewallbrands" },
+          { label: "All Brands", path: "/dashboard/getallbrands" },
         ],
       },
       {

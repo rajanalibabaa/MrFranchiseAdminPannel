@@ -7,6 +7,7 @@ import InvestorManage from '../Components/ManageInvestor/InvestorManage';
 import MainPageDashboard from '../Pages/dashboardOutlet/MainPageDashboard'
 import NewInvestor from '../Components/ManageInvestor/NewInvestor';
 import AllInvestor from '../Components/ManageInvestor/AllInvestor';
+import GetAllBrands from '../Components/Brands/GetAllBrands';
 
 const Router = () => {
   return (
@@ -18,7 +19,7 @@ const Router = () => {
 
             // Manage Brand Routes
             <Route path="createbrand" element={<BrandRegisterForm />} />
-            <Route path="viewallbrands" element={<InvestorManage />} />
+            <Route path="getallbrands" element={<GetAllBrands />} />
 
 
             // Manage Investor Routes
