@@ -1,166 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  CircularProgress,
-  Typography,
-  Button,
-  Box,
-  TextField,
-  IconButton
-} from '@mui/material';
-import { Refresh, Search, Edit, Delete } from '@mui/icons-material';
+import React, { useCallback, useEffect, useState } from "react";
+import TableOutlet from "../../ui/TableOutlet";
+import { GetApiCall } from "../../api/default/GetApi";
+import { Api } from "../../api/apiurl";
+import DeletePopup from "../../ui/DeletePopup";
+import { PostApiCall } from "../../api/default/PostApi";
+import BrandInfoPopup from "../../ui/BrandInfoPopup";
 
-const BrandListing = () => {
+const GetAllBrands = () => {     
   const [brands, setBrands] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const fetchBrands = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/v1/brandlisting/getAllBrandListing');
-      setBrands(response.data.data); // Assuming the response has a data property with the array of brands
-      setError(null);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch brands');
-      console.error('Error fetching brands:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [searchTerm, setSearchTerm] = useState(""); 
+  const [open, setOpen] = useState(false);
+  const [openBrandInfo, setOpenBrandInfo] = useState(false);
+  const [selectedBrandId, setSelectedBrandId] = useState(null);
+  const [brandDetails, setBrandDetails] = useState(null);
 
   useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const response = await GetApiCall(Api.admin.brand.getAllBrands);
+        console.log("Fetched brands:", response.data);
+        setBrands(response.data.data || []); 
+      } catch (error) {
+        console.error("Error fetching brands:", error);
+      }
+    };
+
     fetchBrands();
+  }, []); 
+
+  
+
+  const handleDelete = useCallback((brandId) => {
+    setSelectedBrandId(brandId);  
+    setOpen(true);
   }, []);
 
- // ...existing code...
-  const filteredBrands = brands.filter(brand =>
-    (brand.name && brand.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-// ...existing code...
+  const newIncomingBrands = async() => {
+    try {
+    const newIncomingData = await GetApiCall(Api.admin.brand.getNewIncomingBrands)
 
-  const handleRefresh = () => {
-    fetchBrands();
-  };
-
-  const handleEdit = (brandId) => {
-    // Implement edit functionality
-    console.log('Edit brand with ID:', brandId);
-  };
-
-  const handleDelete = (brandId) => {
-    // Implement delete functionality
-    console.log('Delete brand with ID:', brandId);
-  };
-
-  if (loading && brands.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
-    );
+    console.log(newIncomingData.data.data);
+    setBrands(newIncomingData?.data?.data)
+      } catch(error){
+        console.log("Error fetching brands :",error);
+        
+      }
   }
 
-  if (error) {
-    return (
-      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="200px">
-        <Typography color="error">{error}</Typography>
-        <Button variant="contained" color="primary" onClick={fetchBrands} startIcon={<Refresh />}>
-          Retry
-        </Button>
-      </Box>
-    );
+
+  const getAllBrands =async() => {
+    try{
+      console.log("All Brands clicked");
+      const getAllBrands =await GetApiCall(Api.admin.brand.getAllBrands)
+      console.log(getAllBrands?.data?.data);
+      setBrands(getAllBrands?.data?.data)
+      
+    }catch(error){
+      console.log("Error fetching brands :",error);
+      
+    }
   }
 
+const handleApprove = useCallback(async(brandId) =>{
+  
+  const updated = brands.brands.filter(brand => brand.uuid !== brandId)
+  setBrands({ brands: updated })
+  // const data = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`)
+
+},[brands])
+
+const handleInfoOpen = useCallback(async(brandId) => {
+
+  const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+  console.log("Brand details:", res?.data?.data);
+  setBrandDetails(res?.data?.data);
+  setOpenBrandInfo(true);
+},[])
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" component="h2">
-          Brand Listings
-        </Typography>
-        <Box display="flex" alignItems="center">
-          <TextField
-            size="small"
-            placeholder="Search brands..."
-            variant="outlined"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <Search sx={{ mr: 1 }} />
-            }}
-            sx={{ mr: 2 }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleRefresh}
-            startIcon={<Refresh />}
-          >
-            Refresh
-          </Button>
-        </Box>
-      </Box>
+    <div>
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={getAllBrands}>All Brands</button>
+        <button onClick={newIncomingBrands}>
+          New Incoming Brands
+        </button>
+        <input
+          type="text"
+          placeholder="Search brands..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ marginLeft: "1rem", padding: "5px" }}
+        />
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Logo</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredBrands.length > 0 ? (
-              filteredBrands.map((brand) => (
-                <TableRow key={brand._id}>
-                  <TableCell>
-                    {brand.logo ? (
-                      <img
-                        src={brand.logo}
-                        alt={brand.name}
-                        style={{ width: 50, height: 50, objectFit: 'contain' }}
-                      />
-                    ) : (
-                      'No logo'
-                    )}
-                  </TableCell>
-                  <TableCell>{brand.name}</TableCell>
-                  <TableCell>{brand.description || 'N/A'}</TableCell>
-                  <TableCell>{brand.category || 'N/A'}</TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => handleEdit(brand._id)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(brand._id)}>
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  {searchTerm ? 'No matching brands found' : 'No brands available'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Paper>
+      <TableOutlet
+        filteredBrands={brands}
+        handleDelete={handleDelete}
+        searchTerm={searchTerm}
+        handleApprove={handleApprove}
+        handleInfoOpen={handleInfoOpen}
+      />
+
+      {open && (
+        <div>
+          <DeletePopup
+            open={open}
+            onClose={() => setOpen(false)}
+            brands={brands}
+            setBrands={setBrands}
+            selectedBrandId={selectedBrandId}
+          />
+        </div>
+      )}
+
+      {openBrandInfo && (
+        <div>
+          <BrandInfoPopup
+            open={openBrandInfo}
+            onClose={() => setOpenBrandInfo(false)}
+            brandDetails={brandDetails}
+            
+            
+          />
+        </div>
+      )}
+    </div>
   );
 };
 
-export default BrandListing;
+export default GetAllBrands;
