@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import TableOutlet from "../../ui/TableOutlet";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
+import DeletePopup from "../../ui/DeletePopup";
+import { PostApiCall } from "../../api/default/PostApi";
+import BrandInfoPopup from "../../ui/BrandInfoPopup";
 
-const GetAllBrands = () => {
-  const [brands, setBrands] = useState([]);     
+const GetAllBrands = () => {     
+  const [brands, setBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState(""); 
+  const [open, setOpen] = useState(false);
+  const [openBrandInfo, setOpenBrandInfo] = useState(false);
+  const [selectedBrandId, setSelectedBrandId] = useState(null);
+  const [brandDetails, setBrandDetails] = useState(null);
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -21,21 +28,59 @@ const GetAllBrands = () => {
     fetchBrands();
   }, []); 
 
-  // const filteredBrands = brands
+  
 
-  const handleEdit = (uuid) => {
-    console.log("Edit brand:", uuid);
-  };
+  const handleDelete = useCallback((brandId) => {
+    setSelectedBrandId(brandId);  
+    setOpen(true);
+  }, []);
 
-  const handleDelete = (uuid) => {
-    console.log("Delete brand:", uuid);
-  };
+  const newIncomingBrands = async() => {
+    try {
+    const newIncomingData = await GetApiCall(Api.admin.brand.getNewIncomingBrands)
 
+    console.log(newIncomingData.data.data);
+    setBrands(newIncomingData?.data?.data)
+      } catch(error){
+        console.log("Error fetching brands :",error);
+        
+      }
+  }
+
+
+  const getAllBrands =async() => {
+    try{
+      console.log("All Brands clicked");
+      const getAllBrands =await GetApiCall(Api.admin.brand.getAllBrands)
+      console.log(getAllBrands?.data?.data);
+      setBrands(getAllBrands?.data?.data)
+      
+    }catch(error){
+      console.log("Error fetching brands :",error);
+      
+    }
+  }
+
+const handleApprove = useCallback(async(brandId) =>{
+  
+  const updated = brands.brands.filter(brand => brand.uuid !== brandId)
+  setBrands({ brands: updated })
+  // const data = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`)
+
+},[brands])
+
+const handleInfoOpen = useCallback(async(brandId) => {
+
+  const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+  console.log("Brand details:", res?.data?.data);
+  setBrandDetails(res?.data?.data);
+  setOpenBrandInfo(true);
+},[])
   return (
     <div>
       <div style={{ marginBottom: "1rem" }}>
-        <button onClick={() => console.log("Fetching all brands...")}>All Brands</button>
-        <button onClick={() => console.log("Fetching new incoming brands...")}>
+        <button onClick={getAllBrands}>All Brands</button>
+        <button onClick={newIncomingBrands}>
           New Incoming Brands
         </button>
         <input
@@ -49,10 +94,35 @@ const GetAllBrands = () => {
 
       <TableOutlet
         filteredBrands={brands}
-        handleEdit={handleEdit}
         handleDelete={handleDelete}
         searchTerm={searchTerm}
+        handleApprove={handleApprove}
+        handleInfoOpen={handleInfoOpen}
       />
+
+      {open && (
+        <div>
+          <DeletePopup
+            open={open}
+            onClose={() => setOpen(false)}
+            brands={brands}
+            setBrands={setBrands}
+            selectedBrandId={selectedBrandId}
+          />
+        </div>
+      )}
+
+      {openBrandInfo && (
+        <div>
+          <BrandInfoPopup
+            open={openBrandInfo}
+            onClose={() => setOpenBrandInfo(false)}
+            brandDetails={brandDetails}
+            
+            
+          />
+        </div>
+      )}
     </div>
   );
 };

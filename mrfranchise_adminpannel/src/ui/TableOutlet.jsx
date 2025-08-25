@@ -10,10 +10,11 @@ import {
   IconButton,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-const TableOutlet = ({ filteredBrands, handleEdit, handleDelete, searchTerm }) => {
+const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove ,handleInfoOpen}) => {
 
-  console.log("Rendering TableOutlet with brands:", filteredBrands);
+  // console.log("Rendering TableOutlet with brands:", filteredBrands);
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -45,18 +46,20 @@ const TableOutlet = ({ filteredBrands, handleEdit, handleDelete, searchTerm }) =
                 </TableCell>
 
                 {/* Brand Name */}
-                <TableCell>{brand?.brandname}</TableCell>
+                <TableCell>{brand?.brandname || brand?.brandName}</TableCell>
 
                 {/* Category Sub */}
-                <TableCell>{brand?.brandCategories?.sub || "N/A"}</TableCell>
+                <TableCell>{brand?.brandCategories?.sub || brand?.brandCategories?.child||"N/A"}</TableCell>
 
                 {/* Investment Range */}
-                <TableCell>{brand?.fico.investmentRange || "N/A"}</TableCell>
+                <TableCell>{brand?.fico?.investmentRange || brand?.investmentRange||"N/A"}</TableCell>
 
                 {/* Details (Area, Model, Video link, etc.) */}
                 <TableCell>
                   <div>
-                    <button>info</button>
+                    <button
+                      onClick={() => {handleInfoOpen(brand?.uuid)}}
+                    >info</button>
                   </div>
                 </TableCell>
 
@@ -67,7 +70,15 @@ const TableOutlet = ({ filteredBrands, handleEdit, handleDelete, searchTerm }) =
                   </IconButton> */}
                   <IconButton color="error" onClick={() => handleDelete(brand?.uuid)}>
                     <Delete />
+                    {/* <button>Pending</button> */}
                   </IconButton>
+                  {brand?.seen === false && 
+                  <IconButton color="" onClick={() => handleApprove(brand?.uuid)}
+                    // sx={{ color: brand? "green" : "gray" }}
+                    >
+                    <CheckCircleIcon />
+                  </IconButton>
+                  }
                 </TableCell>
               </TableRow>
             ))
