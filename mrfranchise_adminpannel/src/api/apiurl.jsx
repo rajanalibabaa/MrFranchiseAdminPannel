@@ -10,5 +10,9 @@ export const Api = {
       brandApprove: `${BASE_URL}/brandApprove`,
       getNewIncomingBrandById: `${BASE_URL}/getNewIncomingBrandById`,
     },
+    investor:{
+      getAllInvestors: `${BASE_URL_2}/investor/getInvestor`,
+    
+    }
   },
 };
