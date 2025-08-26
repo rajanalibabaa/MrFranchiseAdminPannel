@@ -12,7 +12,11 @@ export const Api = {
     },
     investor:{
       getAllInvestors: `${BASE_URL_2}/investor/getInvestor`,
-    
+      createInvestor: `${BASE_URL_2}/investor/createInvestor`,
+    },
+    otp:{
+      sendOtpEmail: `${BASE_URL_2}/otpverify/send-otp-email`,
+      verifyOtp: `${BASE_URL_2}/otpverify/verify-otp`,
     }
   },
 };
