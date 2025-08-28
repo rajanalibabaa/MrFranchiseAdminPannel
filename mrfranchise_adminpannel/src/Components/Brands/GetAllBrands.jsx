@@ -71,8 +71,15 @@ const handleApprove = useCallback(async(brandId) =>{
 
 const handleInfoOpen = useCallback(async(brandId) => {
 
-  const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
-  console.log("Brand details:", res?.data?.data);
+  let res = null
+  if (brandId) {
+    res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId} `) 
+  }else {
+    res = await GetApiCall(`${Api.admin.brand.getBrandById}/${brandId}`) 
+  }
+  console.log("Brand details:", res?.data);
+
+
   setBrandDetails(res?.data?.data);
   setOpenBrandInfo(true);
 },[])

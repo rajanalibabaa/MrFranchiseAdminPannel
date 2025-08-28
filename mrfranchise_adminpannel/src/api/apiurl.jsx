@@ -9,6 +9,7 @@ export const Api = {
       getAllBrands: `${BASE_URL_2}/brandlisting/getAllBrandListing`,
       brandApprove: `${BASE_URL}/brandApprove`,
       getNewIncomingBrandById: `${BASE_URL}/getNewIncomingBrandById`,
+      getBrandById : `${BASE_URL}/brandlisting/getBrandListingByUUID`
     },
   },
 };
