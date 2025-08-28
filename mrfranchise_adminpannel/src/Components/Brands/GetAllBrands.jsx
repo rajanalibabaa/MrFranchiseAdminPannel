@@ -5,6 +5,7 @@ import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import { PostApiCall } from "../../api/default/PostApi";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
+import socket from "../../Utils/Socket";
 
 const GetAllBrands = () => {     
   const [brands, setBrands] = useState([]);
@@ -38,13 +39,13 @@ const GetAllBrands = () => {
   const newIncomingBrands = async() => {
     try {
     const newIncomingData = await GetApiCall(Api.admin.brand.getNewIncomingBrands)
-
-    console.log(newIncomingData.data.data);
+    // console.log(newIncomingData.data.data);
     setBrands(newIncomingData?.data?.data)
       } catch(error){
         console.log("Error fetching brands :",error);
         
       }
+      
   }
 
 
@@ -54,7 +55,10 @@ const GetAllBrands = () => {
       const getAllBrands =await GetApiCall(Api.admin.brand.getAllBrands)
       console.log(getAllBrands?.data?.data);
       setBrands(getAllBrands?.data?.data)
-      
+         const audio = new Audio("/ting.mp3");
+         audio.play()
+        socket.emit("newbrand","approved"); 
+
     }catch(error){
       console.log("Error fetching brands :",error);
       
