@@ -22,7 +22,7 @@ import AddIcon from "@mui/icons-material/Add";
 import axios from "axios";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { categories } from "../Brands/BrandLIstingRegister/BrandCategories";
+import { categories } from "../Brands/BrandLIstingRegister/BrandCategories.jsx";
 import { TbPhotoEdit } from "react-icons/tb";
 
 const EditInvestor = () => {
