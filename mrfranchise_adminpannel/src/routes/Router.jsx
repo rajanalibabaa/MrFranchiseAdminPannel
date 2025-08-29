@@ -5,9 +5,10 @@ import ViewAllBrands from '../Components/ViewAllBrands/ViewAllBrands'
 import BrandRegisterForm from '../Components/Brands/BrandLIstingRegister/BrandRegisterForm';
 import InvestorManage from '../Components/ManageInvestor/InvestorManage';
 import MainPageDashboard from '../Pages/dashboardOutlet/MainPageDashboard'
-import NewInvestor from '../Components/ManageInvestor/NewInvestor';
 import AllInvestor from '../Components/ManageInvestor/AllInvestor';
 import GetAllBrands from '../Components/Brands/GetAllBrands';
+import InvestorRegister from '../Components/ManageInvestor/NewInvestorRegister/InvestorRegister';
+import EditInvestor from '../Components/ManageInvestor/EditInvestor';
 import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 
 const Router = () => {
@@ -25,7 +26,9 @@ const Router = () => {
 
             // Manage Investor Routes
             <Route path="allinvestors" element={<AllInvestor />} />
-            <Route path="newinvestors" element={<NewInvestor />} />
+            <Route path="newinvestors" element={<InvestorRegister />} />
+
+<Route path="edit-investor/:id" element={<EditInvestor />} />
           </Route>
         </Routes>
     </div>

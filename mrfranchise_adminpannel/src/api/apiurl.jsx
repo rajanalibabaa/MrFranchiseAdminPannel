@@ -11,5 +11,14 @@ export const Api = {
       getNewIncomingBrandById: `${BASE_URL}/getNewIncomingBrandById`,
       getBrandByID:`${BASE_URL_2}/brandlisting/getBrandById`
     },
+    investor:{
+      getAllInvestors: `${BASE_URL_2}/investor/getInvestor`,
+      createInvestor: `${BASE_URL_2}/investor/createInvestor`,
+      updateInvestor: (uuid) => `${BASE_URL_2}/investor/updateInvestor/${uuid}`,
+    },
+    otp:{
+      sendOtpEmail: `${BASE_URL_2}/otpverify/send-otp-email`,
+      verifyOtp: `${BASE_URL_2}/otpverify/verify-otp`,
+    }
   },
 };
