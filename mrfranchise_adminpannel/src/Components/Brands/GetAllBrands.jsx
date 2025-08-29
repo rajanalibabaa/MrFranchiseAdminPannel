@@ -4,17 +4,11 @@ import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
-<<<<<<< HEAD
 import socket from "../../Utils/Socket";
 import { Badge, Button } from "@mui/material";
-
-const GetAllBrands = () => {
-=======
 import { useNavigate } from "react-router-dom";
 
 const GetAllBrands = () => {
-  const navigate = useNavigate();
->>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
   const [brands, setBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
@@ -22,11 +16,10 @@ const GetAllBrands = () => {
   const [selectedBrandId, setSelectedBrandId] = useState(null);
   const [brandDetails, setBrandDetails] = useState(null);
   const [brandCount, setBrandCount] = useState(0);
-
- 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   
   const fetchBrands = async (pageNum = 1, append = false) => {
@@ -86,17 +79,7 @@ const GetAllBrands = () => {
     setOpen(true);
   }, []);
 
-<<<<<<< HEAD
   const newIncomingBrands = async () => {
-=======
-
-  const handleEdit = useCallback((brandId) => {
-    console.log("Edit brand:", brandId);
-    navigate(`/dashboard/edit-brand/${brandId}`);
-  }, [navigate]);
-
-  const newIncomingBrands = async() => {
->>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
     try {
       const res = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
       setBrands(res?.data?.data?.brands || []);
@@ -125,13 +108,24 @@ const GetAllBrands = () => {
     [brands]
   );
 
-  const handleInfoOpen = useCallback(async (brandId) => {
-    const res = await GetApiCall(
-      `${Api.admin.brand.getNewIncomingBrandById}/${brandId}`
-    );
-    setBrandDetails(res?.data?.data);
-    setOpenBrandInfo(true);
-  }, []);
+const handleInfoOpen = useCallback(async(brandId) => {
+ 
+ 
+  let res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+ 
+  if (res.data.statuscode !== 200) {
+    res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
+    console.log("Brand details fetched successfully");
+  }
+  console.log("Brand details:", res?.data.data);
+  setBrandDetails(res?.data?.data);
+  setOpenBrandInfo(true);
+},[])
+
+  const handleEdit = useCallback((brandId) => {
+    console.log("Edit brand:", brandId);
+    navigate(`/dashboard/edit-brand/${brandId}`);
+  }, [navigate]);
 
  
   const loadMore = () => {
@@ -142,20 +136,6 @@ const GetAllBrands = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
-  
-  let res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
-
-  if (res.data.statuscode !== 200) {
-    res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
-    console.log("Brand details fetched successfully");
-  } 
-  console.log("Brand details:", res?.data.data);
-  setBrandDetails(res?.data?.data);
-  setOpenBrandInfo(true);
-},[])
->>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
   return (
     <div>
       {/* Top Controls */}
@@ -189,11 +169,11 @@ const GetAllBrands = () => {
       {/* Table with Infinite Scroll */}
       <TableOutlet
         filteredBrands={brands}
-        handleEdit={handleEdit}
         handleDelete={handleDelete}
         searchTerm={searchTerm}
         handleApprove={handleApprove}
         handleInfoOpen={handleInfoOpen}
+        handleEdit={handleEdit}
         loadMore={loadMore}
         hasMore={hasMore}
         loading={loading}

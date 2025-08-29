@@ -8,26 +8,19 @@ import {
   TableBody,
   Paper,
   IconButton,
-  Button,
-  Box,
   CircularProgress,
+  Box,
+  Button,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { Edit } from "lucide-react";
 
 const TableOutlet = ({
   filteredBrands,
+  handleDelete,
+  searchTerm,
   handleEdit,
-  handleDelete,
-  searchTerm,
-  handleApprove,
-  handleInfoOpen,
-}) => {
-  // console.log("Rendering TableOutlet with brands:", filteredBrands);
-const TableOutlet = ({
-  filteredBrands,
-  handleDelete,
-  searchTerm,
   handleApprove,
   handleInfoOpen,
   loadMore,
@@ -36,8 +29,9 @@ const TableOutlet = ({
 }) => {
   const observer = useRef();
 
-  const lastRowRef = useCallback((node) => {
-    // console.log("🔍 Observing last row:", node);
+  const lastRowRef = useCallback(
+    (node) => {
+      // console.log("🔍 Observing last row:", node);
       if (loading) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
@@ -52,117 +46,6 @@ const TableOutlet = ({
   );
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Logo</TableCell>
-            <TableCell>Brand Name</TableCell>
-            <TableCell>Category (Sub)</TableCell>
-            <TableCell>Investment Range</TableCell>
-            <TableCell>Details</TableCell>
-            <TableCell>Edit</TableCell>
-            <TableCell>Delete</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredBrands?.brands?.length > 0 ? (
-            filteredBrands?.brands.map((brand) => (
-              <TableRow key={brand?.uuid}>
-                {/* Logo */}
-                <TableCell>
-                  {brand.logo ? (
-                    <img
-                      src={brand?.logo}
-                      alt={brand?.brandname}
-                      style={{
-                        width: 50,
-                        height: 50,
-                        objectFit: "contain",
-                        borderRadius: 6,
-                      }}
-                    />
-                  ) : (
-                    "No logo"
-                  )}
-                </TableCell>
-
-                {/* Brand Name */}
-                <TableCell>{brand?.brandname || brand?.brandName}</TableCell>
-
-                {/* Category Sub */}
-                <TableCell>
-                  {brand?.brandCategories?.sub ||
-                    brand?.brandCategories?.child ||
-                    "N/A"}
-                </TableCell>
-
-                {/* Investment Range */}
-                <TableCell>
-                  {brand?.fico?.investmentRange ||
-                    brand?.investmentRange ||
-                    "N/A"}
-                </TableCell>
-
-                {/* Details (Area, Model, Video link, etc.) */}
-                <TableCell>
-                  <Box>
-                    <Button
-                      onClick={() => {
-                        handleInfoOpen(brand?.uuid);
-                      }}
-                      sx={{ py: 0, backgroundColor: "#3adf34ff", color: "white" }}
-                    >
-                      Info
-                    </Button>
-                  </Box>
-                </TableCell>
-
-                <TableCell>
-                  <IconButton
-                    sx={{color:"green"}}
-                    onClick={() => handleEdit(brand?.uuid)}
-                  >
-                    <Edit />
-                  </IconButton>
-                </TableCell>
-
-                {/* Actions */}
-                <TableCell>
-                  {/* <IconButton color="primary" onClick={() => handleEdit(brand?.uuid)}>
-                    <Edit />
-                  </IconButton> */}
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(brand?.uuid)}
-                  >
-                    <Delete />
-                    {/* <button>Pending</button> */}
-                  </IconButton>
-                  {brand?.seen === false && (
-                    <IconButton
-                      color=""
-                      onClick={() => handleApprove(brand?.uuid)}
-                      // sx={{ color: brand? "green" : "gray" }}
-                    >
-                      <CheckCircleIcon />
-                    </IconButton>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={6} align="center">
-                {searchTerm
-                  ? "No matching brands found"
-                  : "No brands available"}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
     <Paper>
       <TableContainer style={{ maxHeight: "80vh", overflow: "auto" }}>
         <Table stickyHeader>
@@ -173,7 +56,8 @@ const TableOutlet = ({
               <TableCell>Category (Sub)</TableCell>
               <TableCell>Investment Range</TableCell>
               <TableCell>Details</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Edit</TableCell>
+              <TableCell>Delete</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -199,7 +83,9 @@ const TableOutlet = ({
                       "No logo"
                     )}
                   </TableCell>
-                  <TableCell>{brand?.brandname || brand?.brandName || "N/A"}</TableCell>
+                  <TableCell>
+                    {brand?.brandname || brand?.brandName || "N/A"}
+                  </TableCell>
                   <TableCell>
                     {brand?.brandCategories?.sub ||
                       brand?.brandCategories?.child ||
@@ -210,10 +96,31 @@ const TableOutlet = ({
                       brand?.investmentRange ||
                       "N/A"}
                   </TableCell>
+                  {/* Details (Area, Model, Video link, etc.) */}
                   <TableCell>
-                    <button onClick={() => handleInfoOpen(brand?.uuid)}>
-                      info
-                    </button>
+                    <Box>
+                      <Button
+                        onClick={() => {
+                          handleInfoOpen(brand?.uuid);
+                        }}
+                        sx={{
+                          py: 0,
+                          backgroundColor: "#3adf34ff",
+                          color: "white",
+                        }}
+                      >
+                        Info
+                      </Button>
+                    </Box>
+                  </TableCell>
+
+                  <TableCell>
+                    <IconButton
+                      sx={{ color: "green" }}
+                      onClick={() => handleEdit(brand?.uuid)}
+                    >
+                      <Edit />
+                    </IconButton>
                   </TableCell>
                   <TableCell>
                     <IconButton
