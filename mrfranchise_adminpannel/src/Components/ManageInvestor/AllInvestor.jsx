@@ -3,28 +3,21 @@ import InvestorTableOutlet from "../../ui/InvestorTableOutlet";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
 import { categories as brandCategories } from "../Brands/BrandLIstingRegister/BrandCategories";
+import FilterOption from "../../ui/FilterOption";
 import { 
   Typography, 
   Button, 
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Box,
-  TextField,
+  Box
 } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { useNavigate } from "react-router-dom";
 
 const AllInvestor = () => {
+  const navigate = useNavigate();
   const [investors, setInvestors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -32,14 +25,16 @@ const AllInvestor = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Filter options
+  // Other filters
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedInvestmentRange, setSelectedInvestmentRange] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
 
-  const handleView = (uuid) => {
-    console.log("View Investor:", uuid);
-  };
+  // Loading and error states
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+ 
 
   useEffect(() => {
     const fetchInvestors = async () => {
@@ -53,18 +48,9 @@ const AllInvestor = () => {
 
     fetchInvestors();
   }, []);
-
-  const handleDownloadClick = () => {
-    setOpenDialog(true);
-  };
-
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    // Reset filters when dialog closes
-    setSelectedCategory("");
-    setSelectedInvestmentRange("");
-    setSelectedLocation("");
-  };
+  const handleEdit = (investor) => {
+  navigate(`/dashboard/edit-investor/${investor._id}`, { state: { investor } });
+};
 
   const handleDownloadExcel = () => {
     if (investors.length === 0) {
@@ -199,171 +185,53 @@ const AllInvestor = () => {
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(data, "AllInvestors.xlsx");
-
-    setOpenDialog(false);
   };
 
-  // Extract unique values for filter dropdowns
-  const getUniqueValues = (data, key) => {
-    const values = new Set();
-    data.forEach(inv => {
-      if (inv.preferences?.[0]?.[key]) {
-        if (Array.isArray(inv.preferences[0][key])) {
-          inv.preferences[0][key].forEach(item => {
-            if (item && typeof item === 'object') {
-              Object.values(item).forEach(val => {
-                if (val) values.add(val);
-              });
-            } else if (item) {
-              values.add(item);
-            }
-          });
-        } else {
-          values.add(inv.preferences[0][key]);
-        }
-      }
-    });
-    return Array.from(values).sort();
-  };
-
-const categoryOptions = brandCategories.flatMap(cat =>
-  cat.children.flatMap(child => child.children) 
-);
-const investmentRanges = [
-  "Below - 50,000",
-  "Rs. 50,000 - 2 L",
-  "Rs. 2 L - 5 L",
-  "Rs. 5 L - 10 L",
-  "Rs. 10 L - 20 L",
-  "Rs. 20 L - 30 L",
-  "Rs. 30 L - 50 L",
-  "Rs. 50 L - 1 Cr",
-  "Rs. 1 Cr - 2 Crs",
-  "Rs. 2 Crs - 5 Crs",
-  "Rs. 5Crs - above",
-];
-  const locations = [
-    ...getUniqueValues(investors, 'preferredCity'),
-    ...getUniqueValues(investors, 'preferredState')
-  ].filter((value, index, self) => self.indexOf(value) === index).sort();
+  const categoryOptions = brandCategories.flatMap(cat =>
+    cat.children.flatMap(child => child.children) 
+  );
 
   return (
     <div>
-      <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography sx={{ textAlign: "center", fontSize: "30px", fontWeight: "bold" }}>
-          ALL INVESTORS
-        </Typography>
-
-        <Button variant="contained" color="success" onClick={handleDownloadClick}>
-          Download Excel
-        </Button>
-      </div>
-
-      {/* Dialog with download options */}
-      <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-            Download Investor Data
+      <Box sx={{ marginBottom: "2rem" }}>
+        {/* Header */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Typography sx={{ fontSize: "30px", fontWeight: "bold" }}>
+            ALL INVESTORS
           </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-            <Box>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 1 }}>
-                Filter Options
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-               <FormControl fullWidth>
-  <InputLabel>Category</InputLabel>
-  <Select
-    value={selectedCategory}
-    label="Category"
-    onChange={(e) => setSelectedCategory(e.target.value)}
-  >
-    <MenuItem value="">All Categories</MenuItem>
-    {categoryOptions.map((subCategory, index) => (
-      <MenuItem key={index} value={subCategory}>{subCategory}</MenuItem>
-    ))}
-  </Select>
-</FormControl>                
-               <FormControl fullWidth>
-  <InputLabel>Investment Range</InputLabel>
-  <Select
-    value={selectedInvestmentRange}
-    label="Investment Range"
-    onChange={(e) => setSelectedInvestmentRange(e.target.value)}
-  >
-    <MenuItem value="">All Ranges</MenuItem>
-    {investmentRanges.map((range, index) => (
-      <MenuItem key={index} value={range}>
-        {range}
-      </MenuItem>
-    ))}
-  </Select>
-</FormControl>
 
-                
-                <FormControl fullWidth>
-                  <InputLabel>Location</InputLabel>
-                  <Select
-                    value={selectedLocation}
-                    label="Location"
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                  >
-                    <MenuItem value="">All Locations</MenuItem>
-                    {locations.map((location, index) => (
-                      <MenuItem key={index} value={location}>{location}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-            </Box>
-
-           
-            <Box>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 1 }}>
-                Date Range Filter
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField
-                  label="Start Date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-                <TextField
-                  label="End Date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              </Box>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleDialogClose} variant="outlined" color="secondary">
-            Cancel
-          </Button>
           <Button 
-            onClick={handleDownloadExcel} 
             variant="contained" 
-            color="success"
+            color="success" 
+            onClick={handleDownloadExcel}
             startIcon={<DownloadIcon />}
           >
             Download Excel
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+
+        {/* Filter Options */}
+          <FilterOption
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedInvestmentRange={selectedInvestmentRange}
+            setSelectedInvestmentRange={setSelectedInvestmentRange}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            categoryOptions={categoryOptions}
+            loading={loading}
+            error={error}
+          />
+      </Box>
 
       <InvestorTableOutlet
         investors={investors}
-        handleView={handleView}
         searchTerm={searchTerm}
+        handleEdit={handleEdit}
       />
     </div>
   );

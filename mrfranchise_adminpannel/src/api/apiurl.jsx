@@ -13,6 +13,7 @@ export const Api = {
     investor:{
       getAllInvestors: `${BASE_URL_2}/investor/getInvestor`,
       createInvestor: `${BASE_URL_2}/investor/createInvestor`,
+      updateInvestor: (uuid) => `${BASE_URL_2}/investor/updateInvestor/${uuid}`,
     },
     otp:{
       sendOtpEmail: `${BASE_URL_2}/otpverify/send-otp-email`,

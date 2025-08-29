@@ -8,6 +8,7 @@ import MainPageDashboard from '../Pages/dashboardOutlet/MainPageDashboard'
 import AllInvestor from '../Components/ManageInvestor/AllInvestor';
 import GetAllBrands from '../Components/Brands/GetAllBrands';
 import InvestorRegister from '../Components/ManageInvestor/NewInvestorRegister/InvestorRegister';
+import EditInvestor from '../Components/ManageInvestor/EditInvestor';
 
 const Router = () => {
   return (
@@ -25,6 +26,8 @@ const Router = () => {
             // Manage Investor Routes
             <Route path="allinvestors" element={<AllInvestor />} />
             <Route path="newinvestors" element={<InvestorRegister />} />
+
+<Route path="edit-investor/:id" element={<EditInvestor />} />
           </Route>
         </Routes>
     </div>
