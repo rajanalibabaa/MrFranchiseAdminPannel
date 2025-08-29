@@ -4,10 +4,17 @@ import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
+<<<<<<< HEAD
+import socket from "../../Utils/Socket";
+import { Badge, Button } from "@mui/material";
+
+const GetAllBrands = () => {
+=======
 import { useNavigate } from "react-router-dom";
 
 const GetAllBrands = () => {
   const navigate = useNavigate();
+>>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
   const [brands, setBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
@@ -79,6 +86,9 @@ const GetAllBrands = () => {
     setOpen(true);
   }, []);
 
+<<<<<<< HEAD
+  const newIncomingBrands = async () => {
+=======
 
   const handleEdit = useCallback((brandId) => {
     console.log("Edit brand:", brandId);
@@ -86,46 +96,66 @@ const GetAllBrands = () => {
   }, [navigate]);
 
   const newIncomingBrands = async() => {
+>>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
     try {
-    const newIncomingData = await GetApiCall(Api.admin.brand.getNewIncomingBrands)
-
-    console.log(newIncomingData.data.data);
-    setBrands(newIncomingData?.data?.data)
-      } catch(error){
-        console.log("Error fetching brands :",error);
-        
-      }
-  }
-
-
-  const getAllBrands =async() => {
-    try{
-      console.log("All Brands clicked");
-      const getAllBrands =await GetApiCall(Api.admin.brand.getAllBrands)
-      console.log(getAllBrands?.data?.data);
-      setBrands(getAllBrands?.data?.data)
-      
-    }catch(error){
-      console.log("Error fetching brands :",error);
-      
+      const res = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
+      setBrands(res?.data?.data?.brands || []);
+      setPage(1);
+      setHasMore(false); 
+    } catch (error) {
+      console.log("Error fetching new incoming brands:", error);
     }
-  }
+  };
 
-const handleApprove = useCallback(async(brandId) =>{
+  const getAllBrands = async () => {
+    fetchBrands(1, false);
+    setPage(1);
+  };
+
+  const handleApprove = useCallback(
+    async (brandId) => {
+      try {
+        const updated = brands.filter((brand) => brand.uuid !== brandId);
+        setBrands(updated);
+        setBrandCount((prev) => Math.max(prev - 1, 0));
+      } catch (error) {
+        console.error("Error approving brand:", error);
+      }
+    },
+    [brands]
+  );
+
+  const handleInfoOpen = useCallback(async (brandId) => {
+    const res = await GetApiCall(
+      `${Api.admin.brand.getNewIncomingBrandById}/${brandId}`
+    );
+    setBrandDetails(res?.data?.data);
+    setOpenBrandInfo(true);
+  }, []);
+
+ 
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      console.log("➡️ Loading page:", nextPage);
+      fetchBrands(nextPage, true);
+    }
+  };
+
+<<<<<<< HEAD
+=======
   
-  const updated = brands.brands.filter(brand => brand.uuid !== brandId)
-  setBrands({ brands: updated })
-  // const data = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`)
+  let res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
 
-},[brands])
-
-const handleInfoOpen = useCallback(async(brandId) => {
-
-  const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
-  console.log("Brand details:", res?.data?.data);
+  if (res.data.statuscode !== 200) {
+    res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
+    console.log("Brand details fetched successfully");
+  } 
+  console.log("Brand details:", res?.data.data);
   setBrandDetails(res?.data?.data);
   setOpenBrandInfo(true);
 },[])
+>>>>>>> beedd8bb8539be896dd485099fd47e0b071dafe3
   return (
     <div>
       {/* Top Controls */}
