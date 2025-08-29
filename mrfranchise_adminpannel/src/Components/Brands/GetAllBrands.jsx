@@ -5,8 +5,10 @@ import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import { PostApiCall } from "../../api/default/PostApi";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
+import { useNavigate } from "react-router-dom";
 
-const GetAllBrands = () => {     
+const GetAllBrands = () => {
+  const navigate = useNavigate();
   const [brands, setBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState(""); 
   const [open, setOpen] = useState(false);
@@ -34,6 +36,12 @@ const GetAllBrands = () => {
     setSelectedBrandId(brandId);  
     setOpen(true);
   }, []);
+
+
+  const handleEdit = useCallback((brandId) => {
+    console.log("Edit brand:", brandId);
+    navigate(`/dashboard/edit-brand/${brandId}`);
+  }, [navigate]);
 
   const newIncomingBrands = async() => {
     try {
@@ -71,8 +79,14 @@ const handleApprove = useCallback(async(brandId) =>{
 
 const handleInfoOpen = useCallback(async(brandId) => {
 
-  const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
-  console.log("Brand details:", res?.data?.data);
+  
+  let res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+
+  if (res.data.statuscode !== 200) {
+    res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
+    console.log("Brand details fetched successfully");
+  } 
+  console.log("Brand details:", res?.data.data);
   setBrandDetails(res?.data?.data);
   setOpenBrandInfo(true);
 },[])
@@ -94,6 +108,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
 
       <TableOutlet
         filteredBrands={brands}
+        handleEdit={handleEdit}
         handleDelete={handleDelete}
         searchTerm={searchTerm}
         handleApprove={handleApprove}
