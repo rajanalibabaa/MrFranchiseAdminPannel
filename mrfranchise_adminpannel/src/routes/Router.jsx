@@ -8,6 +8,7 @@ import MainPageDashboard from '../Pages/dashboardOutlet/MainPageDashboard'
 import NewInvestor from '../Components/ManageInvestor/NewInvestor';
 import AllInvestor from '../Components/ManageInvestor/AllInvestor';
 import GetAllBrands from '../Components/Brands/GetAllBrands';
+import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 
 const Router = () => {
   return (
@@ -20,7 +21,7 @@ const Router = () => {
             // Manage Brand Routes
             <Route path="createbrand" element={<BrandRegisterForm />} />
             <Route path="getallbrands" element={<GetAllBrands />} />
-
+            <Route path="edit-brand/:uuid" element={<BrandListingEdit />} />
 
             // Manage Investor Routes
             <Route path="allinvestors" element={<AllInvestor />} />

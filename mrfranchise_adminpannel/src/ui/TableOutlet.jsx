@@ -8,12 +8,20 @@ import {
   TableBody,
   Paper,
   IconButton,
+  Button,
+  Box,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove ,handleInfoOpen}) => {
-
+const TableOutlet = ({
+  filteredBrands,
+  handleEdit,
+  handleDelete,
+  searchTerm,
+  handleApprove,
+  handleInfoOpen,
+}) => {
   // console.log("Rendering TableOutlet with brands:", filteredBrands);
   return (
     <TableContainer component={Paper}>
@@ -25,7 +33,8 @@ const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove 
             <TableCell>Category (Sub)</TableCell>
             <TableCell>Investment Range</TableCell>
             <TableCell>Details</TableCell>
-            <TableCell>Actions</TableCell>
+            <TableCell>Edit</TableCell>
+            <TableCell>Delete</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -38,7 +47,12 @@ const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove 
                     <img
                       src={brand?.logo}
                       alt={brand?.brandname}
-                      style={{ width: 50, height: 50, objectFit: "contain", borderRadius: 6 }}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        objectFit: "contain",
+                        borderRadius: 6,
+                      }}
                     />
                   ) : (
                     "No logo"
@@ -49,18 +63,40 @@ const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove 
                 <TableCell>{brand?.brandname || brand?.brandName}</TableCell>
 
                 {/* Category Sub */}
-                <TableCell>{brand?.brandCategories?.sub || brand?.brandCategories?.child||"N/A"}</TableCell>
+                <TableCell>
+                  {brand?.brandCategories?.sub ||
+                    brand?.brandCategories?.child ||
+                    "N/A"}
+                </TableCell>
 
                 {/* Investment Range */}
-                <TableCell>{brand?.fico?.investmentRange || brand?.investmentRange||"N/A"}</TableCell>
+                <TableCell>
+                  {brand?.fico?.investmentRange ||
+                    brand?.investmentRange ||
+                    "N/A"}
+                </TableCell>
 
                 {/* Details (Area, Model, Video link, etc.) */}
                 <TableCell>
-                  <div>
-                    <button
-                      onClick={() => {handleInfoOpen(brand?.uuid)}}
-                    >info</button>
-                  </div>
+                  <Box>
+                    <Button
+                      onClick={() => {
+                        handleInfoOpen(brand?.uuid);
+                      }}
+                      sx={{ py: 0, backgroundColor: "#3adf34ff", color: "white" }}
+                    >
+                      Info
+                    </Button>
+                  </Box>
+                </TableCell>
+
+                <TableCell>
+                  <IconButton
+                    sx={{color:"green"}}
+                    onClick={() => handleEdit(brand?.uuid)}
+                  >
+                    <Edit />
+                  </IconButton>
                 </TableCell>
 
                 {/* Actions */}
@@ -68,24 +104,31 @@ const TableOutlet = ({ filteredBrands,  handleDelete, searchTerm, handleApprove 
                   {/* <IconButton color="primary" onClick={() => handleEdit(brand?.uuid)}>
                     <Edit />
                   </IconButton> */}
-                  <IconButton color="error" onClick={() => handleDelete(brand?.uuid)}>
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDelete(brand?.uuid)}
+                  >
                     <Delete />
                     {/* <button>Pending</button> */}
                   </IconButton>
-                  {brand?.seen === false && 
-                  <IconButton color="" onClick={() => handleApprove(brand?.uuid)}
-                    // sx={{ color: brand? "green" : "gray" }}
+                  {brand?.seen === false && (
+                    <IconButton
+                      color=""
+                      onClick={() => handleApprove(brand?.uuid)}
+                      // sx={{ color: brand? "green" : "gray" }}
                     >
-                    <CheckCircleIcon />
-                  </IconButton>
-                  }
+                      <CheckCircleIcon />
+                    </IconButton>
+                  )}
                 </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
               <TableCell colSpan={6} align="center">
-                {searchTerm ? "No matching brands found" : "No brands available"}
+                {searchTerm
+                  ? "No matching brands found"
+                  : "No brands available"}
               </TableCell>
             </TableRow>
           )}
