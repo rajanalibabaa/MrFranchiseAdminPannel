@@ -20,6 +20,7 @@ const GetAllBrands = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [editShow, setEditShow] = useState(true);
 
   
   const fetchBrands = async (pageNum = 1, append = false) => {
@@ -34,6 +35,7 @@ const GetAllBrands = () => {
       
       const newIncomingcount = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
       setBrandCount(newIncomingcount?.data?.data?.totalBrands || 0);
+      setEditShow(true)
 
       
       if (append) {
@@ -46,7 +48,7 @@ const GetAllBrands = () => {
       setPage(pagination?.currentPage || pageNum);
       setHasMore(pagination?.hasNext || false);
 
-      console.log("📄 Pagination info:", pagination);
+      console.log("📄 response?.data?.data:", response?.data?.data);
     } catch (error) {
       console.error("Error fetching brands:", error);
     } finally {
@@ -82,9 +84,11 @@ const GetAllBrands = () => {
   const newIncomingBrands = async () => {
     try {
       const res = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
+      console.log("New incoming brands fetched:", res?.data?.data);
       setBrands(res?.data?.data?.brands || []);
       setPage(1);
       setHasMore(false); 
+      setEditShow(false)
     } catch (error) {
       console.log("Error fetching new incoming brands:", error);
     }
@@ -174,6 +178,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
         handleApprove={handleApprove}
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
+        editShow={editShow}
         loadMore={loadMore}
         hasMore={hasMore}
         loading={loading}

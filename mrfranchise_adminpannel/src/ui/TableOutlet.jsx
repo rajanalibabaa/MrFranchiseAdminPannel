@@ -20,6 +20,7 @@ const TableOutlet = ({
   filteredBrands,
   handleDelete,
   searchTerm,
+  editShow,
   handleEdit,
   handleApprove,
   handleInfoOpen,
@@ -28,6 +29,7 @@ const TableOutlet = ({
   loading,
 }) => {
   const observer = useRef();
+  console.log("filteredBrands :", filteredBrands);
 
   const lastRowRef = useCallback(
     (node) => {
@@ -56,8 +58,9 @@ const TableOutlet = ({
               <TableCell>Category (Sub)</TableCell>
               <TableCell>Investment Range</TableCell>
               <TableCell>Details</TableCell>
-              <TableCell>Edit</TableCell>
+              {editShow && <TableCell>Edit</TableCell>}
               <TableCell>Delete</TableCell>
+              {!editShow && <TableCell>Approve</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -114,7 +117,8 @@ const TableOutlet = ({
                     </Box>
                   </TableCell>
 
-                  <TableCell>
+                  {editShow && (
+                    <TableCell>
                     <IconButton
                       sx={{ color: "green" }}
                       onClick={() => handleEdit(brand?.uuid)}
@@ -122,6 +126,7 @@ const TableOutlet = ({
                       <Edit />
                     </IconButton>
                   </TableCell>
+                  )}
                   <TableCell>
                     <IconButton
                       color="error"
@@ -129,7 +134,10 @@ const TableOutlet = ({
                     >
                       <Delete />
                     </IconButton>
-                    {brand?.seen === false && (
+                   
+                  </TableCell>
+                  <TableCell>
+                     {brand?.seen === false && (
                       <IconButton onClick={() => handleApprove(brand?.uuid)}>
                         <CheckCircleIcon />
                       </IconButton>
