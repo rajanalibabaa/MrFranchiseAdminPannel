@@ -95,7 +95,7 @@ const SidebarAdmin = () => {
         icon: <AccountBalance />,
         toggleKey: "investor",
         submenu: [
-          { label: "New Investors", path: "/dashboard/newinvestors" },
+          { label: "Create Investors", path: "/dashboard/newinvestors" },
           { label: "All Investors", path: "/dashboard/allinvestors" },
         ],
       },
