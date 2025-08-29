@@ -10,10 +10,10 @@ import {
 
 const DeletePopup = ({ open, onClose,brands,setBrands,selectedBrandId}) => {
     const handleConfirmDelete = () => {
-        console.log("Delete brand:", brands.brands);
-    const updated = brands.brands.filter(brand => brand.uuid !== selectedBrandId)
+        console.log("Delete brand:", brands);
+    const updated = brands.filter(brand => brand.uuid !== selectedBrandId)
     console.log("Updated brands after deletion:", updated);
-    setBrands({ brands: updated })
+    setBrands(updated)
     onClose()
       };
   return (
