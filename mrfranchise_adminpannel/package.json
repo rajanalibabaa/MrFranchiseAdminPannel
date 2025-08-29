@@ -12,11 +12,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.1.2",
-    "@mui/lab": "^7.0.0-beta.16",
-    "@mui/material": "^7.3.1",
-    "@mui/x-date-pickers": "^8.10.2",
-    "@mui/x-date-pickers-pro": "^8.10.2",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.1.2",
     "@reduxjs/toolkit": "^2.8.2",
     "@tinymce/tinymce-react": "^6.2.1",
     "axios": "^1.10.0",
@@ -36,6 +33,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.8.2",
     "redux-persist": "^6.0.0",
+    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "xlsx": "^0.18.5"
   },

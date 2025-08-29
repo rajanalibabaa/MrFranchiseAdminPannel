@@ -7,9 +7,9 @@ import InvestorManage from '../Components/ManageInvestor/InvestorManage';
 import MainPageDashboard from '../Pages/dashboardOutlet/MainPageDashboard'
 import AllInvestor from '../Components/ManageInvestor/AllInvestor';
 import GetAllBrands from '../Components/Brands/GetAllBrands';
-import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 import InvestorRegister from '../Components/ManageInvestor/NewInvestorRegister/InvestorRegister';
 import EditInvestor from '../Components/ManageInvestor/EditInvestor';
+import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 
 const Router = () => {
   return (
