@@ -5,8 +5,10 @@ import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
 import socket from "../../Utils/Socket";
-import { Badge, Button } from "@mui/material";
+import { Badge, Button ,Box} from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import BrandFilter from "./BrandFilter/BrandFilter";
+// import { Box } from "lucide-react";
 
 const GetAllBrands = () => {
   const [brands, setBrands] = useState([]);
@@ -143,7 +145,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
   return (
     <div>
       {/* Top Controls */}
-      <div style={{ marginBottom: "1rem" }}>
+      {/* <div style={{ marginBottom: "1rem" }}>
         <div style={{ display: "inline-flex", gap: "1rem", alignItems: "center" }}>
           <Button variant="contained" onClick={getAllBrands}>
             All Brands
@@ -168,7 +170,45 @@ const handleInfoOpen = useCallback(async(brandId) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ marginLeft: "1rem", padding: "5px" }}
         />
-      </div>
+      </div> */}
+        <Box style={{ marginBottom: "1rem" }}>
+        <Box style={{ display: "inline-flex", gap: "1rem", alignItems: "center" }}>
+ 
+          <Box>
+          <Button variant="contained" onClick={getAllBrands}>
+            All Brands
+          </Button>
+          </Box>
+ 
+          <Badge
+            badgeContent={brandCount}
+            color="error"
+            overlap="circular"
+            invisible={brandCount === 0}
+          >
+            <Button variant="contained" onClick={newIncomingBrands}>
+              New Incoming Brands
+            </Button>
+          </Badge>
+             
+          <Button variant="contained" onClick={newIncomingBrands}>
+             All Leads
+            </Button>    
+ 
+             <input
+          type="text"
+          placeholder="Search brands..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ marginLeft: "1rem", padding: "5px" }}
+        />
+        </Box>
+ 
+        <Box sx={{ marginTop: 2 }}>
+          <BrandFilter />
+        </Box>
+ 
+      </Box>
 
       {/* Table with Infinite Scroll */}
       <TableOutlet
