@@ -153,7 +153,6 @@ const { id } = useParams();
         );
         setIndiaData(res.data);
       } catch (err) {
-        console.error("Error fetching location data:", err);
         setIndiaData([]);
         setSnackbar({
           open: true,
@@ -229,8 +228,6 @@ useEffect(() => {
           investorID: investorDataToUse.inveterID || "",
           uuid: investorDataToUse.uuid || id // Ensure UUID is properly set
         };
-        
-        console.log('Formatted data UUID:', formattedData.uuid);
         setInvestorData(formattedData);
         setOriginalData(formattedData);
         setAvatarPreview(investorDataToUse.profileImage || "");
@@ -556,8 +553,6 @@ const handleSave = async () => {
   
   const changedFields = getChangedFields();
   
-  console.log('Investor UUID:', investorData.uuid);
-  console.log('Changed fields:', changedFields);
   
   // If nothing changed, just show message
   if (Object.keys(changedFields).length === 0 && !avatarFile && !isImageRemoved) {
@@ -579,7 +574,6 @@ const handleSave = async () => {
     } else {
       formData.append(key, value);
     }
-    console.log(`Appending ${key}:`, value);
   });
 
   try {

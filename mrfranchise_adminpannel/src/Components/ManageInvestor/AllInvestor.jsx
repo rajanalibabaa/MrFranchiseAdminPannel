@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 const AllInvestor = () => {
   const navigate = useNavigate();
   const [investors, setInvestors] = useState([]);
+  const [filteredInvestors, setFilteredInvestors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -34,13 +35,12 @@ const AllInvestor = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
- 
-
   useEffect(() => {
     const fetchInvestors = async () => {
       try {
         const response = await GetApiCall(Api.admin.investor.getAllInvestors);
         setInvestors(response.data || []);
+        setFilteredInvestors(response.data || []);
       } catch (error) {
         console.error("Error fetching Investors:", error);
       }
@@ -48,23 +48,22 @@ const AllInvestor = () => {
 
     fetchInvestors();
   }, []);
-  const handleEdit = (investor) => {
-  navigate(`/dashboard/edit-investor/${investor._id}`, { state: { investor } });
-};
 
-  const handleDownloadExcel = () => {
-    if (investors.length === 0) {
-      alert("No data to export!");
-      return;
-    }
+  // Apply filters whenever any filter changes
+  useEffect(() => {
+    applyFilters();
+  }, [investors, selectedCategory, selectedInvestmentRange, selectedLocation, startDate, endDate, sortBy, sortOrder]);
+
+  const applyFilters = () => {
+    let filteredData = [...investors];
 
     // 1. Filter by date range if selected
-    let filteredInvestors = [...investors];
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // Include the entire end day
 
-      filteredInvestors = filteredInvestors.filter(inv => {
+      filteredData = filteredData.filter(inv => {
         const created = new Date(inv.createdAt);
         return created >= start && created <= end;
       });
@@ -72,15 +71,15 @@ const AllInvestor = () => {
 
     // 2. Filter by category if selected
     if (selectedCategory) {
-      filteredInvestors = filteredInvestors.filter(inv => {
+      filteredData = filteredData.filter(inv => {
         const categories = inv.preferences?.[0]?.category || [];
-        return categories.some(cat => cat.main === selectedCategory);
+        return categories.some(cat => cat.main === selectedCategory || cat.sub === selectedCategory || cat.child === selectedCategory);
       });
     }
 
     // 3. Filter by investment range if selected
     if (selectedInvestmentRange) {
-      filteredInvestors = filteredInvestors.filter(inv => {
+      filteredData = filteredData.filter(inv => {
         const investmentRange = inv.preferences?.[0]?.investmentRange || "";
         return investmentRange === selectedInvestmentRange;
       });
@@ -88,29 +87,27 @@ const AllInvestor = () => {
 
     // 4. Filter by location if selected
     if (selectedLocation) {
-      filteredInvestors = filteredInvestors.filter(inv => {
+      filteredData = filteredData.filter(inv => {
         const preferredCity = inv.preferences?.[0]?.preferredCity || "";
         const preferredState = inv.preferences?.[0]?.preferredState || "";
-        return preferredCity === selectedLocation || preferredState === selectedLocation;
+        const preferredCountry = inv.preferences?.[0]?.preferredCountry || "";
+        return preferredCity === selectedLocation || 
+               preferredState === selectedLocation || 
+               preferredCountry === selectedLocation;
       });
-    }
-
-    if (filteredInvestors.length === 0) {
-      alert("No data matches the selected filters!");
-      return;
     }
 
     // 5. Sort the filtered investors
     switch(sortBy) {
       case "date":
-        filteredInvestors.sort((a, b) => {
+        filteredData.sort((a, b) => {
           const dateA = new Date(a.createdAt || 0);
           const dateB = new Date(b.createdAt || 0);
           return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
         });
         break;
       case "investment":
-        filteredInvestors.sort((a, b) => {
+        filteredData.sort((a, b) => {
           const amountA = a.preferences && a.preferences[0] ? 
             parseInt(a.preferences[0].investmentAmount || 0) : 0;
           const amountB = b.preferences && b.preferences[0] ? 
@@ -119,7 +116,7 @@ const AllInvestor = () => {
         });
         break;
       case "location":
-        filteredInvestors.sort((a, b) => {
+        filteredData.sort((a, b) => {
           const locationA = a.preferences?.[0]?.preferredCity || a.preferences?.[0]?.preferredState || "";
           const locationB = b.preferences?.[0]?.preferredCity || b.preferences?.[0]?.preferredState || "";
           return sortOrder === "asc" 
@@ -128,7 +125,7 @@ const AllInvestor = () => {
         });
         break;
       case "category":
-        filteredInvestors.sort((a, b) => {
+        filteredData.sort((a, b) => {
           const categoryA = a.preferences?.[0]?.category?.[0]?.main || "";
           const categoryB = b.preferences?.[0]?.category?.[0]?.main || "";
           return sortOrder === "asc" 
@@ -140,7 +137,20 @@ const AllInvestor = () => {
         break;
     }
 
-    // 6. Flatten data for Excel
+    setFilteredInvestors(filteredData);
+  };
+
+  const handleEdit = (investor) => {
+    navigate(`/dashboard/edit-investor/${investor._id}`, { state: { investor } });
+  };
+
+  const handleDownloadExcel = () => {
+    if (filteredInvestors.length === 0) {
+      alert("No data to export!");
+      return;
+    }
+
+    // Flatten data for Excel
     const flattenedData = filteredInvestors.map(inv => {
       const firstPref = inv.preferences?.[0] || {};
       const firstCategory = firstPref.category?.[0] || {};
@@ -222,14 +232,13 @@ const AllInvestor = () => {
             setStartDate={setStartDate}
             endDate={endDate}
             setEndDate={setEndDate}
-            categoryOptions={categoryOptions}
             loading={loading}
             error={error}
           />
       </Box>
 
       <InvestorTableOutlet
-        investors={investors}
+        investors={filteredInvestors} 
         searchTerm={searchTerm}
         handleEdit={handleEdit}
       />
