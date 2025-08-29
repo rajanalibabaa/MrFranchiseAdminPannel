@@ -201,8 +201,8 @@ if (selectedLocation) {
             setStartDate={setStartDate}
             endDate={endDate}
             setEndDate={setEndDate}
-            selectedState={selectedState}              // ✅ PASS
-            setSelectedState={setSelectedState}        // ✅ PASS
+            selectedState={selectedState}              
+            setSelectedState={setSelectedState}       
             loading={loading}
             error={error}
           />
