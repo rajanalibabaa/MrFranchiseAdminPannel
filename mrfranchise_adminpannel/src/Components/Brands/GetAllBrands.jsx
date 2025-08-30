@@ -142,8 +142,16 @@ const handleInfoOpen = useCallback(async(brandId) => {
     }
   };
 
+  const handleSearchTerm = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (value) {
+      // const res = 
+    }
+  }
+
   return (
-    <div>
+    <Box>
       {/* Top Controls */}
       {/* <div style={{ marginBottom: "1rem" }}>
         <div style={{ display: "inline-flex", gap: "1rem", alignItems: "center" }}>
@@ -199,7 +207,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
           type="text"
           placeholder="Search brands..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchTerm}
           style={{ marginLeft: "1rem", padding: "5px" }}
         />
         </Box>
@@ -241,7 +249,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
           brandDetails={brandDetails}
         />
       )}
-    </div>
+    </Box>
   );
 };
 

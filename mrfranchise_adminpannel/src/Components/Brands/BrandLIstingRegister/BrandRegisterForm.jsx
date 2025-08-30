@@ -398,6 +398,10 @@ const BrandRegisterForm = () => {
           })
         );
 
+        formDataSend.append(
+          "admin",true
+        )
+
         // Append all files
         const fileFields = {
           brandLogo: formData.uploads.brandLogo,
@@ -440,9 +444,9 @@ console.log("Form data prepared for submission:", formDataSend);
           localStorage.removeItem(FORM_STEP_KEY);
           setFormData(initialFormData);
           setActiveStep(0);
-          setTimeout(() => {
-            navigate("/advertisewithus");
-          }, 1500);
+          // setTimeout(() => {
+          //   navigate("/advertisewithus");
+          // }, 1500);
         }
       } catch (error) {
         console.error("Submission error:", error);

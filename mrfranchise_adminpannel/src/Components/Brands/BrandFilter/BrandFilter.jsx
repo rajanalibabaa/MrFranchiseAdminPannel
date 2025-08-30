@@ -69,6 +69,7 @@ const BrandFilter = () => {
   // Handle filter changes
   const handleFilterChange = (filterName) => (event) => {
     const value = event.target.value;
+    console.log(`Filter changed: ${filterName} = ${value}`);
  
     // Reset dependent filters when parent changes
     if (filterName === 'maincategory') {

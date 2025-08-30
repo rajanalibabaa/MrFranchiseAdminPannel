@@ -49,7 +49,7 @@ const TableOutlet = ({
 
   return (
     <Paper>
-      <TableContainer style={{ maxHeight: "80vh", overflow: "auto" }}>
+      <TableContainer style={{ maxHeight: "65vh", overflow: "auto" }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
