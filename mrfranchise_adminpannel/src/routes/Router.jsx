@@ -10,6 +10,8 @@ import GetAllBrands from '../Components/Brands/GetAllBrands';
 import InvestorRegister from '../Components/ManageInvestor/NewInvestorRegister/InvestorRegister';
 import EditInvestor from '../Components/ManageInvestor/EditInvestor';
 import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
+import Bredcrumbs from '../Components/Brands/Bredcrumbs';
+
 
 const Router = () => {
   return (
@@ -21,7 +23,7 @@ const Router = () => {
 
             // Manage Brand Routes
             <Route path="createbrand" element={<BrandRegisterForm />} />
-            <Route path="getallbrands" element={<GetAllBrands />} />
+            <Route path="getallbrands" element={<Bredcrumbs />} />
             <Route path="edit-brand/:uuid" element={<BrandListingEdit />} />
 
             // Manage Investor Routes

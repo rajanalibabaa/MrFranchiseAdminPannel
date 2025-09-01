@@ -1,12 +1,7 @@
-
-
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
-// import { userId } from '../../Utils/autherId';
 
 const API_BASE_URL = 'http://localhost:5000/api/v1/';
-
-// const id = userId
 
 export const fetchFilteredBrands = createAsyncThunk(
   'filterBrands/fetchFilteredBrands',
@@ -30,7 +25,6 @@ export const fetchFilteredBrands = createAsyncThunk(
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('limit', limit);
-      // if (id) params.append('id', id);
       if (maincat) params.append('maincat', maincat);
       if (subcat) params.append('subcat', subcat);
       if (childcat) params.append('childcat', childcat);
@@ -43,7 +37,8 @@ export const fetchFilteredBrands = createAsyncThunk(
       if (modelType) params.append('modelType', modelType);
 
       const response = await axios.get(`${API_BASE_URL}filter/getAllBrandsAndFilter?${params.toString()}`);
- console.log("Fetched and normalized brands:", response.data.data);
+      
+      console.log("Fetched Brands Response:", response.data);
       // Normalize the brand data to ensure consistent structure
       const normalizedBrands = response.data.data?.brands?.map(brand => ({
         ...brand,
@@ -67,7 +62,6 @@ export const fetchFilteredBrands = createAsyncThunk(
         isLiked: brand?.isLiked || false,
         isShortListed: brand?.isShortListed || false
       })) || [];
-
 
       return {
         brands: normalizedBrands,
@@ -140,10 +134,6 @@ const filterBrandSlice = createSlice({
       state.filters.page = 1;
       state.pagination.currentPage = 1;
     },
-    resetFilters: (state) => {
-      state.filters = initialState.filters;
-      state.pagination.currentPage = 1;
-    },
     setPage: (state, action) => {
       state.filters.page = action.payload;
       state.pagination.currentPage = action.payload;
@@ -151,24 +141,15 @@ const filterBrandSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    // Add the toggle actions similar to brandSlice
-    toggleBrandLikefilter: (state, action) => {
-      const brandId = action.payload;
-      state.brands = state.brands.map(brand => 
-        brand?.uuid === brandId 
-          ? { ...brand, isLiked: !brand.isLiked }
-          : brand
-      );
+
+    appendBrands: (state, action) => {
+      state.brands = [...state.brands, ...action.payload];
     },
-    toggleBrandShortListfilter: (state, action) => {
+
+    deleteBrand: (state, action) => {
       const brandId = action.payload;
-      console.log("Toggling shortlist for brand:", brandId);
-      state.brands = state.brands.map(brand => 
-        brand.uuid === brandId 
-          ? { ...brand, isShortListed: !brand.isShortListed }
-          : brand
-      );
-    }
+      state.brands = state.brands.filter(brand => brand.uuid !== brandId);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -178,7 +159,13 @@ const filterBrandSlice = createSlice({
       })
       .addCase(fetchFilteredBrands.fulfilled, (state, action) => {
         state.loading = false;
-        state.brands = action.payload.brands;
+        
+        // If it's the first page, replace the brands, otherwise append
+        if (action.payload.pagination.currentPage === 1) {
+          state.brands = action.payload.brands;
+        } else {
+          state.brands = [...state.brands, ...action.payload.brands];
+        }
        
         // Update pagination info
         if (action.payload.pagination) {
@@ -197,11 +184,11 @@ const filterBrandSlice = createSlice({
 
 export const { 
   setFilter, 
-  resetFilters, 
   setPage, 
   clearError,
-  toggleBrandLikefilter,
-  toggleBrandShortListfilter
+  appendBrands,
+  deleteBrand,
+
 } = filterBrandSlice.actions;
 
 export default filterBrandSlice.reducer;
