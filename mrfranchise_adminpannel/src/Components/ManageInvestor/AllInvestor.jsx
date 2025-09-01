@@ -31,6 +31,8 @@ const AllInvestor = () => {
   const [endDate, setEndDate] = useState("");
 
   // Other filters
+  const [selectedMainCategory, setSelectedMainCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedInvestmentRange, setSelectedInvestmentRange] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -59,7 +61,6 @@ const AllInvestor = () => {
     fetchInvestors();
   }, []);
 
-  // Apply filters whenever any filter changes
   useEffect(() => {
     applyFilters();
   }, [
@@ -202,28 +203,76 @@ const AllInvestor = () => {
 
   return (
     <>
-      <Box sx={{ marginBottom: "2rem" }}>
+      <Box
+        sx={{
+          mb: { xs: 2, sm: 3 },
+        }}
+      >
         {/* Header */}
         <Box
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            flexDirection: { xs: "row", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+          }}
         >
-          <Typography sx={{ fontSize: "30px", fontWeight: "bold" }}>
-            ALL INVESTORS
-          </Typography>
+          <Box>
+            <Typography
+              sx={{
+                fontSize: { xs: "20px", sm: "30px" },
+                fontWeight: "bold",
+                mb: { xs: 1, sm: 2 },
+              }}
+            >
+              ALL INVESTORS
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: { xs: "12px", sm: "14px" },
+                color: "gray",
+              }}
+            >
+              Showing {filteredInvestors.length} of {investors.length}
+            </Typography>
+          </Box>
 
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleDownloadClick}   // ✅ FIXED (was calling handleDownloadExcel directly)
-            startIcon={<DownloadIcon />}
+          {/* Download Excel Button */}
+          <Box
+            sx={{
+              [theme => theme.breakpoints.down("sm")]: {
+                alignSelf: "flex-end",
+                width: "100%",
+                display: "flex",
+                justifyContent: "flex-end",
+              },
+            }}
           >
-            Download Excel
-          </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleDownloadClick}
+              startIcon={<DownloadIcon />}
+              sx={{
+                px: { xs: 0.7, sm: 3 },
+                py: { xs: 0.7, sm: 1 },
+                fontSize: { xs: "0.65rem", sm: "0.875rem" },
+                minWidth: { xs: "80px", sm: "120px" },
+              }}
+            >
+              Download Excel
+            </Button>
+          </Box>
         </Box>
 
         {/* Filter Options */}
         <FilterOption
           allDetails={investors}
+          selectedMainCategory={selectedMainCategory}
+          setSelectedMainCategory={setSelectedMainCategory}
+          selectedSubCategory={selectedSubCategory}
+          setSelectedSubCategory={setSelectedSubCategory}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           selectedInvestmentRange={selectedInvestmentRange}
@@ -248,25 +297,96 @@ const AllInvestor = () => {
       />
 
       {/* Captcha Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Confirm Download</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: { xs: 1, sm: 2 },
+            width: { xs: "90%", sm: 400 },
+            maxWidth: "100%",
+            bgcolor: "#f9fafb",
+            boxShadow: "0px 6px 20px rgba(0,0,0,0.2)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: { xs: "16px", sm: "20px" },
+            color: "#2c3e50",
+          }}
+        >
+          Confirm Download
+        </DialogTitle>
+
         <DialogContent>
-          <Typography sx={{ mb: 2 }}>
-            Please type the word "<strong>DOWNLOAD</strong>" to confirm.
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            label="Enter Captcha"
-            value={captchaInput}
-            onChange={(e) => setCaptchaInput(e.target.value)}
-          />
+          <Box sx={{ textAlign: "center", mb: { xs: 1, sm: 2 } }}>
+            <Typography sx={{ mb: 1, fontSize: { xs: "12px", sm: "14px" } }}>
+              Please type the word below to confirm:
+            </Typography>
+
+            {/* Captcha Box */}
+            <Box
+              sx={{
+                display: "inline-block",
+                px: { xs: 2, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                borderRadius: 2,
+                bgcolor: "#eaf4ff",
+                border: "1px dashed #1976d2",
+                fontSize: { xs: "16px", sm: "18px" },
+                fontWeight: "bold",
+                letterSpacing: "3px",
+                color: "#1976d2",
+                mb: { xs: 1, sm: 2 },
+              }}
+            >
+              {CAPTCHA_WORD}
+            </Box>
+
+            {/* Input */}
+            <TextField
+              fullWidth
+              size="small"
+              label="Enter Captcha"
+              value={captchaInput}
+              onChange={(e) => setCaptchaInput(e.target.value)}
+              sx={{ fontSize: { xs: "12px", sm: "14px" } }}
+            />
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} color="error">
+
+        <DialogActions
+          sx={{
+            justifyContent: "space-between",
+            px: { xs: 2, sm: 3 },
+            pb: { xs: 1, sm: 2 },
+          }}
+        >
+          <Button
+            onClick={() => setOpenDialog(false)}
+            color="error"
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirmDownload} color="success" variant="contained">
+          <Button
+            onClick={handleConfirmDownload}
+            color="success"
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            }}
+            disabled={captchaInput.trim().toUpperCase() !== CAPTCHA_WORD}
+          >
             Confirm
           </Button>
         </DialogActions>

@@ -226,7 +226,7 @@ useEffect(() => {
             _id: `pref-${Date.now()}`
           }],
           investorID: investorDataToUse.inveterID || "",
-          uuid: investorDataToUse.uuid || id // Ensure UUID is properly set
+          uuid: investorDataToUse.uuid || id 
         };
         setInvestorData(formattedData);
         setOriginalData(formattedData);

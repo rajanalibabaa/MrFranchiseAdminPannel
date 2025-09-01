@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   FormControl,
@@ -7,12 +7,23 @@ import {
   MenuItem,
   TextField,
   Alert,
-  CircularProgress,
   Grid,
+  Button,
+  Paper,
+  Typography,
+  IconButton,
+  Drawer,
 } from "@mui/material";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import CloseIcon from "@mui/icons-material/Close";
 
 const FilterOption = ({
   allDetails = [],
+  selectedMainCategory = "",
+  setSelectedMainCategory,
+  selectedSubCategory = "",
+  setSelectedSubCategory,
   selectedCategory = "",
   setSelectedCategory,
   selectedInvestmentRange = "",
@@ -28,39 +39,77 @@ const FilterOption = ({
   loading = false,
   error = "",
 }) => {
-  /** -------- Extract unique options -------- **/
-  const categoryOptions = useMemo(() => {
-    const categories = [];
+  // State for Drawer visibility
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Main Categories
+  const mainCategoryOptions = useMemo(() => {
+    const unique = [];
     allDetails.forEach((detail) => {
       detail?.preferences?.forEach((pref) => {
         pref?.category?.forEach((cat) => {
-          if (cat?.child) {
-            const clean = cat.child.trim();
-            if (!categories.includes(clean)) {
-              categories.push(clean);
-            }
+          if (cat.main) {
+            const clean = cat.main.trim();
+            if (!unique.includes(clean)) unique.push(clean);
           }
         });
       });
     });
-    return categories;
+    return unique;
   }, [allDetails]);
 
+  // Sub Categories
+  const subCategoryOptions = useMemo(() => {
+    const unique = [];
+    if (!selectedMainCategory) return unique;
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat?.sub && cat.main?.trim() === selectedMainCategory.trim()) {
+            const clean = cat.sub.trim();
+            if (!unique.includes(clean)) unique.push(clean);
+          }
+        });
+      });
+    });
+    return unique;
+  }, [allDetails, selectedMainCategory]);
+
+  // Child Categories
+  const categoryOptions = useMemo(() => {
+    const unique = [];
+    if (!selectedSubCategory) return unique;
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat?.child && cat.sub?.trim() === selectedSubCategory.trim()) {
+            const clean = cat.child.trim();
+            if (!unique.includes(clean)) unique.push(clean);
+          }
+        });
+      });
+    });
+    return unique;
+  }, [allDetails, selectedSubCategory]);
+
+  // Investment Ranges
   const investmentRanges = useMemo(() => {
-    const ranges = [];
+    const unique = [];
     allDetails.forEach((detail) => {
       const investment = detail?.preferences?.[0]?.investmentAmount?.trim();
-      if (investment && !ranges.includes(investment)) {
-        ranges.push(investment);
+      if (investment && !unique.includes(investment)) {
+        unique.push(investment);
       }
     });
-    return ranges;
+    return unique;
   }, [allDetails]);
 
+  // States
   const states = useMemo(() => {
     const unique = [];
     allDetails.forEach((detail) => {
-      const st = (detail.state || detail.preferredState || "").trim();
+      const st =
+        (detail.state || detail.preferences?.[0]?.preferredState || "").trim();
       if (st && !unique.includes(st)) {
         unique.push(st);
       }
@@ -68,42 +117,140 @@ const FilterOption = ({
     return unique;
   }, [allDetails]);
 
+  // Cities
   const cities = useMemo(() => {
     const unique = [];
     allDetails.forEach((detail) => {
-      const st = (detail.state || detail.preferredState || "").trim();
+      const st =
+        (detail.state || detail.preferences?.[0]?.preferredState || "").trim();
       const ct =
-        (detail.city ||
-          detail.preferredCity ||
-          detail.preferredDistrict ||
+        (
+          detail.city ||
+          detail.preferences?.[0]?.preferredCity ||
+          detail.preferences?.[0]?.preferredDistrict ||
           ""
         ).trim();
-      if (ct && (!selectedState || st === selectedState) && !unique.includes(ct)) {
+      if (
+        ct &&
+        (!selectedState || st === selectedState) &&
+        !unique.includes(ct)
+      ) {
         unique.push(ct);
       }
     });
     return unique;
   }, [allDetails, selectedState]);
 
-  const isLoading = loading;
-  const hasError = error;
+  // Clear all filters handler
+  const handleClearFilters = () => {
+    setSelectedMainCategory("");
+    setSelectedSubCategory("");
+    setSelectedCategory("");
+    setSelectedInvestmentRange("");
+    setSelectedState("");
+    setSelectedLocation("");
+    setStartDate("");
+    setEndDate("");
+    setDrawerOpen(false); 
+  };
 
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-      {hasError && (
-        <Alert severity="error" sx={{ mb: 1 }}>
-          {hasError}
+  // Filter content to be reused in both mobile and desktop views
+  const filterContent = (
+    <Box sx={{ p: { xs: 2, sm: 0 } }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
         </Alert>
       )}
+      <Grid container spacing={0.5} direction={{ xs: "column", sm: "row" }} wrap="wrap">
+        {/* Main Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+            mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small">
+            <InputLabel>Main Category</InputLabel>
+            <Select
+              value={selectedMainCategory}
+              onChange={(e) => {
+                setSelectedMainCategory(e.target.value);
+                setSelectedSubCategory("");
+                setSelectedCategory("");
+                setDrawerOpen(false);
+              }}
+              label="Main Category"
+            >
+              <MenuItem value="">All Main Categories</MenuItem>
+              {mainCategoryOptions.map((cat, i) => (
+                <MenuItem key={i} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
-      <Grid container spacing={2}>
-        {/* Category */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <FormControl fullWidth size="small" sx={{ width: 250 }}>
-            <InputLabel>Category</InputLabel>
+        {/* Sub Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!subCategoryOptions.length}>
+            <InputLabel>Sub Category</InputLabel>
+            <Select
+              value={selectedSubCategory}
+              onChange={(e) => {
+                setSelectedSubCategory(e.target.value);
+                setSelectedCategory("");
+                setDrawerOpen(false); 
+              }}
+              label="Sub Category"
+            >
+              <MenuItem value="">All Sub Categories</MenuItem>
+              {subCategoryOptions.map((sub, i) => (
+                <MenuItem key={i} value={sub}>
+                  {sub}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Child Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!categoryOptions.length}>
+            <InputLabel>Child Category</InputLabel>
             <Select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
+              label="Child Category"
             >
               <MenuItem value="">All Categories</MenuItem>
               {categoryOptions.map((cat, i) => (
@@ -115,13 +262,27 @@ const FilterOption = ({
           </FormControl>
         </Grid>
 
-        {/* Investment */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <FormControl fullWidth size="small" sx={{ width: 250 }}>
+        {/* Investment Range */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small">
             <InputLabel>Investment Range</InputLabel>
             <Select
               value={selectedInvestmentRange}
-              onChange={(e) => setSelectedInvestmentRange(e.target.value)}
+              onChange={(e) => {
+                setSelectedInvestmentRange(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
+              label="Investment Range"
             >
               <MenuItem value="">All Ranges</MenuItem>
               {investmentRanges.map((range, i) => (
@@ -134,15 +295,27 @@ const FilterOption = ({
         </Grid>
 
         {/* State */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <FormControl fullWidth size="small" sx={{ width: 250 }}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small">
             <InputLabel>State</InputLabel>
             <Select
               value={selectedState}
               onChange={(e) => {
                 setSelectedState(e.target.value);
-                setSelectedLocation(""); // reset city if state changes
+                setSelectedLocation("");
+                setDrawerOpen(false); // Auto-close Drawer
               }}
+              label="State"
             >
               <MenuItem value="">Select State</MenuItem>
               {states.map((st, i) => (
@@ -155,13 +328,26 @@ const FilterOption = ({
         </Grid>
 
         {/* City */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <FormControl fullWidth size="small" sx={{ width: 250 }}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!cities.length}>
             <InputLabel>City</InputLabel>
             <Select
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              disabled={!cities.length}
+              onChange={(e) => {
+                setSelectedLocation(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
+              label="City"
             >
               <MenuItem value="">Select City</MenuItem>
               {cities.map((ct, i) => (
@@ -174,40 +360,173 @@ const FilterOption = ({
         </Grid>
 
         {/* Start Date */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <TextField
             fullWidth
             label="Start Date"
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setDrawerOpen(false); 
+            }}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ width: 250 }}
           />
         </Grid>
 
         {/* End Date */}
-        <Grid item xs={12} sm={6} md={3} lg={2}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 1, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <TextField
             fullWidth
             label="End Date"
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setDrawerOpen(false); // Auto-close Drawer
+            }}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ width: 250 }}
           />
         </Grid>
       </Grid>
-
-      {isLoading && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <CircularProgress size={24} />
-        </Box>
-      )}
+      
+      {/* Clear Filters Button - Now part of filterContent */}
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          justifyContent: "flex-end",
+          [theme => theme.breakpoints.down("sm")]: {
+            justifyContent: "center",
+            mb: 1
+          }
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleClearFilters}
+          startIcon={<SearchOffIcon />}
+          sx={{ textTransform: "none" }}
+        >
+          Clear Filters
+        </Button>
+      </Box>
     </Box>
+  );
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: { xs: "flex", sm: "none" },
+          alignItems: "center",
+          justifyContent: "flex-start",
+          mb: 2,
+          p: 2,
+          background: "#f9fafb",
+          borderRadius: 3,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => setDrawerOpen(true)}
+          startIcon={<FilterListIcon />}
+          sx={{ textTransform: "none" }}
+        >
+          Filter
+        </Button>
+      </Box>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{
+          display: { xs: "block", sm: "none" },
+          "& .MuiDrawer-paper": {
+            width: "80%",
+            maxWidth: 300,
+            p: 2,
+            background: "#f9fafb",
+            borderRadius: "0 8px 8px 0",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Filters
+          </Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+         <Typography
+    variant="h6"
+    sx={{
+      fontWeight: 600,
+      mb: 2,
+      display: "flex",
+      alignItems: "center",
+      gap: 1,
+    }}
+  >
+    <FilterListIcon fontSize="medium" color="primary" />
+    Filter
+  </Typography>
+        {filterContent}
+      </Drawer>
+      <Paper
+        elevation={2}
+        sx={{
+          display: { xs: "none", sm: "block" },
+          p: 2,
+          borderRadius: 3,
+          mt: 2,
+          background: "#f9fafb",
+        }}
+      >
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FilterListIcon fontSize="medium" color="primary" />
+            Filter
+          </Box>
+        </Typography>
+        {filterContent}
+      </Paper>
+    </>
   );
 };
 
