@@ -8,10 +8,32 @@ import socket from "../../Utils/Socket";
 import { Badge, Button ,Box} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import BrandFilter from "./BrandFilter/BrandFilter";
-// import { Box } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { 
+  fetchFilteredBrands, 
+  setFilter, 
+  resetFilters, 
+  setPage,
+  toggleBrandLikefilter,
+  toggleBrandShortListfilter
+} from "../../Redux/Slices/FilterBrandSlice";
 
 const GetAllBrands = () => {
-  const [brands, setBrands] = useState([]);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+    // Get state from Redux store
+  const { brands, loading, error, pagination, filters } = useSelector(
+    (state) => state.filterBrands
+  );
+
+  console.log("Brands from Redux store:", brands);
+  console.log("Filters from Redux store:", pagination);
+ 
+
+
+  const [brand, setBrands] = useState(brands || []);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [openBrandInfo, setOpenBrandInfo] = useState(false);
@@ -20,48 +42,14 @@ const GetAllBrands = () => {
   const [brandCount, setBrandCount] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [loadings, setLoading] = useState(false);
   const [editShow, setEditShow] = useState(true);
 
-  
-  const fetchBrands = async (pageNum = 1, append = false) => {
-    try {
-      setLoading(true);
-      const response = await GetApiCall(
-        `${Api.admin.brand.getAllBrands}?page=${pageNum}&limit=10`
-      );
 
-      const { brands: newData = [], pagination } = response?.data?.data || {};
-
-      
-      const newIncomingcount = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
-      setBrandCount(newIncomingcount?.data?.data?.totalBrands || 0);
-      setEditShow(true)
-
-      
-      if (append) {
-        setBrands((prev) => [...prev, ...newData]);
-      } else {
-        setBrands(newData);
-      }
-
-     
-      setPage(pagination?.currentPage || pageNum);
-      setHasMore(pagination?.hasNext || false);
-
-      console.log("📄 response?.data?.data:", response?.data?.data);
-    } catch (error) {
-      console.error("Error fetching brands:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
+    // Fetch brands when filters change
   useEffect(() => {
-    fetchBrands(1, false);
-  }, []);
+    dispatch(fetchFilteredBrands(filters));
+  }, [dispatch, filters]);
 
 
   useEffect(() => {
@@ -73,9 +61,51 @@ const GetAllBrands = () => {
     });
 
     return () => {
-      socket.off("recevie");
+      socket.off("receive");
     };
   }, []);
+
+
+  const fetchBrands = async (pageNum = 1, append = false) => {
+    try {
+      setLoading(true);
+      // const response = await GetApiCall(
+      //   `${Api.admin.brand.getAllBrands}?page=${pageNum}&limit=10`
+      // );
+
+      // const { brands: newData = [], pagination } = response?.data?.data || {};
+
+      setBrands(brands || []); // Ensure local state is in sync with Redux store
+      const newIncomingcount = await GetApiCall(Api.admin.brand.getNewIncomingBrands);
+      setBrandCount(newIncomingcount?.data?.data?.totalBrands || 0);
+      setEditShow(true)
+
+      
+      if (append) {
+        // setBrands((prev) => [...prev, ...newData]);
+      } else {
+        setBrands(newData);
+      }
+
+     
+      setPage(pagination?.currentPage || pageNum);
+      setHasMore(pagination?.hasNext || false);
+
+      // console.log("📄 response?.data?.data:", response?.data?.data);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchBrands(1, false);
+  }, [brands]);
+
+
+  
 
   const handleDelete = useCallback((brandId) => {
     setSelectedBrandId(brandId);
@@ -90,7 +120,10 @@ const GetAllBrands = () => {
       setBrands(res?.data?.data?.brands || []);
       setPage(1);
       setHasMore(false); 
-      setEditShow(false)
+
+      dispatch(resetFilters());
+      setEditShow(false);
+
     } catch (error) {
       console.log("Error fetching new incoming brands:", error);
     }
@@ -128,10 +161,17 @@ const handleInfoOpen = useCallback(async(brandId) => {
   setOpenBrandInfo(true);
 },[])
 
+
+ const handleFilterChange = (filterName, value) => {
+    dispatch(setFilter({ filterName, value }));
+  };
+
   const handleEdit = useCallback((brandId) => {
     console.log("Edit brand:", brandId);
     navigate(`/dashboard/edit-brand/${brandId}`);
   }, [navigate]);
+
+  
 
  
   const loadMore = () => {
@@ -158,6 +198,7 @@ const handleInfoOpen = useCallback(async(brandId) => {
           <Button variant="contained" onClick={getAllBrands}>
             All Brands
           </Button>
+          </Box>
 
           <Badge
             badgeContent={brandCount}
@@ -169,9 +210,12 @@ const handleInfoOpen = useCallback(async(brandId) => {
               New Incoming Brands
             </Button>
           </Badge>
-        </div>
+              
+          <Button variant="contained" onClick={newIncomingBrands}>
+             All Leads
+            </Button>    
 
-        <input
+             <input
           type="text"
           placeholder="Search brands..."
           value={searchTerm}
@@ -198,31 +242,31 @@ const handleInfoOpen = useCallback(async(brandId) => {
               New Incoming Brands
             </Button>
           </Badge>
-             
-          <Button variant="contained" onClick={newIncomingBrands}>
-             All Leads
-            </Button>    
+     
  
-             <input
-          type="text"
-          placeholder="Search brands..."
-          value={searchTerm}
-          onChange={handleSearchTerm}
-          style={{ marginLeft: "1rem", padding: "5px" }}
-        />
+          <input
+            type="text"
+            placeholder="Search brands..."
+            value={filters.serchterm || ""}
+            onChange={(e) => handleFilterChange("serchterm", e.target.value)}
+            style={{ marginLeft: "1rem", padding: "5px" }}
+          />
         </Box>
  
-        <Box sx={{ marginTop: 2 }}>
-          <BrandFilter />
+      <Box sx={{ marginTop: 2 }}>
+          <BrandFilter 
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
         </Box>
  
       </Box>
 
       {/* Table with Infinite Scroll */}
       <TableOutlet
-        filteredBrands={brands}
+        filteredBrands={brand}
         handleDelete={handleDelete}
-        searchTerm={searchTerm}
+        searchTerm={filters.serchterm || ""}
         handleApprove={handleApprove}
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
@@ -230,6 +274,8 @@ const handleInfoOpen = useCallback(async(brandId) => {
         loadMore={loadMore}
         hasMore={hasMore}
         loading={loading}
+        pagination={pagination}
+      
       />
 
       {open && (

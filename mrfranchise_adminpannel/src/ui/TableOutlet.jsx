@@ -15,6 +15,7 @@ import {
 import { Delete } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Edit } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const TableOutlet = ({
   filteredBrands,
@@ -29,8 +30,13 @@ const TableOutlet = ({
   loading,
 }) => {
   const observer = useRef();
-  console.log("filteredBrands :", filteredBrands);
 
+
+
+  // const filteredBrand = useSelector((state) => state.brands.filteredBrands);
+
+  // console.log("filteredBrand :", filteredBrand);
+  
   const lastRowRef = useCallback(
     (node) => {
       // console.log("🔍 Observing last row:", node);

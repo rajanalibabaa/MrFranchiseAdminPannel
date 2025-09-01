@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   FormControl,
@@ -13,114 +13,96 @@ import {
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
- 
-const BrandFilter = () => {
-  // State for all filter values
-  const [filters, setFilters] = useState({
-    maincategory: '',
-    subcategory: '',
-    childcategory: '',
-    country: '',
-    state: '',
-    city: '',
-    investmentrange: ''
-  });
- 
-  // Sample data for dropdowns
-  const mainCategories = ['Electronics', 'Fashion', 'Home & Kitchen', 'Automotive', 'Health & Beauty'];
-  const subCategories = {
-    'Electronics': ['Mobile Phones', 'Laptops', 'Cameras', 'Audio'],
-    'Fashion': ['Men', 'Women', 'Kids', 'Accessories'],
-    'Home & Kitchen': ['Furniture', 'Appliances', 'Decor', 'Cookware'],
-    'Automotive': ['Car Parts', 'Bike Parts', 'Tools', 'Accessories'],
-    'Health & Beauty': ['Skincare', 'Makeup', 'Haircare', 'Fragrances']
-  };
-  const childCategories = {
-    'Mobile Phones': ['Smartphones', 'Feature Phones', 'Refurbished'],
-    'Laptops': ['Gaming', 'Business', 'Ultrabooks', 'Chromebooks'],
-    'Men': ['Clothing', 'Shoes', 'Accessories'],
-    'Women': ['Clothing', 'Shoes', 'Accessories']
-  };
-  const countries = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'India'];
-  const states = {
-    'United States': ['California', 'Texas', 'New York', 'Florida'],
-    'Canada': ['Ontario', 'Quebec', 'British Columbia', 'Alberta'],
-    'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
-    'India': ['Maharashtra', 'Karnataka', 'Tamil Nadu', 'Delhi']
-  };
-  const cities = {
-    'California': ['Los Angeles', 'San Francisco', 'San Diego'],
-    'Texas': ['Houston', 'Dallas', 'Austin'],
-    'New York': ['New York City', 'Buffalo', 'Rochester'],
-    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur'],
-    'Karnataka': ['Bangalore', 'Mysore', 'Hubli']
-  };
- 
-  // Predefined investment ranges for dropdown
-  const investmentRanges = [
-    { label: 'All', value: '' },
-    { label: '$0 - $10,000', value: '0-10000' },
-    { label: '$10,001 - $25,000', value: '10001-25000' },
-    { label: '$25,001 - $50,000', value: '25001-50000' },
-    { label: '$50,001 - $75,000', value: '50001-75000' },
-    { label: '$75,001 - $100,000', value: '75001-100000' }
-  ];
- 
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchFilterOptions,
+  resetChildCategories,
+  resetDistricts,
+  resetCities,
+  clearErrors
+} from '../../../Redux/Slices/filterDropdownData';
+
+const BrandFilter = ({ filters, onFilterChange }) => {
+  const dispatch = useDispatch();
+  const filterData = useSelector((state) => state.filterDropdown);
+
+  // Fetch initial filter data on component mount
+  React.useEffect(() => {
+    dispatch(fetchFilterOptions());
+  }, [dispatch]);
+
+  // Fetch child categories when subcategory changes
+  React.useEffect(() => {
+    if (filters.subcat) {
+      dispatch(fetchFilterOptions({ sub: filters.subcat }));
+    } else {
+      dispatch(resetChildCategories());
+    }
+  }, [filters.subcat, dispatch]);
+
+  // Fetch districts when state changes
+  React.useEffect(() => {
+    if (filters.state) {
+      dispatch(fetchFilterOptions({ state: filters.state }));
+    } else {
+      dispatch(resetDistricts());
+    }
+  }, [filters.state, dispatch]);
+
+  // Fetch cities when district changes
+  React.useEffect(() => {
+    if (filters.district) {
+      dispatch(fetchFilterOptions({ district: filters.district }));
+    } else {
+      dispatch(resetCities());
+    }
+  }, [filters.district, dispatch]);
+
   // Handle filter changes
   const handleFilterChange = (filterName) => (event) => {
     const value = event.target.value;
-    console.log(`Filter changed: ${filterName} = ${value}`);
- 
-    // Reset dependent filters when parent changes
-    if (filterName === 'maincategory') {
-      setFilters({
-        ...filters,
-        [filterName]: value,
-        subcategory: '',
-        childcategory: ''
-      });
-    } else if (filterName === 'subcategory') {
-      setFilters({
-        ...filters,
-        [filterName]: value,
-        childcategory: ''
-      });
-    } else if (filterName === 'country') {
-      setFilters({
-        ...filters,
-        [filterName]: value,
-        state: '',
-        city: ''
-      });
-    } else if (filterName === 'state') {
-      setFilters({
-        ...filters,
-        [filterName]: value,
-        city: ''
-      });
-    } else {
-      setFilters({
-        ...filters,
-        [filterName]: value
-      });
-    }
+    onFilterChange(filterName, value);
   };
- 
+
   // Reset all filters
   const handleReset = () => {
-    setFilters({
-      maincategory: '',
-      subcategory: '',
-      childcategory: '',
-      country: '',
-      state: '',
-      city: '',
-      investmentrange: ''
-    });
+    // Reset all filter values to null/empty
+    onFilterChange("maincat", null);
+    onFilterChange("subcat", null);
+    onFilterChange("childcat", null);
+    onFilterChange("state", null);
+    onFilterChange("district", null);
+    onFilterChange("city", null);
+    onFilterChange("investmentRange", null);
+    dispatch(clearErrors());
   };
- 
+
+  // Helper function to get display value for investment range
+  const getInvestmentRangeDisplay = (range) => {
+    if (!range) return '';
+    
+    if (typeof range === 'string') return range;
+    if (range.name) return range.name;
+    if (range.label) return range.label;
+    if (range.value) return range.value;
+    if (range.range) return range.range;
+    
+    return JSON.stringify(range);
+  };
+
+  // Helper function to get value for investment range
+  const getInvestmentRangeValue = (range) => {
+    if (!range) return '';
+    
+    if (range._id) return range._id;
+    if (range.id) return range.id;
+    if (range.value) return range.value;
+    
+    return range;
+  };
+
   return (
-    <Paper elevation={2} sx={{ p: 2, mb: 1,mt:1 }}>
+    <Paper elevation={2} sx={{ p: 2, mb: 1, mt: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
         <FilterListIcon sx={{ mr: 1 }} />
         <Typography variant="h6" component="h2">
@@ -144,139 +126,146 @@ const BrandFilter = () => {
           <FormControl fullWidth sx={{ width: '145px' }} size="small">
             <InputLabel>Main Category</InputLabel>
             <Select
-              value={filters.maincategory}
+              value={filters.maincat || ''}
               label="Main Category"
-              onChange={handleFilterChange('maincategory')}
+              onChange={handleFilterChange('maincat')}
+              disabled={filterData.loading}
             >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {mainCategories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
+              {filterData.mainCategories.map((category) => (
+                <MenuItem key={category._id || category} value={category._id || category}>
+                  {category.name || category}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
- 
+
         {/* Sub Category */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.maincategory}>
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.maincat || filterData.loading}>
             <InputLabel>Sub Category</InputLabel>
             <Select
-              value={filters.subcategory}
+              value={filters.subcat || ''}
               label="Sub Category"
-              onChange={handleFilterChange('subcategory')}
+              onChange={handleFilterChange('subcat')}
             >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filters.maincategory && subCategories[filters.maincategory]?.map((sub) => (
-                <MenuItem key={sub} value={sub}>
-                  {sub}
+              {filterData.subCategories.map((sub) => (
+                <MenuItem key={sub._id || sub} value={sub._id || sub}>
+                  {sub.name || sub}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
- 
+
         {/* Child Category */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.subcategory}>
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.subcat || filterData.loadingChildCategories}>
             <InputLabel>Child Category</InputLabel>
             <Select
-              value={filters.childcategory}
+              value={filters.childcat || ''}
               label="Child Category"
-              onChange={handleFilterChange('childcategory')}
+              onChange={handleFilterChange('childcat')}
             >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filters.subcategory && childCategories[filters.subcategory]?.map((child) => (
-                <MenuItem key={child} value={child}>
-                  {child}
+              {filterData.childCategories.map((child) => (
+                <MenuItem key={child._id || child} value={child._id || child}>
+                  {child.name || child}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
- 
-        {/* Country */}
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small">
-            <InputLabel>Country</InputLabel>
-            <Select
-              value={filters.country}
-              label="Country"
-              onChange={handleFilterChange('country')}
-            >
-              <MenuItem value="">
-                <em>All</em>
-              </MenuItem>
-              {countries.map((country) => (
-                <MenuItem key={country} value={country}>
-                  {country}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
- 
+
         {/* State */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small">
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={filterData.loading}>
             <InputLabel>State</InputLabel>
             <Select
-              value={filters.state}
+              value={filters.state || ''}
               label="State"
               onChange={handleFilterChange('state')}
             >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filters.country && states[filters.country]?.map((state) => (
-                <MenuItem key={state} value={state}>
-                  {state}
+              {filterData.states.map((state) => (
+                <MenuItem key={state._id || state} value={state._id || state}>
+                  {state.name || state}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
- 
+
+        {/* District */}
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.state || filterData.loadingDistricts}>
+            <InputLabel>District</InputLabel>
+            <Select
+              value={filters.district || ''}
+              label="District"
+              onChange={handleFilterChange('district')}
+            >
+              <MenuItem value="">
+                <em>All</em>
+              </MenuItem>
+              {filterData.districts.map((district) => (
+                <MenuItem key={district._id || district} value={district._id || district}>
+                  {district.name || district}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
         {/* City */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth  sx={{ width: '145px' }}size="small">
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.district || filterData.loadingCities}>
             <InputLabel>City</InputLabel>
             <Select
-              value={filters.city}
+              value={filters.city || ''}
               label="City"
               onChange={handleFilterChange('city')}
             >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filters.state && cities[filters.state]?.map((city) => (
-                <MenuItem key={city} value={city}>
-                  {city}
+              {filterData.cities.map((city) => (
+                <MenuItem key={city._id || city} value={city._id || city}>
+                  {city.name || city}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
- 
+
         {/* Investment Range Dropdown */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small">
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={filterData.loading}>
             <InputLabel>Investment Range</InputLabel>
             <Select
-              value={filters.investmentrange}
+              value={filters.investmentRange || ''}
               label="Investment Range"
-              onChange={handleFilterChange('investmentrange')}
+              onChange={handleFilterChange('investmentRange')}
             >
-              {investmentRanges.map((range) => (
-                <MenuItem key={range.value} value={range.value}>
-                  {range.label}
+              <MenuItem value="">
+                <em>All</em>
+              </MenuItem>
+              {filterData.investmentRanges.map((range) => (
+                <MenuItem 
+                  key={getInvestmentRangeValue(range)} 
+                  value={getInvestmentRangeValue(range)}
+                >
+                  {getInvestmentRangeDisplay(range)}
                 </MenuItem>
               ))}
             </Select>
@@ -286,5 +275,5 @@ const BrandFilter = () => {
     </Paper>
   );
 };
- 
+
 export default BrandFilter;

@@ -2,11 +2,11 @@
 
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { userId } from '../../Utils/autherId';
+// import { userId } from '../../Utils/autherId';
 
 const API_BASE_URL = 'http://localhost:5000/api/v1/';
 
-const id = userId
+// const id = userId
 
 export const fetchFilteredBrands = createAsyncThunk(
   'filterBrands/fetchFilteredBrands',
@@ -15,7 +15,6 @@ export const fetchFilteredBrands = createAsyncThunk(
       const {
         page = 1,
         limit = 20,
-     
         maincat,
         subcat,
         childcat,
@@ -31,7 +30,7 @@ export const fetchFilteredBrands = createAsyncThunk(
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('limit', limit);
-      if (id) params.append('id', id);
+      // if (id) params.append('id', id);
       if (maincat) params.append('maincat', maincat);
       if (subcat) params.append('subcat', subcat);
       if (childcat) params.append('childcat', childcat);
@@ -44,7 +43,7 @@ export const fetchFilteredBrands = createAsyncThunk(
       if (modelType) params.append('modelType', modelType);
 
       const response = await axios.get(`${API_BASE_URL}filter/getAllBrandsAndFilter?${params.toString()}`);
-
+ console.log("Fetched and normalized brands:", response.data.data);
       // Normalize the brand data to ensure consistent structure
       const normalizedBrands = response.data.data?.brands?.map(brand => ({
         ...brand,
@@ -68,6 +67,7 @@ export const fetchFilteredBrands = createAsyncThunk(
         isLiked: brand?.isLiked || false,
         isShortListed: brand?.isShortListed || false
       })) || [];
+
 
       return {
         brands: normalizedBrands,
