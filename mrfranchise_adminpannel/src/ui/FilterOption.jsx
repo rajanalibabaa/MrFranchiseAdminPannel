@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+import CloseIcon from "@mui/icons-material/Close";
 
 const FilterOption = ({
   allDetails = [],
@@ -150,7 +151,7 @@ const FilterOption = ({
     setSelectedLocation("");
     setStartDate("");
     setEndDate("");
-    setDrawerOpen(false); // Close drawer on clear
+    setDrawerOpen(false); 
   };
 
   // Filter content to be reused in both mobile and desktop views
@@ -169,6 +170,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+            mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -181,7 +183,7 @@ const FilterOption = ({
                 setSelectedMainCategory(e.target.value);
                 setSelectedSubCategory("");
                 setSelectedCategory("");
-                setDrawerOpen(false); // Auto-close Drawer
+                setDrawerOpen(false);
               }}
               label="Main Category"
             >
@@ -202,6 +204,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -213,7 +216,7 @@ const FilterOption = ({
               onChange={(e) => {
                 setSelectedSubCategory(e.target.value);
                 setSelectedCategory("");
-                setDrawerOpen(false); // Auto-close Drawer
+                setDrawerOpen(false); 
               }}
               label="Sub Category"
             >
@@ -234,6 +237,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -265,6 +269,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -296,6 +301,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -328,6 +334,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -359,6 +366,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 2, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -370,7 +378,7 @@ const FilterOption = ({
             value={startDate}
             onChange={(e) => {
               setStartDate(e.target.value);
-              setDrawerOpen(false); // Auto-close Drawer
+              setDrawerOpen(false); 
             }}
             InputLabelProps={{ shrink: true }}
             size="small"
@@ -384,6 +392,7 @@ const FilterOption = ({
           sm={6}
           md={3}
           sx={{
+             mb: { xs: 1, sm: 0 },
             width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
             [theme => theme.breakpoints.down("sm")]: { mb: 1 },
           }}
@@ -402,13 +411,28 @@ const FilterOption = ({
           />
         </Grid>
       </Grid>
+      
+      {/* Clear Filters Button - Now part of filterContent */}
       <Box
         sx={{
-          [theme => theme.breakpoints.down("sm")]: { mt: 2, mb: 1 },
-          [theme => theme.breakpoints.up("sm")]: { mt: 2 },
+          mt: 2,
+          display: "flex",
+          justifyContent: "flex-end",
+          [theme => theme.breakpoints.down("sm")]: {
+            justifyContent: "center",
+            mb: 1
+          }
         }}
       >
-       
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleClearFilters}
+          startIcon={<SearchOffIcon />}
+          sx={{ textTransform: "none" }}
+        >
+          Clear Filters
+        </Button>
       </Box>
     </Box>
   );
@@ -448,18 +472,30 @@ const FilterOption = ({
             p: 2,
             background: "#f9fafb",
             borderRadius: "0 8px 8px 0",
-            [theme => theme.breakpoints.down("sm")]: { mb: 2 },
           },
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Filters
           </Typography>
           <IconButton onClick={() => setDrawerOpen(false)}>
-            <SearchOffIcon />
+            <CloseIcon />
           </IconButton>
         </Box>
+         <Typography
+    variant="h6"
+    sx={{
+      fontWeight: 600,
+      mb: 2,
+      display: "flex",
+      alignItems: "center",
+      gap: 1,
+    }}
+  >
+    <FilterListIcon fontSize="medium" color="primary" />
+    Filter
+  </Typography>
         {filterContent}
       </Drawer>
       <Paper
@@ -487,12 +523,6 @@ const FilterOption = ({
             <FilterListIcon fontSize="medium" color="primary" />
             Filter
           </Box>
-          <IconButton color="error" onClick={handleClearFilters}>
-            <Button variant="outlined" color="error" sx={{ ml: 0.5, mr: 0.5 }}>
-              Clear Filters
-              <SearchOffIcon fontSize="medium" sx={{ ml: 0.5 }} />
-            </Button>
-          </IconButton>
         </Typography>
         {filterContent}
       </Paper>
