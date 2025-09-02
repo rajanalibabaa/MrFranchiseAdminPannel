@@ -1,0 +1,116 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { GetApiCall } from "../../api/default/GetApi";
+import { Api } from "../../api/apiurl";
+
+// ✅ Thunk with date filter support
+export const fetchNewIncomingBrands = createAsyncThunk(
+  "brands/fetchNewIncomingBrands",
+  async ({ page = 1, startDate, endDate } = {}, { rejectWithValue }) => {
+    try {
+      const queryParams = new URLSearchParams({
+        page,
+        limit: 10,
+      });
+
+      if (startDate) queryParams.append("startDate", startDate);
+      if (endDate) queryParams.append("endDate", endDate);
+
+      const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrands}?${queryParams.toString()}`);
+
+      return {
+        page,
+        data: res?.data?.data,
+        total: res?.data?.data?.totalBrands,
+      };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// ✅ Get brand details
+export const fetchBrandById = createAsyncThunk(
+  "brands/fetchBrandById",
+  async (brandId, { rejectWithValue }) => {
+    try {
+      const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+      return res?.data?.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+const newIncomingSlice = createSlice({
+  name: "brands",
+  initialState: {
+    brands: [],
+    brandDetails: null,
+    totalBrands: 0,
+    loading: false,
+    error: null,
+    pagination: {
+      currentPage: 1,
+      hasNext: false,
+    },
+  },
+  reducers: {
+    approveBrand: (state, action) => {
+      state.brands = state.brands.filter(b => b.uuid !== action.payload);
+      state.totalBrands -= 1;
+    },
+    deleteBrand: (state, action) => {
+      state.brands = state.brands.filter(b => b.uuid !== action.payload);
+      state.totalBrands -= 1;
+    },
+    clearBrandDetails: (state) => {
+      state.brandDetails = null;
+    },
+    resetBrands: (state) => {
+      state.brands = [];
+      state.totalBrands = 0;
+      state.pagination = {
+        currentPage: 1,
+        hasNext: false,
+      };
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchNewIncomingBrands.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchNewIncomingBrands.fulfilled, (state, action) => {
+        const { page, data, total } = action.payload;
+        if (page === 1) {
+          state.brands = data?.brands || [];
+        } else {
+          state.brands = [...state.brands, ...(data?.brands || [])];
+        }
+
+        state.totalBrands = total || 0;
+
+        state.pagination = {
+          currentPage: page,
+          hasNext: data?.hasNext || false,
+        };
+        state.loading = false;
+      })
+      .addCase(fetchNewIncomingBrands.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchBrandById.fulfilled, (state, action) => {
+        state.brandDetails = action.payload;
+      });
+  },
+});
+
+export const {
+  approveBrand,
+  deleteBrand,
+  clearBrandDetails,
+  resetBrands,
+} = newIncomingSlice.actions;
+
+export default newIncomingSlice.reducer;
