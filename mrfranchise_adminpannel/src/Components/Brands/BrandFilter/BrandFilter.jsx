@@ -21,6 +21,7 @@ import {
   resetCities,
   clearErrors
 } from '../../../Redux/Slices/filterDropdownData';
+import { Margin } from '@mui/icons-material';
 
 const BrandFilter = ({ filters, onFilterChange }) => {
   const dispatch = useDispatch();
@@ -108,6 +109,24 @@ const BrandFilter = ({ filters, onFilterChange }) => {
         <Typography variant="h6" component="h2">
           Filters
         </Typography>
+        <Box style={{ margin: "0 1rem", width: "70%" }}>
+          <Box >
+            <input
+              type="text"
+              placeholder="Search brands..."
+              value={filters.serchterm || ""}
+              onChange={(e) => onFilterChange("serchterm", e.target.value)}
+              style={{ 
+                padding: "8px 12px", 
+                borderRadius: "4px", 
+                border: "1px solid #706161ff",
+                width: "100%",
+                maxWidth: "400px"
+              }}
+            />
+          </Box>
+        </Box>
+ 
         <Button
           startIcon={<ClearIcon />}
           onClick={handleReset}

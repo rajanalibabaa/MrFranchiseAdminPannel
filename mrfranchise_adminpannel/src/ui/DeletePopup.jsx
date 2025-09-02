@@ -7,15 +7,23 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { useDispatch } from "react-redux";
+import { deleteBrand } from "../Redux/Slices/FilterBrandSlice";
 
-const DeletePopup = ({ open, onClose,brands,setBrands,selectedBrandId}) => {
+const DeletePopup = ({ open, onClose,brands,newIncomingDeleteId,selectedBrandId,onConfirm}) => {
+
+  const dispatch = useDispatch();
     const handleConfirmDelete = () => {
-        console.log("Delete brand:", brands);
-    const updated = brands.filter(brand => brand.uuid !== selectedBrandId)
-    console.log("Updated brands after deletion:", updated);
-    setBrands(updated)
-    onClose()
-      };
+    if(newIncomingDeleteId){
+      onConfirm(newIncomingDeleteId);
+
+    }
+    if(selectedBrandId){
+      dispatch(deleteBrand(selectedBrandId));
+    }
+
+    onClose();
+  };
   return (
     <Dialog
       open={open}
