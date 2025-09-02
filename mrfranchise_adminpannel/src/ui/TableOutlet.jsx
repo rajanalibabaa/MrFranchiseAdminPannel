@@ -27,18 +27,16 @@ const TableOutlet = ({
   loadMore,
   hasMore,
   loading,
+  pagination,
 }) => {
   const observer = useRef();
-  console.log("filteredBrands :", filteredBrands);
 
   const lastRowRef = useCallback(
     (node) => {
-      // console.log("🔍 Observing last row:", node);
       if (loading) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          console.log("👀 Last row visible, loading more...");
           loadMore();
         }
       });
@@ -47,9 +45,22 @@ const TableOutlet = ({
     [loading, hasMore, loadMore]
   );
 
+  // Filter brands based on search term
+  const filteredBrandList = filteredBrands.filter(brand => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (brand.brandname || '').toLowerCase().includes(searchLower) ||
+      (brand.brandName || '').toLowerCase().includes(searchLower) ||
+      (brand.brandCategories?.sub || '').toLowerCase().includes(searchLower) ||
+      (brand.brandCategories?.child || '').toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <Paper>
-      <TableContainer style={{ maxHeight: "65vh", overflow: "auto" }}>
+      <TableContainer style={{ maxHeight: "64vh", overflow: "auto" }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -64,16 +75,16 @@ const TableOutlet = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBrands.length > 0 ? (
-              filteredBrands.map((brand, index) => (
+            {filteredBrandList.length > 0 ? (
+              filteredBrandList.map((brand, index) => (
                 <TableRow
                   key={brand?.uuid || `row-${index}`}
-                  ref={index === filteredBrands.length - 1 ? lastRowRef : null} // 👈 last row observed
+                  ref={index === filteredBrandList.length - 1 ? lastRowRef : null}
                 >
                   <TableCell>
-                    {brand?.logo ? (
+                    {brand?.uploads?.logo || brand?.logo ? (
                       <img
-                        src={brand.logo}
+                        src={brand.uploads?.logo || brand.logo}
                         alt={brand.brandname || brand.brandName || "Brand"}
                         style={{
                           width: 50,
@@ -95,17 +106,15 @@ const TableOutlet = ({
                       "N/A"}
                   </TableCell>
                   <TableCell>
-                    {brand?.fico?.investmentRange ||
+                    {brand?.brandfranchisedetails?.franchiseDetails?.fico?.investmentRange ||
+                      brand?.fico?.investmentRange ||
                       brand?.investmentRange ||
                       "N/A"}
                   </TableCell>
-                  {/* Details (Area, Model, Video link, etc.) */}
                   <TableCell>
                     <Box>
                       <Button
-                        onClick={() => {
-                          handleInfoOpen(brand?.uuid);
-                        }}
+                        onClick={() => handleInfoOpen(brand?.uuid)}
                         sx={{
                           py: 0,
                           backgroundColor: "#3adf34ff",
@@ -119,13 +128,13 @@ const TableOutlet = ({
 
                   {editShow && (
                     <TableCell>
-                    <IconButton
-                      sx={{ color: "green" }}
-                      onClick={() => handleEdit(brand?.uuid)}
-                    >
-                      <Edit />
-                    </IconButton>
-                  </TableCell>
+                      <IconButton
+                        sx={{ color: "green" }}
+                        onClick={() => handleEdit(brand?.uuid)}
+                      >
+                        <Edit />
+                      </IconButton>
+                    </TableCell>
                   )}
                   <TableCell>
                     <IconButton
@@ -134,20 +143,21 @@ const TableOutlet = ({
                     >
                       <Delete />
                     </IconButton>
-                   
                   </TableCell>
-                  <TableCell>
-                     {brand?.seen === false && (
-                      <IconButton onClick={() => handleApprove(brand?.uuid)}>
-                        <CheckCircleIcon />
-                      </IconButton>
-                    )}
-                  </TableCell>
+                  {!editShow && (
+                    <TableCell>
+                      {brand?.seen === false && (
+                        <IconButton onClick={() => handleApprove(brand?.uuid)}>
+                          <CheckCircleIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={editShow ? 7 : 7} align="center">
                   {searchTerm
                     ? "No matching brands found"
                     : "No brands available"}
@@ -160,7 +170,13 @@ const TableOutlet = ({
         {/* Loader & End message */}
         <div style={{ textAlign: "center", padding: "10px" }}>
           {loading && <CircularProgress size={24} />}
-          {!hasMore && filteredBrands.length > 0 && <p>No more brands</p>}
+          {!hasMore && filteredBrandList.length > 0 && <p>No more brands</p>}
+          {pagination.total > 0 && (
+            <p>
+              Showing {filteredBrandList.length} of {pagination.total} brands
+              (Page {pagination.currentPage} of {pagination.totalPages})
+            </p>
+          )}
         </div>
       </TableContainer>
     </Paper>
