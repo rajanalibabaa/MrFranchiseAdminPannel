@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Badge, Box, Tabs, Tab, styled } from "@mui/material";
 import GetAllBrand from "./GetAllBrands";
 import NewIncomingBrand from "./NewIncomingBrands";
-import socket from "../../Utils/Socket";
+import socket from "../../utils/socket";
+import { fetchNewIncomingBrands } from "../../Redux/Slices/newIncomingSlice";
+import { useDispatch, useSelector } from "react-redux";
 
-// ✅ Styled components
+// ✅ Styled Tabs
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
   "& .MuiTabs-indicator": {
@@ -29,15 +31,20 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const Bredcrumbs = () => {
-  const [brandCount, setBrandCount] = useState(0);
+const Breadcrumbs = () => {
+  
   const [activeTab, setActiveTab] = useState(0);
+  const dispatch = useDispatch();
 
-  // 🔔 Socket connection
+  useEffect(() => {
+      dispatch(fetchNewIncomingBrands(1));
+    }, [dispatch]);
+
+    // 🔔 Socket connection
   useEffect(() => {
     socket.on("recevie", (count) => {
       console.log("📥 Updated brand count:", count);
-      setBrandCount(count);
+      // setBrandCount(count);
       const audio = new Audio("/ting.mp3");
       audio.play();
     });
@@ -46,18 +53,17 @@ const Bredcrumbs = () => {
       socket.off("recevie");
     };
   }, []);
-  
+
   const handleTabChange = (event, newValue) => {
-    console.log("Tab changed to:", newValue);
     setActiveTab(newValue);
   };
-
+const total = useSelector((state) => state.brands.totalBrands);
   const renderComponent = () => {
     switch (activeTab) {
       case 0:
         return <GetAllBrand />;
       case 1:
-        return <NewIncomingBrand brandCount={brandCount} />;
+        return <NewIncomingBrand />;
       default:
         return <GetAllBrand />;
     }
@@ -66,32 +72,27 @@ const Bredcrumbs = () => {
   return (
     <Box>
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
-        <StyledTabs
-          value={activeTab}
-          onChange={handleTabChange}
-          aria-label="brand tabs"
-        >
+        <StyledTabs value={activeTab} onChange={handleTabChange}>
           <StyledTab label="All Brands" />
           <StyledTab
             label={
               <Badge
-                badgeContent={brandCount}
+                badgeContent={total}
                 color="error"
                 overlap="circular"
-                invisible={brandCount === 0}
+                invisible={total === 0}
                 sx={{ "& .MuiBadge-badge": { right: -3, top: -3 } }}
               >
-                New Incoming Brands({brandCount})
+                New Incoming Brands
               </Badge>
             }
           />
         </StyledTabs>
       </Box>
 
-      {/* Render content */}
       {renderComponent()}
     </Box>
   );
 };
 
-export default Bredcrumbs;
+export default Breadcrumbs; // ✅ Corrected typo from Bredcrumbs to Breadcrumbs

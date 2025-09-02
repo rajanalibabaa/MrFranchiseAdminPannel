@@ -19,6 +19,11 @@ export const Api = {
     otp:{
       sendOtpEmail: `${BASE_URL_2}/otpverify/send-otp-email`,
       verifyOtp: `${BASE_URL_2}/otpverify/verify-otp`,
+    },
+
+
+    delete : {
+      newIncomingBrand:`${BASE_URL}/deleteNewIncomingBrandById`,
     }
   },
 };
