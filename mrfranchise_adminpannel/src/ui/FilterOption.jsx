@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from "react";
 import {
   Box,
   FormControl,
@@ -8,198 +8,124 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  Grid
+  Grid,
 } from "@mui/material";
-import { categories as brandCategories } from "../Components/Brands/BrandLIstingRegister/BrandCategories"; 
 
 const FilterOption = ({
-  selectedCategory,
+  allDetails = [],
+  selectedCategory = "",
   setSelectedCategory,
-  selectedInvestmentRange,
+  selectedInvestmentRange = "",
   setSelectedInvestmentRange,
-  selectedLocation,
+  selectedLocation = "",
   setSelectedLocation,
-  startDate,
+  startDate = "",
   setStartDate,
-  endDate,
+  endDate = "",
   setEndDate,
+  selectedState = "",
+  setSelectedState,
   loading = false,
-  error = ""
+  error = "",
 }) => {
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedState, setSelectedState] = useState("");
-  const [internalLoading, setInternalLoading] = useState(false);
-  const [internalError, setInternalError] = useState("");
-
-   const categoryOptions = brandCategories.flatMap(cat =>
-    cat.children.flatMap(child => child.children)
-  );
-   const investmentRanges = [
-    "Below - 50,000",
-    "Rs. 50,000 - 2 L",
-    "Rs. 2 L - 5 L",
-    "Rs. 5 L - 10 L",
-    "Rs. 10 L - 20 L",
-    "Rs. 20 L - 30 L",
-    "Rs. 30 L - 50 L",
-    "Rs. 50 L - 1 Cr",
-    "Rs. 1 Cr - 2 Crs",
-    "Rs. 2 Crs - 5 Crs",
-    "Rs. 5 Crs - above",
-  ];
-
-  // Fetch countries
-  const fetchCountries = async () => {
-    try {
-      setInternalLoading(true);
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries');
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setCountries(data.data || []);
-      } else {
-        setInternalError("Failed to fetch countries");
-      }
-    } catch (err) {
-      setInternalError("Error fetching countries: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
-
-  // Fetch states based on selected country
-  const fetchStates = async (country) => {
-    try {
-      setInternalLoading(true);
-      setInternalError("");
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ country })
+  /** -------- Extract unique options -------- **/
+  const categoryOptions = useMemo(() => {
+    const categories = [];
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat?.child) {
+            const clean = cat.child.trim();
+            if (!categories.includes(clean)) {
+              categories.push(clean);
+            }
+          }
+        });
       });
-      
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setStates(data.data.states || []);
-      } else {
-        setInternalError("Failed to fetch states");
+    });
+    return categories;
+  }, [allDetails]);
+
+  const investmentRanges = useMemo(() => {
+    const ranges = [];
+    allDetails.forEach((detail) => {
+      const investment = detail?.preferences?.[0]?.investmentAmount?.trim();
+      if (investment && !ranges.includes(investment)) {
+        ranges.push(investment);
       }
-    } catch (err) {
-      setInternalError("Error fetching states: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
+    });
+    return ranges;
+  }, [allDetails]);
 
-  // Fetch cities based on selected country and state
-  const fetchCities = async (country, state) => {
-    try {
-      setInternalLoading(true);
-      setInternalError("");
-const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
-            method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ country, state })
-      });
-      
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setCities(data.data || []);
-      } else {
-        setInternalError("Failed to fetch cities");
+  const states = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      const st = (detail.state || detail.preferredState || "").trim();
+      if (st && !unique.includes(st)) {
+        unique.push(st);
       }
-    } catch (err) {
-      setInternalError("Error fetching cities: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
+    });
+    return unique;
+  }, [allDetails]);
 
-  const handleCountryChange = (e) => {
-    const country = e.target.value;
-    setSelectedCountry(country);
-    setSelectedState("");
-    setSelectedLocation("");
-    setStates([]);
-    setCities([]);
-    
-    if (country) {
-      fetchStates(country);
-    }
-  };
+  const cities = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      const st = (detail.state || detail.preferredState || "").trim();
+      const ct =
+        (detail.city ||
+          detail.preferredCity ||
+          detail.preferredDistrict ||
+          ""
+        ).trim();
+      if (ct && (!selectedState || st === selectedState) && !unique.includes(ct)) {
+        unique.push(ct);
+      }
+    });
+    return unique;
+  }, [allDetails, selectedState]);
 
-  const handleStateChange = (e) => {
-    const state = e.target.value;
-    setSelectedState(state);
-    setSelectedLocation("");
-    setCities([]);
-    
-    if (state && selectedCountry) {
-      fetchCities(selectedCountry, state);
-    }
-  };
-
-  const handleLocationChange = (e) => {
-    setSelectedLocation(e.target.value);
-  };
-
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
-  const isLoading = loading || internalLoading;
-  const hasError = error || internalError;
+  const isLoading = loading;
+  const hasError = error;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {hasError && <Alert severity="error" sx={{ mb: 1 }}>{hasError}</Alert>}
-      
-      <Grid container spacing={2} alignItems="center">
-        {/* Category Filter */}
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth size="small" sx={{width:250}}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+      {hasError && (
+        <Alert severity="error" sx={{ mb: 1 }}>
+          {hasError}
+        </Alert>
+      )}
+
+      <Grid container spacing={2}>
+        {/* Category */}
+        <Grid item xs={12} sm={6} md={3} lg={2}>
+          <FormControl fullWidth size="small" sx={{ width: 250 }}>
             <InputLabel>Category</InputLabel>
             <Select
               value={selectedCategory}
-              label="Category"
               onChange={(e) => setSelectedCategory(e.target.value)}
-               MenuProps={{
-      PaperProps: {
-        sx: {
-
-          width: 340       
-        }
-      }
-    }} >
+            >
               <MenuItem value="">All Categories</MenuItem>
-              {categoryOptions.map((subCategory, index) => (
-                <MenuItem key={index} value={subCategory}>{subCategory}</MenuItem>
+              {categoryOptions.map((cat, i) => (
+                <MenuItem key={i} value={cat}>
+                  {cat}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
 
-        {/* Investment Range Filter */}
-        <Grid item xs={12} sm={6} md={2} sx={{width:250}}>
-          <FormControl fullWidth size="small">
+        {/* Investment */}
+        <Grid item xs={12} sm={6} md={3} lg={2}>
+          <FormControl fullWidth size="small" sx={{ width: 250 }}>
             <InputLabel>Investment Range</InputLabel>
             <Select
               value={selectedInvestmentRange}
-              label="Investment Range"
               onChange={(e) => setSelectedInvestmentRange(e.target.value)}
             >
               <MenuItem value="">All Ranges</MenuItem>
-              {investmentRanges.map((range, index) => (
-                <MenuItem key={index} value={range}>
+              {investmentRanges.map((range, i) => (
+                <MenuItem key={i} value={range}>
                   {range}
                 </MenuItem>
               ))}
@@ -207,60 +133,40 @@ const response = await fetch('https://countriesnow.space/api/v0.1/countries/stat
           </FormControl>
         </Grid>
 
-        {/* Country Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Country</InputLabel>
-            <Select
-              value={selectedCountry}
-              label="Country"
-              onChange={handleCountryChange}
-              disabled={isLoading}
-            >
-              <MenuItem value="">Select Country</MenuItem>
-              {countries.map((country, index) => (
-                <MenuItem key={index} value={country.country}>
-                  {country.country}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {/* State Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
-          <FormControl fullWidth size="small">
+        {/* State */}
+        <Grid item xs={12} sm={6} md={3} lg={2}>
+          <FormControl fullWidth size="small" sx={{ width: 250 }}>
             <InputLabel>State</InputLabel>
             <Select
               value={selectedState}
-              label="State"
-              onChange={handleStateChange}
-              disabled={!selectedCountry || isLoading}
+              onChange={(e) => {
+                setSelectedState(e.target.value);
+                setSelectedLocation(""); // reset city if state changes
+              }}
             >
               <MenuItem value="">Select State</MenuItem>
-              {states.map((state, index) => (
-                <MenuItem key={index} value={state.name}>
-                  {state.name}
+              {states.map((st, i) => (
+                <MenuItem key={i} value={st}>
+                  {st}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
 
-        {/* City Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
-          <FormControl fullWidth size="small">
+        {/* City */}
+        <Grid item xs={12} sm={6} md={3} lg={2}>
+          <FormControl fullWidth size="small" sx={{ width: 250 }}>
             <InputLabel>City</InputLabel>
             <Select
               value={selectedLocation}
-              label="City"
-              onChange={handleLocationChange}
-              disabled={!selectedState || isLoading}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              disabled={!cities.length}
             >
               <MenuItem value="">Select City</MenuItem>
-              {cities.map((city, index) => (
-                <MenuItem key={index} value={city}>
-                  {city}
+              {cities.map((ct, i) => (
+                <MenuItem key={i} value={ct}>
+                  {ct}
                 </MenuItem>
               ))}
             </Select>
@@ -268,42 +174,36 @@ const response = await fetch('https://countriesnow.space/api/v0.1/countries/stat
         </Grid>
 
         {/* Start Date */}
-        <Grid item xs={12} sm={6} md={3}sx={{width:250}}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <TextField
+            fullWidth
             label="Start Date"
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            placeholder='YYYY-MM-DD'
-            inputProps={{
-              pattern: "\\d{4}-\\d{2}-\\d{2}"
-            }}
             InputLabelProps={{ shrink: true }}
-            fullWidth
             size="small"
+            sx={{ width: 250 }}
           />
         </Grid>
 
         {/* End Date */}
-        <Grid item xs={12} sm={6} md={3} sx={{width:250}}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <TextField
+            fullWidth
             label="End Date"
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-             placeholder="YYYY-MM-DD"
-  inputProps={{
-    pattern: "\\d{4}-\\d{2}-\\d{2}" 
-  }}
             InputLabelProps={{ shrink: true }}
-            fullWidth
             size="small"
+            sx={{ width: 250 }}
           />
         </Grid>
       </Grid>
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <CircularProgress size={24} />
         </Box>
       )}

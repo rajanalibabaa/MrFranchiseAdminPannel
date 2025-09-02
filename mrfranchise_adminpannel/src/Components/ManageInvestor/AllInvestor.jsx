@@ -2,14 +2,18 @@ import React, { useState, useEffect } from "react";
 import InvestorTableOutlet from "../../ui/InvestorTableOutlet";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
-import { categories as brandCategories } from "../Brands/BrandLIstingRegister/BrandCategories";
 import FilterOption from "../../ui/FilterOption";
-import { 
-  Typography, 
-  Button, 
-  Box
+import {
+  Typography,
+  Button,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
-import DownloadIcon from '@mui/icons-material/Download';
+import DownloadIcon from "@mui/icons-material/Download";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
@@ -30,10 +34,16 @@ const AllInvestor = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedInvestmentRange, setSelectedInvestmentRange] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedState, setSelectedState] = useState("");
 
   // Loading and error states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Dialog State
+  const [openDialog, setOpenDialog] = useState(false);
+  const [captchaInput, setCaptchaInput] = useState("");
+  const CAPTCHA_WORD = "DOWNLOAD";
 
   useEffect(() => {
     const fetchInvestors = async () => {
@@ -52,89 +62,66 @@ const AllInvestor = () => {
   // Apply filters whenever any filter changes
   useEffect(() => {
     applyFilters();
-  }, [investors, selectedCategory, selectedInvestmentRange, selectedLocation, startDate, endDate, sortBy, sortOrder]);
+  }, [
+    investors,
+    selectedCategory,
+    selectedInvestmentRange,
+    selectedLocation,
+    selectedState,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   const applyFilters = () => {
     let filteredData = [...investors];
 
-    // 1. Filter by date range if selected
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Include the entire end day
-
-      filteredData = filteredData.filter(inv => {
+      end.setHours(23, 59, 59, 999);
+      filteredData = filteredData.filter((inv) => {
         const created = new Date(inv.createdAt);
         return created >= start && created <= end;
       });
     }
 
-    // 2. Filter by category if selected
     if (selectedCategory) {
-      filteredData = filteredData.filter(inv => {
+      filteredData = filteredData.filter((inv) => {
         const categories = inv.preferences?.[0]?.category || [];
-        return categories.some(cat => cat.main === selectedCategory || cat.sub === selectedCategory || cat.child === selectedCategory);
+        return categories.some(
+          (cat) =>
+            cat.main === selectedCategory ||
+            cat.sub === selectedCategory ||
+            cat.child === selectedCategory
+        );
       });
     }
 
-    // 3. Filter by investment range if selected
     if (selectedInvestmentRange) {
-      filteredData = filteredData.filter(inv => {
-        const investmentRange = inv.preferences?.[0]?.investmentRange || "";
-        return investmentRange === selectedInvestmentRange;
+      filteredData = filteredData.filter((inv) => {
+        const investmentAmount = inv.preferences?.[0]?.investmentAmount || "";
+        return investmentAmount === selectedInvestmentRange;
       });
     }
 
-    // 4. Filter by location if selected
+    if (selectedState) {
+      filteredData = filteredData.filter((inv) => {
+        const state = inv.state || inv.preferences?.[0]?.preferredState || "";
+        return state === selectedState;
+      });
+    }
+
     if (selectedLocation) {
-      filteredData = filteredData.filter(inv => {
-        const preferredCity = inv.preferences?.[0]?.preferredCity || "";
-        const preferredState = inv.preferences?.[0]?.preferredState || "";
-        const preferredCountry = inv.preferences?.[0]?.preferredCountry || "";
-        return preferredCity === selectedLocation || 
-               preferredState === selectedLocation || 
-               preferredCountry === selectedLocation;
+      filteredData = filteredData.filter((inv) => {
+        const preferredCity = inv.city || inv.preferences?.[0]?.preferredCity || "";
+        const preferredDistrict = inv.preferences?.[0]?.preferredDistrict || "";
+        return (
+          preferredCity === selectedLocation ||
+          preferredDistrict === selectedLocation
+        );
       });
-    }
-
-    // 5. Sort the filtered investors
-    switch(sortBy) {
-      case "date":
-        filteredData.sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0);
-          const dateB = new Date(b.createdAt || 0);
-          return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-        });
-        break;
-      case "investment":
-        filteredData.sort((a, b) => {
-          const amountA = a.preferences && a.preferences[0] ? 
-            parseInt(a.preferences[0].investmentAmount || 0) : 0;
-          const amountB = b.preferences && b.preferences[0] ? 
-            parseInt(b.preferences[0].investmentAmount || 0) : 0;
-          return sortOrder === "asc" ? amountA - amountB : amountB - amountA;
-        });
-        break;
-      case "location":
-        filteredData.sort((a, b) => {
-          const locationA = a.preferences?.[0]?.preferredCity || a.preferences?.[0]?.preferredState || "";
-          const locationB = b.preferences?.[0]?.preferredCity || b.preferences?.[0]?.preferredState || "";
-          return sortOrder === "asc" 
-            ? locationA.localeCompare(locationB) 
-            : locationB.localeCompare(locationA);
-        });
-        break;
-      case "category":
-        filteredData.sort((a, b) => {
-          const categoryA = a.preferences?.[0]?.category?.[0]?.main || "";
-          const categoryB = b.preferences?.[0]?.category?.[0]?.main || "";
-          return sortOrder === "asc" 
-            ? categoryA.localeCompare(categoryB) 
-            : categoryB.localeCompare(categoryA);
-        });
-        break;
-      default:
-        break;
     }
 
     setFilteredInvestors(filteredData);
@@ -144,14 +131,14 @@ const AllInvestor = () => {
     navigate(`/dashboard/edit-investor/${investor._id}`, { state: { investor } });
   };
 
-  const handleDownloadExcel = () => {
+  // Excel Download function
+  const downloadExcel = () => {
     if (filteredInvestors.length === 0) {
       alert("No data to export!");
       return;
     }
 
-    // Flatten data for Excel
-    const flattenedData = filteredInvestors.map(inv => {
+    const flattenedData = filteredInvestors.map((inv) => {
       const firstPref = inv.preferences?.[0] || {};
       const firstCategory = firstPref.category?.[0] || {};
       const firstProperty = firstPref.propertyPreferred?.[0] || {};
@@ -172,9 +159,9 @@ const AllInvestor = () => {
         "Category Sub": firstCategory.sub || "",
         "Category Child": firstCategory.child || "",
         "Investment Amount": firstPref.investmentAmount || "",
-        "Investment Range": firstPref.investmentRange || "",  
-        "Location Type": firstPref.locationType || "",         
-        "Preferred City": firstPref.preferredCity || "",       
+        "Investment Range": firstPref.investmentRange || "",
+        "Location Type": firstPref.locationType || "",
+        "Preferred City": firstPref.preferredCity || "",
         "Preferred District": firstPref.preferredDistrict || "",
         "Preferred State": firstPref.preferredState || "",
         "Preferred Country": firstPref.preferredCountry || "",
@@ -197,23 +184,37 @@ const AllInvestor = () => {
     saveAs(data, "AllInvestors.xlsx");
   };
 
-  const categoryOptions = brandCategories.flatMap(cat =>
-    cat.children.flatMap(child => child.children) 
-  );
+  // Open dialog when user clicks download
+  const handleDownloadClick = () => {
+    setCaptchaInput("");
+    setOpenDialog(true);
+  };
+
+  // Validate captcha then download
+  const handleConfirmDownload = () => {
+    if (captchaInput.trim().toUpperCase() === CAPTCHA_WORD) {
+      setOpenDialog(false);
+      downloadExcel();
+    } else {
+      alert("Captcha incorrect. Please type DOWNLOAD exactly.");
+    }
+  };
 
   return (
-    <div>
+    <>
       <Box sx={{ marginBottom: "2rem" }}>
         {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Box
+          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}
+        >
           <Typography sx={{ fontSize: "30px", fontWeight: "bold" }}>
             ALL INVESTORS
           </Typography>
 
-          <Button 
-            variant="contained" 
-            color="success" 
-            onClick={handleDownloadExcel}
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleDownloadClick}   // ✅ FIXED (was calling handleDownloadExcel directly)
             startIcon={<DownloadIcon />}
           >
             Download Excel
@@ -221,28 +222,56 @@ const AllInvestor = () => {
         </Box>
 
         {/* Filter Options */}
-          <FilterOption
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedInvestmentRange={selectedInvestmentRange}
-            setSelectedInvestmentRange={setSelectedInvestmentRange}
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            startDate={startDate}
-            setStartDate={setStartDate}
-            endDate={endDate}
-            setEndDate={setEndDate}
-            loading={loading}
-            error={error}
-          />
+        <FilterOption
+          allDetails={investors}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedInvestmentRange={selectedInvestmentRange}
+          setSelectedInvestmentRange={setSelectedInvestmentRange}
+          selectedLocation={selectedLocation}
+          setSelectedLocation={setSelectedLocation}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          selectedState={selectedState}
+          setSelectedState={setSelectedState}
+          loading={loading}
+          error={error}
+        />
       </Box>
 
       <InvestorTableOutlet
-        investors={filteredInvestors} 
+        investors={filteredInvestors}
         searchTerm={searchTerm}
         handleEdit={handleEdit}
       />
-    </div>
+
+      {/* Captcha Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Confirm Download</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Please type the word "<strong>DOWNLOAD</strong>" to confirm.
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            label="Enter Captcha"
+            value={captchaInput}
+            onChange={(e) => setCaptchaInput(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDownload} color="success" variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 
