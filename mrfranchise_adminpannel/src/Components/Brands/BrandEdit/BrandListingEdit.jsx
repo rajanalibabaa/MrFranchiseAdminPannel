@@ -231,15 +231,27 @@ const BrandListingEdit = () => {
       }));
     }
   };
-  const handleObjectChange = (field, key, value) => {
-    setFormData((prev) => ({
+const handleObjectChange = (field, keyOrValue, maybeValue) => {
+  setFormData((prev) => {
+    // Case 1: Replace whole object (FranchiseDetailsEdit passes object)
+    if (typeof keyOrValue === "object" && maybeValue === undefined) {
+      return {
+        ...prev,
+        [field]: keyOrValue,  // ✅ overwrite full object
+      };
+    }
+
+    // Case 2: Update nested key
+    return {
       ...prev,
       [field]: {
         ...prev[field],
-        [key]: value,
+        [keyOrValue]: maybeValue,
       },
-    }));
-  };
+    };
+  });
+};
+
 
   const handleFileChange = (field, newFiles) => {
     setFiles((prev) => ({

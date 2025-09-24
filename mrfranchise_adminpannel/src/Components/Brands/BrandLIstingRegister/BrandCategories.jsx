@@ -1,3 +1,5 @@
+
+
 import React from "react";
 
 export const categories = [
@@ -431,7 +433,7 @@ export const categories = [
           "Vegan Street Food",
           "Chaat Counters",
           "Corn / Popcorn / Ice Gola Stalls",
-         
+          
         ],
       },
       {
@@ -549,17 +551,17 @@ export const categories = [
       //   children: [
       //     "Food Delivery ",
       //     "catering ",
-         
+          
       //   ],
       // },
       //  {
       //   name: "Food Equipment",
       //   children: [
-         
+          
       //     " Kitchen Equipment ",
       //     "food Preparation Equipment ",
       //     "Bakery Equipment ",
-       
+        
       //   ],
       // },
       //  {
@@ -593,8 +595,8 @@ export const categories = [
       //     "Others Food Service",
       //   ],
       // },
-     
-     
+      
+      
     ],
   },
   {
@@ -703,7 +705,7 @@ export const categories = [
     ],
   },
   {
-    name: "Reatils",
+    name: "Retails",
     children: [
       {
         groupId:"A",
@@ -767,7 +769,7 @@ export const categories = [
     ],
   },
   {
-    name: "Sports & Fitness & entertainment",
+    name: "Sports & Fitness & Entertainment",
     children: [
       {
         groupId:"A",
@@ -807,3 +809,4 @@ export const categories = [
 ];
 
 export default categories;
+

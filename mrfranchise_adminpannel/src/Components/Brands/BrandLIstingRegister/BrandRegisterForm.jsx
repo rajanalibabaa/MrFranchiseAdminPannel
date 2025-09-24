@@ -44,7 +44,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import BrandExpansionLocationDetails from "./BrandExpansionLocationDetails";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { useDispatch } from "react-redux";
-import { showLoading } from "../../../Redux/Slices/LoadingSlice";
+import { showLoading } from "../../../Redux/Slices/loadingSlice";
 
 const FORM_DATA_KEY = "brandRegistrationFormData";
 const FORM_STEP_KEY = "brandRegistrationActiveStep";
@@ -398,10 +398,6 @@ const BrandRegisterForm = () => {
           })
         );
 
-        formDataSend.append(
-          "admin",true
-        )
-
         // Append all files
         const fileFields = {
           brandLogo: formData.uploads.brandLogo,
@@ -439,14 +435,14 @@ console.log("Form data prepared for submission:", formDataSend);
             message: "Form submitted successfully!",
             severity: "success",
           });
-
+          console.log('Form data submitted successfully:', response.data);
           localStorage.removeItem(FORM_DATA_KEY);
           localStorage.removeItem(FORM_STEP_KEY);
           setFormData(initialFormData);
           setActiveStep(0);
-          // setTimeout(() => {
-          //   navigate("/advertisewithus");
-          // }, 1500);
+          setTimeout(() => {
+            navigate("/advertisewithus");
+          }, 1500);
         }
       } catch (error) {
         console.error("Submission error:", error);
@@ -1229,11 +1225,11 @@ console.log("Form data prepared for submission:", formDataSend);
           }}
         >
           <Box
-            // sx={{ display: "grid", gridTemplateColumns: "auto 1fr" }}
+            sx={{ display: "grid", gridTemplateColumns: "auto 1fr" }}
             mb={1}
-            // mt={1}
+            mt={1}
           >
-            {/* <Button
+            <Button
               onClick={handleHomeClick}
               sx={{
                 backgroundColor: "#7ad03a",
@@ -1261,7 +1257,7 @@ console.log("Form data prepared for submission:", formDataSend);
               }}
             >
               <HomeOutlinedIcon fontSize="small" /> Home
-            </Button> */}
+            </Button>
 
             {/* Stepper ==> To Navigate The Particular Page */}
             <Stepper
@@ -1321,7 +1317,7 @@ console.log("Form data prepared for submission:", formDataSend);
                 border: 0,
                 mr: 2,
                 borderRadius: "12px",
-                color: "#FFFFFF",
+                color: "black",
                 cursor: "pointer",
                 display: "inline-block",
                 fontFamily:
@@ -1356,18 +1352,10 @@ console.log("Form data prepared for submission:", formDataSend);
               variant="outlined"
               onClick={handlePreviewOpen}
               sx={{
-                backgroundColor: "#c2fbd7",
+                backgroundColor: "#7ad03a",
                 borderRadius: "100px",
-                boxShadow: `
-      rgba(44, 187, 99, 0.2) 0 -25px 18px -14px inset,
-      rgba(44, 187, 99, 0.15) 0 1px 2px,
-      rgba(44, 187, 99, 0.15) 0 2px 4px,
-      rgba(44, 187, 99, 0.15) 0 4px 8px,
-      rgba(44, 187, 99, 0.15) 0 8px 16px,
-      rgba(44, 187, 99, 0.15) 0 16px 32px
-    `,
                 mr: 2,
-                color: "green",
+                color: "black",
                 fontFamily:
                   "CerebriSans-Regular, -apple-system, system-ui, Roboto, sans-serif",
                 padding: "7px 20px",
@@ -1379,16 +1367,9 @@ console.log("Form data prepared for submission:", formDataSend);
                 WebkitUserSelect: "none",
                 touchAction: "manipulation",
                 "&:hover": {
-                  boxShadow: `
-        rgba(44, 187, 99, 0.35) 0 -25px 18px -14px inset,
-        rgba(44, 187, 99, 0.25) 0 1px 2px,
-        rgba(44, 187, 99, 0.25) 0 2px 4px,
-        rgba(44, 187, 99, 0.25) 0 4px 8px,
-        rgba(44, 187, 99, 0.25) 0 8px 16px,
-        rgba(44, 187, 99, 0.25) 0 16px 32px
-      `,
+    
                   transform: "scale(1.05) rotate(-1deg)",
-                  backgroundColor: "#c2fbd7", // Maintain same background on hover
+                  backgroundColor: "#5db024", // Maintain same background on hover
                 },
                 "&:active": {
                   transform: "scale(1) rotate(0deg)", // Reset on click
@@ -1402,18 +1383,11 @@ console.log("Form data prepared for submission:", formDataSend);
             <Button
               variant="outlined"
               sx={{
-                backgroundColor: "#c2fbd7",
+                backgroundColor: "#7ad03a",
                 borderRadius: "100px",
-                boxShadow: `
-      rgba(44, 187, 99, 0.2) 0 -25px 18px -14px inset,
-      rgba(44, 187, 99, 0.15) 0 1px 2px,
-      rgba(44, 187, 99, 0.15) 0 2px 4px,
-      rgba(44, 187, 99, 0.15) 0 4px 8px,
-      rgba(44, 187, 99, 0.15) 0 8px 16px,
-      rgba(44, 187, 99, 0.15) 0 16px 32px
-    `,
+    
                 mr: 2,
-                color: "red",
+                color: "black",
                 fontFamily:
                   "CerebriSans-Regular, -apple-system, system-ui, Roboto, sans-serif",
                 padding: "7px 20px",
@@ -1425,16 +1399,9 @@ console.log("Form data prepared for submission:", formDataSend);
                 WebkitUserSelect: "none",
                 touchAction: "manipulation",
                 "&:hover": {
-                  boxShadow: `
-        rgba(44, 187, 99, 0.35) 0 -25px 18px -14px inset,
-        rgba(44, 187, 99, 0.25) 0 1px 2px,
-        rgba(44, 187, 99, 0.25) 0 2px 4px,
-        rgba(44, 187, 99, 0.25) 0 4px 8px,
-        rgba(44, 187, 99, 0.25) 0 8px 16px,
-        rgba(44, 187, 99, 0.25) 0 16px 32px
-      `,
+     
                   transform: "scale(1.05) rotate(-1deg)",
-                  backgroundColor: "#c2fbd7", // Maintain same background on hover
+                  backgroundColor: "#5db024", // Maintain same background on hover
                 },
                 "&:active": {
                   transform: "scale(1) rotate(0deg)", // Reset on click

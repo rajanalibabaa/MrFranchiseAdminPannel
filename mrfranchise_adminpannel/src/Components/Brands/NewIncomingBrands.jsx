@@ -48,7 +48,7 @@ const NewIncomingBrands = () => {
 
   const handleApprove = useCallback(
     async (brandId) => {
-      // const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
+      const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
       // console.log("Approve response:", res.data);
       dispatch(approveBrand(brandId));
     },
@@ -77,6 +77,7 @@ const NewIncomingBrands = () => {
 
   const confirmDelete = useCallback(async() => {
     const deleteIncomingBrand = await DeleteApiCall(`${Api.admin.delete.newIncomingBrand}/${selectedBrandId}`);
+
     if (deleteIncomingBrand?.data?.statuscode === 200) {
       dispatch(deleteBrand(selectedBrandId));
     setSelectedBrandId(null);

@@ -63,6 +63,7 @@ const GetAllBrands = () => {
 
   // Delete handler
   const handleDelete = useCallback((brandId) => {
+    console.log("Delete ID:", brandId);
     setSelectedBrandId(brandId);
     setOpen(true);
   }, []);
