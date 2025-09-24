@@ -152,6 +152,24 @@ const Count = () => {
               </CardContent>
             </Card>
           </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card
+              onClick={() => handleNavigate('/dashboard/instantapply')}
+              sx={{
+                cursor: 'pointer',
+                transition: '0.3s',
+                '&:hover': { boxShadow: 6 },
+              }}
+            >
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Typography variant="h6">Instant Apply</Typography>
+                <Typography variant="h4" color="success.main">
+                  {brandsData.instantApplyCount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
       </Box>
     </Box>

@@ -13,6 +13,7 @@ import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 import Bredcrumbs from '../Components/Brands/Bredcrumbs';
 import Leads from '../Components/Brands/Leads/Leads';
 import MainDashboard from '../Components/Dashboard/MainDashboard';
+import InstantApplyLayout from '../Components/Brands/InstantApply/InstantApplyLayout';
 
 
 const Router = () => {
@@ -30,7 +31,8 @@ const Router = () => {
 
             // leads
             <Route path="leads" element={<Leads />} />
-
+            // Instant Apply
+            <Route path="instantapply" element={<InstantApplyLayout />} />
 
             // Manage Investor Routes
             <Route path="allinvestors" element={<AllInvestor />} />
