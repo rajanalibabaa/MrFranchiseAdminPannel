@@ -32,8 +32,10 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const Breadcrumbs = () => {
+
+  const activeTabValue = useSelector((state)=>state.brands.goToNewIncoming) || 0
   
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(activeTabValue);
   const dispatch = useDispatch();
 
   useEffect(() => {

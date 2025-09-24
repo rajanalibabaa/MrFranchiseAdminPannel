@@ -24,6 +24,12 @@ export const Api = {
 
     delete : {
       newIncomingBrand:`${BASE_URL}/deleteNewIncomingBrandById`,
+    },
+
+    get:{
+      user:{
+        usersCount:`${BASE_URL}/userCount`,
+      }
     }
   },
 };

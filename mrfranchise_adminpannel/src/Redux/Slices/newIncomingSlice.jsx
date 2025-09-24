@@ -53,6 +53,7 @@ const newIncomingSlice = createSlice({
       currentPage: 1,
       hasNext: false,
     },
+    goToNewIncoming:null
   },
   reducers: {
     approveBrand: (state, action) => {
@@ -74,6 +75,10 @@ const newIncomingSlice = createSlice({
         hasNext: false,
       };
     },
+    goToNewIncoming:(state,action) => {
+      state.goToNewIncoming = action.payload
+      console.log(state.goToNewIncoming,action.payload)
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -111,6 +116,7 @@ export const {
   deleteBrand,
   clearBrandDetails,
   resetBrands,
+  goToNewIncoming,
 } = newIncomingSlice.actions;
 
 export default newIncomingSlice.reducer;

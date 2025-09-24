@@ -12,12 +12,16 @@ import { useNavigate } from 'react-router-dom';
 import SidebarAdmin from '../../Pages/dashboardOutlet/SidebarAdmin';
 import { GetApiCall } from '../../api/default/GetApi';
 import { Api } from '../../api/apiurl';
+import { useDispatch } from 'react-redux';
+import { goToNewIncoming } from '../../Redux/Slices/newIncomingSlice';
+import socket from '../../utils/socket';
 
-const ViewAllBrands = () => {
+const Count = () => {
   const [brandsData, setBrandsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
+  const dispatch = useDispatch()
 
   const fetchBrands = async () => {
     try {
@@ -26,6 +30,7 @@ const ViewAllBrands = () => {
       setBrandsData(response.data?.data || {});
       setLoading(false);
     } catch (err) {
+      console.error(err);
       setError('Failed to fetch data');
       setLoading(false);
     }
@@ -34,6 +39,37 @@ const ViewAllBrands = () => {
   useEffect(() => {
     fetchBrands();
   }, []);
+
+  useEffect(() => {
+    socket.on("recevie", (count) => {
+      console.log("📥 Updated brand count:", count);
+      setBrandsData((prevData) =>(
+        {...prevData,newBrandsCount:count}
+      ));
+      const audio = new Audio("/ting.mp3");
+      audio.play();
+    });
+
+    return () => {
+      socket.off("recevie");
+    };
+  }, []);
+
+  const handleNavigate = (path) => {
+    if (path === "newIncoming") {
+        console.log("kkkk")
+        dispatch(goToNewIncoming(1))
+        navigate("/dashboard/getallbrands")
+        return
+    }
+    if (path === "brands") {
+        console.log("kkkk")
+        dispatch(goToNewIncoming(0))
+        navigate("/dashboard/getallbrands")
+        return
+    }
+    navigate(path);
+  };
 
   if (loading) {
     return (
@@ -58,17 +94,21 @@ const ViewAllBrands = () => {
 
       {/* Main Content */}
       <Box p={4} flexGrow={1}>
-        <Typography variant="h4" gutterBottom>
+        {/* <Typography variant="h4" gutterBottom>
           All Brands
-        </Typography>
+        </Typography> */}
 
         <Grid container spacing={3}>
           <Grid item xs={12} sm={4}>
             <Card
-              onClick={() => navigate('/admin/brands')}
-              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+              onClick={() => handleNavigate('brands')}
+              sx={{
+                cursor: 'pointer',
+                transition: '0.3s',
+                '&:hover': { boxShadow: 6 },
+              }}
             >
-              <CardContent>
+              <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6">Total Brands</Typography>
                 <Typography variant="h4" color="primary">
                   {brandsData.brandsCount}
@@ -79,11 +119,15 @@ const ViewAllBrands = () => {
 
           <Grid item xs={12} sm={4}>
             <Card
-              onClick={() => navigate('/admin/new-brands')}
-              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+              onClick={() => handleNavigate('newIncoming')}
+              sx={{
+                cursor: 'pointer',
+                transition: '0.3s',
+                '&:hover': { boxShadow: 6 },
+              }}
             >
-              <CardContent>
-                <Typography variant="h6">New Brands</Typography>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Typography variant="h6">New Incoming Brands</Typography>
                 <Typography variant="h4" color="secondary">
                   {brandsData.newBrandsCount}
                 </Typography>
@@ -93,10 +137,14 @@ const ViewAllBrands = () => {
 
           <Grid item xs={12} sm={4}>
             <Card
-              onClick={() => navigate('/admin/investors')}
-              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+              onClick={() => handleNavigate('/dashboard/allinvestors')}
+              sx={{
+                cursor: 'pointer',
+                transition: '0.3s',
+                '&:hover': { boxShadow: 6 },
+              }}
             >
-              <CardContent>
+              <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6">Investors</Typography>
                 <Typography variant="h4" color="success.main">
                   {brandsData.investorsCount}
@@ -110,4 +158,4 @@ const ViewAllBrands = () => {
   );
 };
 
-export default ViewAllBrands;
+export default Count;

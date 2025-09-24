@@ -12,6 +12,7 @@ import EditInvestor from '../Components/ManageInvestor/EditInvestor';
 import BrandListingEdit from '../Components/Brands/BrandEdit/BrandListingEdit';
 import Bredcrumbs from '../Components/Brands/Bredcrumbs';
 import Leads from '../Components/Brands/Leads/Leads';
+import MainDashboard from '../Components/Dashboard/MainDashboard';
 
 
 const Router = () => {
@@ -20,7 +21,7 @@ const Router = () => {
         <Routes>
           <Route path="/" element={<AdminLogin/>} />
           <Route path="/dashboard" element={<MainPageDashboard />}>
-            <Route index element={<ViewAllBrands />} />
+            <Route index element={<MainDashboard />} />
 
             // Manage Brand Routes
             <Route path="createbrand" element={<BrandRegisterForm />} />
