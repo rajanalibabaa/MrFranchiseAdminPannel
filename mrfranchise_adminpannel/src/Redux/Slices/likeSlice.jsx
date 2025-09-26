@@ -43,8 +43,6 @@ export const removeFromLikedBrands = createAsyncThunk(
     }
   }
 );
-
-  console.log("userId",userId)
   
 export const fetchLikedBrandsById = createAsyncThunk(
   "likedBrands/fetchById",

@@ -6,111 +6,107 @@ import {
   Typography,
   TextField,
   Button,
-  InputAdornment,
   useTheme,
   useMediaQuery,
-   Snackbar, Alert,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import { CheckCircleOutline, Lock } from "@mui/icons-material";
+import { Lock } from "@mui/icons-material";
 import InvestorImage from "../assets/Images/LoginRightContent.jpg";
 import Logo from "../assets/Images/logo.png";
 import { useNavigate } from "react-router-dom";
 import { PostApiWithData } from "../api/default/PostApi";
 import { Api } from "../api/apiurl";
+import { useDispatch } from "react-redux";
+import { Login } from "../Redux/Slices/admin/authSlice";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [contact, setContact] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState("success");
+  const [loading, setLoading] = useState(false);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  
-  const handleSendOTP = async () => {
-    setLoading(true)
-    setIsVerified(false);
 
-    if (!contact) {
+  const dispatch = useDispatch();
+
+  const handleSendOTP = async () => {
+    setLoading(true);
+
+    if (!contact.trim()) {
       setOpen(true);
-      setLoading(false)
-      setMessage("Please enter your email");
+      setSeverity("error");
+      setMessage("Please enter your email or phone");
+      setLoading(false);
       return;
     }
 
-    const data = {
-      email: contact,
-    };
+    try {
+      const data = { email: contact.trim() };
+      const res = await PostApiWithData(Api.admin.post.login.generateOTP, data);
 
-    const res = await PostApiWithData(Api.admin.post.login.generateOTP, data);
-    console.log("res :", res.data);
+      if (res?.data?.statuscode === 200) {
+        setOtpSent(true);
+        setSeverity("success");
+      } else {
+        setSeverity("error");
+      }
 
-    if (res.data) {
-      setLoading(false)
+      setMessage(res?.data?.message || "Something went wrong");
       setOpen(true);
-    setMessage(res.data.message)
-
-    setOtpSent(true);
+    } catch (err) {
+      console.error(err);
+      setMessage("Server error. Please try again later.");
+      setSeverity("error");
+      setOpen(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerify = async() => {
-   try {
-     setLoading(true)
-     if (!otp) {
-       setOpen(true);
-       setLoading(false)
-       setMessage("Please enter the OTP");
-       return;
-     }
-     const data = {
-      email: contact,
-      verifyOTP: otp
-    };
-     console.log(contact)
-         const res = await PostApiWithData(Api.admin.post.login.verifyOTP, data);
-    console.log("res :", res.data);
+  const handleVerify = async () => {
+    if (!otp.trim()) {
+      setOpen(true);
+      setSeverity("error");
+      setMessage("Please enter the OTP");
+      return;
+    }
 
-    if (res.data) {
-      setTimeout(() => {
-        setLoading(false)
+    try {
+      setLoading(true);
+      const data = { email: contact.trim(), verifyOTP: otp.trim() };
+      const res = await PostApiWithData(Api.admin.post.login.verifyOTP, data);
+
+      if (res?.data?.statuscode === 200) {
+        dispatch(Login(res.data.data));
+        setSeverity("success");
+        setMessage(res?.data?.message || "Login Successful");
         setOpen(true);
-      setMessage(res.data.message)
-
-      setOtpSent(true);
-      }, 1000);
-      localStorage.setItem("adminAccessToken",res.data.data.adminAccessToken)
-    const token = localStorage.getItem("adminAccessToken");
-console.log("Stored Token:", token);
+        navigate("/dashboard");
+      } else {
+        setSeverity("error");
+        setMessage(res?.data?.message || "Verification failed");
+        setOpen(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("Server error. Please try again.");
+      setSeverity("error");
+      setOpen(true);
+    } finally {
+      setLoading(false);
     }
-    
-    
-   } catch (error) {
-    console.error(error)
-    
-   }
-
-    
   };
 
-  const handleClose = (event, reason) => {
-    if (reason === 'clickaway') return;
+  const handleClose = (_, reason) => {
+    if (reason === "clickaway") return;
     setOpen(false);
   };
-
-  React.useEffect(() => {
-    if (isVerified) {
-      const timer = setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isVerified, navigate]);
 
   return (
     <Box
@@ -122,7 +118,6 @@ console.log("Stored Token:", token);
         backgroundImage: "radial-gradient(#e0e7ff 1px, transparent 1px)",
       }}
     >
-      {/* Left Side - Branding Panel */}
       <Box
         flex={1}
         display={{ xs: "none", md: "flex" }}
@@ -133,11 +128,9 @@ console.log("Stored Token:", token);
           color: "white",
           padding: 4,
           position: "relative",
-          overflow: "hidden",
           backgroundImage: `url(${InvestorImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
           "&::before": {
             content: '""',
             position: "absolute",
@@ -152,7 +145,6 @@ console.log("Stored Token:", token);
         }}
       />
 
-      {/* Right Side - Login Form */}
       <Box flex={1} display="flex" justifyContent="center" alignItems="center">
         <Card
           sx={{
@@ -163,25 +155,10 @@ console.log("Stored Token:", token);
             border: "1px solid rgba(0,0,0,0.05)",
             overflow: "visible",
             position: "relative",
-            "&:hover": {
-              boxShadow: "0 15px 35px rgba(0,0,0,0.12)",
-            },
           }}
         >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              zIndex: 2,
-            }}
-          >
-            <img
-              src={Logo}
-              alt="Mr Franchise Logo"
-              style={{ height: 48, width: "auto" }}
-              loading="lazy"
-            />
+          <Box sx={{ position: "absolute", top: 16, right: 16 }}>
+            <img src={Logo} alt="Logo" style={{ height: 48 }} />
           </Box>
 
           <Box
@@ -209,171 +186,63 @@ console.log("Stored Token:", token);
               variant="h5"
               align="center"
               gutterBottom
-              sx={{
-                fontWeight: "bold",
-                color: "black",
-                mb: 4,
-              }}
+              sx={{ fontWeight: "bold", mb: 4 }}
             >
               ADMIN LOGIN
             </Typography>
 
-            {!isVerified ? (
+            <TextField
+              fullWidth
+              margin="normal"
+              label={otpSent ? "Verification Code Sent To" : "Email or Phone"}
+              variant="outlined"
+              value={contact}
+              disabled={otpSent}
+              onChange={(e) => setContact(e.target.value)}
+            />
+
+            {otpSent ? (
               <>
                 <TextField
                   fullWidth
                   margin="normal"
-                  label={
-                    otpSent ? "Verification Code Sent To" : "Email or Phone"
-                  }
+                  label="Enter 6-digit OTP"
                   variant="outlined"
-                  value={contact}
-                  disabled={otpSent}
-                  // required
-                  onChange={(e) => {
-                    setContact(e.target.value.trim());
-                    setError("");
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "& fieldset": {
-                        borderColor: "#e0e0e0",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                  }}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  inputProps={{ maxLength: 6 }}
                 />
 
-                {otpSent ? (
-                  <>
-                    <TextField
-                      fullWidth
-                      margin="normal"
-                      label="Enter 6-digit OTP"
-                      variant="outlined"
-                      value={otp}
-                      onChange={(e) => {
-                        setOtp(e.target.value.trim());
-                        setError("");
-                      }}
-                      inputProps={{ maxLength: 6 }}
-                     
-                      sx={{
-                        mt: 3,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                        },
-                      }}
-                    />
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleVerify}
+                  sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
+                >
+                  {loading ? "Loading..." : "Verify & Sign In"}
+                </Button>
 
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={handleVerify}
-                      sx={{
-                        mt: 3,
-                        py: 1.5,
-                        borderRadius: 2,
-                        backgroundColor: "#e99830",
-                        fontWeight: "bold",
-                        fontSize: 16,
-                        textTransform: "none",
-                        boxShadow: "0 4px 12px rgba(30, 60, 114, 0.2)",
-                        "&:hover": {
-                          backgroundColor: "#7ad03a",
-                          boxShadow: "0 6px 15px rgba(30, 60, 114, 0.3)",
-                          transform: "translateY(-2px)",
-                        },
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      
-                      {loading ? "loading..." :"Verify & Sign In"}
-                    </Button>
-                    {/* Resend OTP Button */}
-                    <Button
-                      fullWidth
-                      variant="text"
-                      onClick={() => {
-                        handleSendOTP();
-                        setOtp("");
-                      }}
-                      sx={{
-                        mt: 2,
-                        color: "black",
-                        fontWeight: "bold",
-                        textTransform: "none",
-                        "&:hover": {
-                          textDecoration: "underline",
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    >
-                      Resend OTP
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSendOTP}
-                    sx={{
-                      mt: 3,
-                      py: 1.5,
-                      borderRadius: 2,
-                      backgroundColor: "#e99830",
-                      fontWeight: "bold",
-                      fontSize: 16,
-                      textTransform: "none",
-                      boxShadow: "0 4px 12px rgba(30, 60, 114, 0.2)",
-                      "&:hover": {
-                        backgroundColor: "#7ad03a",
-                        boxShadow: "0 6px 15px rgba(30, 60, 114, 0.3)",
-                        transform: "translateY(-2px)",
-                      },
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    {loading ? "loading..." :"Send Verification Code"}
-                  </Button>
-                )}
+                <Button
+                  fullWidth
+                  variant="text"
+                  onClick={() => {
+                    handleSendOTP();
+                    setOtp("");
+                  }}
+                  sx={{ mt: 2 }}
+                >
+                  Resend OTP
+                </Button>
               </>
             ) : (
-              <Box textAlign="center" py={4}>
-                <CheckCircleOutline
-                  sx={{
-                    fontSize: 80,
-                    color: "#4caf50",
-                    mb: 2,
-                  }}
-                />
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: "bold", color: "#2e7d32" }}
-                >
-                  Login Successful!
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2, color: "#555" }}>
-                  Redirecting to admin dashboard...
-                </Typography>
-              </Box>
-            )}
-
-            {error && (
-              <Box
-                sx={{
-                  mt: 3,
-                  p: 2,
-                  borderRadius: 2,
-                }}
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleSendOTP}
+                sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
               >
-                <Typography variant="body2" color="error" align="center">
-                  {error}
-                </Typography>
-              </Box>
+                {loading ? "Loading..." : "Send Verification Code"}
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -381,11 +250,11 @@ console.log("Stored Token:", token);
 
       <Snackbar
         open={open}
-        autoHideDuration={3000} // duration in ms
+        autoHideDuration={3000}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleClose} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={handleClose} severity={severity} sx={{ width: "100%" }}>
           {message}
         </Alert>
       </Snackbar>

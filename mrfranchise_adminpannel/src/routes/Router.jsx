@@ -15,14 +15,18 @@ import Leads from '../Components/Brands/Leads/Leads';
 import MainDashboard from '../Components/Dashboard/MainDashboard';
 import InstantApplyLayout from '../Components/Brands/InstantApply/InstantApplyLayout';
 import ErrorPage from '../Components/Error/ErrorPage';
+import { useSelector } from 'react-redux';
 
 
 const Router = () => {
+  const {adminData}  = useSelector((state)=> state.admin)
+  console.log("data :",adminData?.adminData?.uuid)
   return (
     <div>
         <Routes>
           <Route path="/" element={<AdminLogin/>} />
-          <Route path="/dashboard" element={<MainPageDashboard />}>
+          {adminData && adminData?.adminData?.uuid &&
+            <Route path="/dashboard" element={<MainPageDashboard />}>
             <Route index element={<MainDashboard />} />
 
             // Manage Brand Routes
@@ -41,6 +45,7 @@ const Router = () => {
 
 <Route path="edit-investor/:id" element={<EditInvestor />} />
           </Route>
+          }
 
 
           <Route path='*' element={<ErrorPage />} />
