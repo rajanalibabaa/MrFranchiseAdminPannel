@@ -26,7 +26,7 @@ const Count = () => {
   const fetchBrands = async () => {
     try {
       const response = await GetApiCall(Api.admin.get.user.usersCount);
-      console.log('API Response:', response.data);
+      // console.log('API Response:', response.data);
       setBrandsData(response.data?.data || {});
       setLoading(false);
     } catch (err) {

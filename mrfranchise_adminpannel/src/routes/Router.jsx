@@ -15,19 +15,21 @@ import Leads from '../Components/Brands/Leads/Leads';
 import MainDashboard from '../Components/Dashboard/MainDashboard';
 import InstantApplyLayout from '../Components/Brands/InstantApply/InstantApplyLayout';
 import ErrorPage from '../Components/Error/ErrorPage';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { Logout } from '../Redux/Slices/admin/authSlice';
 
 
 const Router = () => {
+  const dispatch = useDispatch()
   useEffect(() => {
     const storedTime = localStorage.getItem("autoLogout");
      const currentTime = new Date().getTime();
-    console.log("currentTime :",currentTime)
+    
     if (storedTime && currentTime > storedTime) {
-      localStorage.removeItem("autoLogout");
-      localStorage.removeItem("adminData");
+      console.log("currentTime")
+      dispatch(Logout())
     }
-  }, [])
+  }, [dispatch])
   const {adminData}  = useSelector((state)=> state.admin)
   return (
     <div>
