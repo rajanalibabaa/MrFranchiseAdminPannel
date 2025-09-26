@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import AdminLogin from '../Pages/AdminLogin'
 import ViewAllBrands from '../Components/ViewAllBrands/ViewAllBrands'
@@ -19,8 +19,16 @@ import { useSelector } from 'react-redux';
 
 
 const Router = () => {
+  useEffect(() => {
+    const storedTime = localStorage.getItem("autoLogout");
+     const currentTime = new Date().getTime();
+    console.log("currentTime :",currentTime)
+    if (storedTime && currentTime > storedTime) {
+      localStorage.removeItem("autoLogout");
+      localStorage.removeItem("adminData");
+    }
+  }, [])
   const {adminData}  = useSelector((state)=> state.admin)
-  console.log("data :",adminData?.adminData?.uuid)
   return (
     <div>
         <Routes>

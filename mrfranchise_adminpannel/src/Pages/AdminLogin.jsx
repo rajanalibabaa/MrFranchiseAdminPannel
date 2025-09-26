@@ -76,7 +76,7 @@ const AdminLogin = () => {
       setMessage("Please enter the OTP");
       return;
     }
-
+    
     try {
       setLoading(true);
       const data = { email: contact.trim(), verifyOTP: otp.trim() };
@@ -87,6 +87,9 @@ const AdminLogin = () => {
         setSeverity("success");
         setMessage(res?.data?.message || "Login Successful");
         setOpen(true);
+        const now = new Date().getTime();
+        const expiryTime = now + 24 * 60 * 60 * 1000
+        localStorage.setItem("autoLogout", expiryTime);
         navigate("/dashboard");
       } else {
         setSeverity("error");
