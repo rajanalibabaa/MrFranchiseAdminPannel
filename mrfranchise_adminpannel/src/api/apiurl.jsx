@@ -30,6 +30,12 @@ export const Api = {
       user:{
         usersCount:`${BASE_URL}/userCount`,
       }
+    },
+    post : {
+      login : {
+        generateOTP : `${BASE_URL}/login/generateOTPforAdminLogin`,
+        verifyOTP : `${BASE_URL}/login/verifyAdminLoginOTP`,
+      }
     }
   },
 };

@@ -146,7 +146,7 @@ const Count = () => {
             >
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6">Investors</Typography>
-                <Typography variant="h4" color="success.main">
+                <Typography variant="h4" color="warning">
                   {brandsData.investorsCount}
                 </Typography>
               </CardContent>

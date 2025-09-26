@@ -14,6 +14,7 @@ import Bredcrumbs from '../Components/Brands/Bredcrumbs';
 import Leads from '../Components/Brands/Leads/Leads';
 import MainDashboard from '../Components/Dashboard/MainDashboard';
 import InstantApplyLayout from '../Components/Brands/InstantApply/InstantApplyLayout';
+import ErrorPage from '../Components/Error/ErrorPage';
 
 
 const Router = () => {
@@ -40,6 +41,9 @@ const Router = () => {
 
 <Route path="edit-investor/:id" element={<EditInvestor />} />
           </Route>
+
+
+          <Route path='*' element={<ErrorPage />} />
         </Routes>
     </div>
   )
