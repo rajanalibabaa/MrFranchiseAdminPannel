@@ -88,7 +88,7 @@ const AdminLogin = () => {
         setMessage(res?.data?.message || "Login Successful");
         setOpen(true);
         const now = new Date().getTime();
-        const expiryTime = now + 1 * 60 * 1000
+        const expiryTime = now + 24 * 60 * 60 * 1000
         localStorage.setItem("autoLogout", expiryTime);
         navigate("/dashboard");
 

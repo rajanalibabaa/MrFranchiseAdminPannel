@@ -1,7 +1,11 @@
-import React from 'react';
-import { Box, Typography, Container } from '@mui/material';
+import React from "react";
+import { Box, Typography, Container } from "@mui/material";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 const ErrorPage = () => {
+  const { adminData } = useSelector((state) => state.admin);
+
   return (
     <Container maxWidth="md">
       <Box
@@ -21,6 +25,12 @@ const ErrorPage = () => {
         <Typography variant="body1">
           The page you're looking for doesn't exist or you don't have access.
         </Typography>
+
+        {!(adminData?.adminData?.uuid) && (
+          <Link to="/" style={{ marginTop: "1rem", color: "blue" }}>
+            Please login
+          </Link>
+        )}
       </Box>
     </Container>
   );
