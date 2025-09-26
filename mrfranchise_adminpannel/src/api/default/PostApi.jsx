@@ -1,10 +1,11 @@
 import axios from "axios"
 
-export const PostApiCall = (url) => {
+export const PostApiCall = (url,token) => {
 
     const res = axios.post(url,{
         headers: {
             'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : "",
         }
     })
 

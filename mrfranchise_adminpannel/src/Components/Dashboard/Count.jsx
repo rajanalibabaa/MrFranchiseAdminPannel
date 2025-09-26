@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -7,31 +7,30 @@ import {
   CardContent,
   CircularProgress,
   Alert,
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import SidebarAdmin from '../../Pages/dashboardOutlet/SidebarAdmin';
-import { GetApiCall } from '../../api/default/GetApi';
-import { Api } from '../../api/apiurl';
-import { useDispatch } from 'react-redux';
-import { goToNewIncoming } from '../../Redux/Slices/newIncomingSlice';
-import socket from '../../utils/socket';
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import SidebarAdmin from "../../Pages/dashboardOutlet/SidebarAdmin";
+import { GetApiCall } from "../../api/default/GetApi";
+import { Api } from "../../api/apiurl";
+import { useDispatch } from "react-redux";
+import { goToNewIncoming } from "../../Redux/Slices/newIncomingSlice";
+import socket from "../../utils/socket";
 
 const Count = () => {
   const [brandsData, setBrandsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const fetchBrands = async () => {
     try {
       const response = await GetApiCall(Api.admin.get.user.usersCount);
-      // console.log('API Response:', response.data);
       setBrandsData(response.data?.data || {});
       setLoading(false);
     } catch (err) {
       console.error(err);
-      setError('Failed to fetch data');
+      setError("Failed to fetch data");
       setLoading(false);
     }
   };
@@ -43,9 +42,10 @@ const Count = () => {
   useEffect(() => {
     socket.on("recevie", (count) => {
       console.log("📥 Updated brand count:", count);
-      setBrandsData((prevData) =>(
-        {...prevData,newBrandsCount:count}
-      ));
+      setBrandsData((prevData) => ({
+        ...prevData,
+        newBrandsCount: count,
+      }));
       const audio = new Audio("/ting.mp3");
       audio.play();
     });
@@ -57,16 +57,14 @@ const Count = () => {
 
   const handleNavigate = (path) => {
     if (path === "newIncoming") {
-        console.log("kkkk")
-        dispatch(goToNewIncoming(1))
-        navigate("/dashboard/getallbrands")
-        return
+      dispatch(goToNewIncoming(1));
+      navigate("/dashboard/getallbrands");
+      return;
     }
     if (path === "brands") {
-        console.log("kkkk")
-        dispatch(goToNewIncoming(0))
-        navigate("/dashboard/getallbrands")
-        return
+      dispatch(goToNewIncoming(0));
+      navigate("/dashboard/getallbrands");
+      return;
     }
     navigate(path);
   };
@@ -88,91 +86,135 @@ const Count = () => {
   }
 
   return (
-    <Box display="flex">
-      {/* Sidebar */}
-      <SidebarAdmin />
+<Box m={0} flexGrow={1}>
+  <Grid
+    container
+    spacing={2}
+    sx={{
+      flexWrap: "nowrap", // prevents wrapping
+      // overflowX: "auto",  // enables horizontal scroll on small screens
+      "&::-webkit-scrollbar": { display: "none" }, 
+      fontSize: { xs: "1rem", sm: ".25rem", md: "2rem" },
+      p:"10px",
+      
+    }}
+  >
+    {/* Total Brands */}
+    <Grid item xs={3} sx={{ flex: "0 0 auto" }}>
+      <Card
+        onClick={() => handleNavigate("brands")}
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight="bold"
+             sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            Total Brands
+          </Typography>
+          <Typography
+            variant="h5"
+            color="primary"
+            sx={{ fontSize: { xs: "1rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            {brandsData.brandsCount}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
 
-      {/* Main Content */}
-      <Box p={4} flexGrow={1}>
-        {/* <Typography variant="h4" gutterBottom>
-          All Brands
-        </Typography> */}
+    {/* New Incoming Brands */}
+    <Grid item xs={3} sx={{ flex: "0 0 auto" }}
+    
+    >
+      <Card
+        onClick={() => handleNavigate("newIncoming")}
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight="bold"
+           sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            New Incoming Brands
+          </Typography>
+          <Typography
+            variant="h5"
+            color="secondary"
+            sx={{ fontSize: { xs: "1rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            {brandsData.newBrandsCount}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={4}>
-            <Card
-              onClick={() => handleNavigate('brands')}
-              sx={{
-                cursor: 'pointer',
-                transition: '0.3s',
-                '&:hover': { boxShadow: 6 },
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h6">Total Brands</Typography>
-                <Typography variant="h4" color="primary">
-                  {brandsData.brandsCount}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+    {/* Investors */}
+    <Grid item xs={3} sx={{ flex: "0 0 auto" }}>
+      <Card
+        onClick={() => handleNavigate("/dashboard/allinvestors")}
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight="bold"
+           sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            Investors
+          </Typography>
+          <Typography
+            variant="h5"
+            color="warning.main"
+            sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            {brandsData.investorsCount}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
 
-          <Grid item xs={12} sm={4}>
-            <Card
-              onClick={() => handleNavigate('newIncoming')}
-              sx={{
-                cursor: 'pointer',
-                transition: '0.3s',
-                '&:hover': { boxShadow: 6 },
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h6">New Incoming Brands</Typography>
-                <Typography variant="h4" color="secondary">
-                  {brandsData.newBrandsCount}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+    {/* Instant Apply */}
+    <Grid item xs={3} sx={{ flex: "0 0 auto" }}>
+      <Card
+        onClick={() => handleNavigate("/dashboard/instantapply")}
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight="bold"
+             sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            Instant Apply
+          </Typography>
+          <Typography
+            variant="h5"
+            color="success.main"
+            sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            {brandsData.instantApplyCount}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
+  </Grid>
+</Box>
 
-          <Grid item xs={12} sm={4}>
-            <Card
-              onClick={() => handleNavigate('/dashboard/allinvestors')}
-              sx={{
-                cursor: 'pointer',
-                transition: '0.3s',
-                '&:hover': { boxShadow: 6 },
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h6">Investors</Typography>
-                <Typography variant="h4" color="warning">
-                  {brandsData.investorsCount}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <Card
-              onClick={() => handleNavigate('/dashboard/instantapply')}
-              sx={{
-                cursor: 'pointer',
-                transition: '0.3s',
-                '&:hover': { boxShadow: 6 },
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h6">Instant Apply</Typography>
-                <Typography variant="h4" color="success.main">
-                  {brandsData.instantApplyCount}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
-    </Box>
   );
 };
 

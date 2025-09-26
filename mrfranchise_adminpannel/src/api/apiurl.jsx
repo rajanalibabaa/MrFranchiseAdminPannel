@@ -35,7 +35,8 @@ export const Api = {
       login : {
         generateOTP : `${BASE_URL}/login/generateOTPforAdminLogin`,
         verifyOTP : `${BASE_URL}/login/verifyAdminLoginOTP`,
-      }
+      },
+      logout :`${BASE_URL_2}/logout`,
     }
   },
 };

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux"; // ✅ correct import
 import {
   Box,
   List,
@@ -16,10 +17,16 @@ import {
   Drawer,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
 } from "@mui/material";
 import {
   Dashboard,
-  Logout,
+  Logout as LogoutIcon, // ✅ rename icon to avoid conflict
   Menu as MenuIcon,
   ExpandLess,
   ExpandMore,
@@ -27,9 +34,15 @@ import {
   AccountBalance,
 } from "@mui/icons-material";
 
+import { Logout} from "../../Redux/Slices/admin/authSlice.jsx"; // ✅ rename redux action
+import { PostApiCall } from "../../api/default/PostApi.jsx";
+import { Api } from "../../api/apiurl.jsx";
+
 const SidebarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch(); // ✅ correct usage
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -38,18 +51,23 @@ const SidebarAdmin = () => {
     brand: false,
     investor: false,
   });
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-  const adminContact = localStorage.getItem("adminContact") || "Admin";
+  const {adminData} = useSelector((state) => state.admin)
 
   /** ---------- Handlers ---------- */
   const toggleMenu = (menu) =>
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminContact");
-    navigate("/admin/login");
+  const handleLogoutConfirm = async() => {
+
+    const res = await PostApiCall(`${Api.admin.post.logout}/${adminData?.adminData?.uuid}`,adminData?.adminAccessToken)
+    console.log("res :",res.data)
+    dispatch(Logout());
+
+    navigate("/");
     if (isMobile) setDrawerOpen(false);
+    setLogoutDialogOpen(false);
   };
 
   const handleNavigation = (path) => {
@@ -117,15 +135,7 @@ const SidebarAdmin = () => {
         p: 2,
       }}
     >
-      {/* User Profile */}
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Avatar alt={adminContact} sx={{ bgcolor: "#4f46e5" }}>
-          {adminContact.charAt(0).toUpperCase()}
-        </Avatar>
-        <Typography variant="h6" fontWeight="bold">
-          {adminContact}
-        </Typography>
-      </Stack>
+      
 
       <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 2 }} />
 
@@ -180,9 +190,12 @@ const SidebarAdmin = () => {
       {/* Logout */}
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout} sx={menuItemStyle}>
+          <ListItemButton
+            onClick={() => setLogoutDialogOpen(true)}
+            sx={menuItemStyle}
+          >
             <ListItemIcon sx={{ color: "#fff" }}>
-              <Logout />
+              <LogoutIcon /> {/* ✅ fixed icon */}
             </ListItemIcon>
             <ListItemText primary="Logout" />
           </ListItemButton>
@@ -257,6 +270,27 @@ const SidebarAdmin = () => {
           {SidebarContent}
         </Box>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+      >
+        <DialogTitle>{"Confirm Logout"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to logout from the admin panel?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleLogoutConfirm} color="error" variant="contained">
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
