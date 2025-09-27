@@ -18,6 +18,7 @@ const authSlice = createSlice({
       state.adminData = [];
       localStorage.removeItem("adminData");
       localStorage.removeItem("autoLogout");
+      localStorage.clear(); 
     },
   },
 });

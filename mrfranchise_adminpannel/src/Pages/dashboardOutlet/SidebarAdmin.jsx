@@ -11,8 +11,6 @@ import {
   Typography,
   Divider,
   Collapse,
-  Avatar,
-  Stack,
   IconButton,
   Drawer,
   useTheme,
@@ -23,6 +21,7 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import {
   Dashboard,
@@ -34,7 +33,7 @@ import {
   AccountBalance,
 } from "@mui/icons-material";
 
-import { Logout} from "../../Redux/Slices/admin/authSlice.jsx"; // ✅ rename redux action
+import { Logout } from "../../Redux/Slices/admin/authSlice.jsx"; // ✅ redux action
 import { PostApiCall } from "../../api/default/PostApi.jsx";
 import { Api } from "../../api/apiurl.jsx";
 
@@ -52,22 +51,32 @@ const SidebarAdmin = () => {
     investor: false,
   });
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // ✅ loading state
 
-  const {adminData} = useSelector((state) => state.admin)
+  const { adminData } = useSelector((state) => state.admin);
 
   /** ---------- Handlers ---------- */
   const toggleMenu = (menu) =>
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
 
-  const handleLogoutConfirm = async() => {
+  const handleLogoutConfirm = async () => {
+    setLoading(true); // ✅ show loader
+    setTimeout(async () => {
+      const res = await PostApiCall(
+        `${Api.admin.post.logout}/${adminData?.adminData?.uuid}`,
+        adminData?.adminAccessToken,
+        {}
+      );
 
-    const res = await PostApiCall(`${Api.admin.post.logout}/${adminData?.adminData?.uuid}`,adminData?.adminAccessToken)
-    console.log("res :",res.data)
-    dispatch(Logout());
+      if (res.data.success === true) {
+        dispatch(Logout());
+        navigate("/");
+      }
 
-    navigate("/");
-    if (isMobile) setDrawerOpen(false);
-    setLogoutDialogOpen(false);
+      if (isMobile) setDrawerOpen(false);
+      setLogoutDialogOpen(false);
+      setLoading(false); // ✅ stop loader
+    }, 1000); // 1 second delay
   };
 
   const handleNavigation = (path) => {
@@ -135,8 +144,6 @@ const SidebarAdmin = () => {
         p: 2,
       }}
     >
-      
-
       <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 2 }} />
 
       {/* Menu Items */}
@@ -167,7 +174,11 @@ const SidebarAdmin = () => {
 
             {/* Submenu */}
             {menu.submenu && (
-              <Collapse in={openMenus[menu.toggleKey]} timeout="auto" unmountOnExit>
+              <Collapse
+                in={openMenus[menu.toggleKey]}
+                timeout="auto"
+                unmountOnExit
+              >
                 <List component="div" disablePadding>
                   {menu.submenu.map((sub, subIdx) => (
                     <ListItem disablePadding key={subIdx}>
@@ -231,7 +242,10 @@ const SidebarAdmin = () => {
             </Typography>
             <IconButton
               onClick={() => setDrawerOpen(true)}
-              sx={{ color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
+              sx={{
+                color: "#fff",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -274,7 +288,7 @@ const SidebarAdmin = () => {
       {/* Logout Confirmation Dialog */}
       <Dialog
         open={logoutDialogOpen}
-        onClose={() => setLogoutDialogOpen(false)}
+        onClose={() => (loading ? null : setLogoutDialogOpen(false))}
       >
         <DialogTitle>{"Confirm Logout"}</DialogTitle>
         <DialogContent>
@@ -283,11 +297,23 @@ const SidebarAdmin = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit">
+          <Button
+            onClick={() => setLogoutDialogOpen(false)}
+            color="inherit"
+            disabled={loading} // disable when loading
+          >
             Cancel
           </Button>
-          <Button onClick={handleLogoutConfirm} color="error" variant="contained">
-            Logout
+          <Button
+            onClick={handleLogoutConfirm}
+            color="error"
+            variant="contained"
+            disabled={loading}
+            startIcon={
+              loading ? <CircularProgress size={18} color="inherit" /> : null
+            }
+          >
+            {loading ? "Logging out..." : "Logout"}
           </Button>
         </DialogActions>
       </Dialog>
