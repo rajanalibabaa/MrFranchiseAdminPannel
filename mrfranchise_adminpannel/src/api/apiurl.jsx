@@ -29,8 +29,10 @@ export const Api = {
     get:{
       user:{
         usersCount:`${BASE_URL}/userCount`,
-      }
+      },
+      instantApply :`${BASE_URL}/instantapply/getAllInstantApply`,
     },
+
     post : {
       login : {
         generateOTP : `${BASE_URL}/login/generateOTPforAdminLogin`,
