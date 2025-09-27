@@ -16,12 +16,13 @@ export const PostApiCall = async (url, token, body = {}) => {
   }
 };
 
-export const PostApiWithData = async(url,body) => {
+export const PostApiWithData = async(url,body,token) => {
 
     try {
         const res = await axios.post(url,body,{
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: token ? `Bearer ${token}` : "",
             }
         })
     

@@ -30,7 +30,11 @@ export const Api = {
       user:{
         usersCount:`${BASE_URL}/userCount`,
       },
-      instantApply :`${BASE_URL}/instantapply/getAllInstantApply`,
+      instantApply : {
+        data : `${BASE_URL}/instantapply/getAllInstantApply`,
+        dropdown : `${BASE_URL}/instantapply/getInstantApplyDropDownData`,
+        filterandsearch : `${BASE_URL}/instantapply/getInstantApplySearchData`,
+      }
     },
 
     post : {
