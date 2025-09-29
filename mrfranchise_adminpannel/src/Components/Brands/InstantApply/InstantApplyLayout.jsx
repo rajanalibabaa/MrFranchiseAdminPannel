@@ -15,7 +15,8 @@ import InstantApplyDialog from "../../../ui/InstantApplyUI/InstantApplyDialog";
 
 const InstantApplyLayout = () => {
   const { adminData } = useSelector((state) => state.admin);
-  const [instantApplyList, setInstantApplyList] = useState([]);
+
+  const [instantApplyList, setInstantApplyList] = useState([ ]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -39,19 +40,20 @@ const InstantApplyLayout = () => {
         if (adminData?.adminData?.uuid && adminData?.adminAccessToken) {
           const resdata = await GetApiCall(
             `${Api.admin.get.instantApply.data}/${adminData?.adminData?.uuid}`,
-            adminData?.adminAccessToken,
-            {}
+            adminData?.adminAccessToken
           );
 
           const dropdownres = await GetApiCall(
             `${Api.admin.get.instantApply.dropdown}/${adminData?.adminData?.uuid}`,
-            adminData?.adminAccessToken,
-            {}
+            adminData?.adminAccessToken
           );
 
-          setInstantApplyList(resdata.data?.data?.data || []);
+          console.log("Initial API Response:", resdata?.data);
 
-          if (dropdownres.data.success) {
+          const listData = resdata?.data?.data?.data;
+          setInstantApplyList(Array.isArray(listData) ? listData : []);
+
+          if (dropdownres?.data?.success) {
             const dropdownData = dropdownres.data.data || {};
             setCities(dropdownData.cities || []);
             setDistricts(dropdownData.districts || []);
@@ -74,17 +76,14 @@ const InstantApplyLayout = () => {
     setPage(0);
   };
 
-  const paginatedData = instantApplyList.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  // ✅ Always safeguard against non-arrays
+  const paginatedData = Array.isArray(instantApplyList)
+    ? instantApplyList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    : [];
 
   const handleChange = async (label, value, setter) => {
     try {
-      console.log(`${label}:`, value);
-
-      // Update local state first
-      setter(value);
+      setter(value); // update local state
 
       const payload = {
         searchTerm: label === "searchTerm" ? value : searchTerm,
@@ -100,12 +99,24 @@ const InstantApplyLayout = () => {
         { payload }
       );
 
-      console.log("Filter Response:", resdata.data);
-
       
-      if (resdata?.data?.success && resdata?.data?.data) {
-        setInstantApplyList(resdata.data.data);
-        setPage(0); 
+      const data = resdata?.data?.data
+      console.log("Filter/Search API Response:", data);
+      if (resdata?.data?.success && data) {
+        setInstantApplyList(Array.isArray(data?.data) ? data?.data : []);
+        setPage(0);
+      }
+      if (resdata?.data?.success && data?.districts?.length > 0) {
+        setDistricts(data?.districts)
+      }
+      if (resdata?.data?.success && data?.investmentRanges?.length > 0) {
+        setInvestmentRanges(data?.investmentRanges)
+      }
+      if (resdata?.data?.success && data?.states?.length > 0) {
+        setStates(data?.states)
+      }
+      if (resdata?.data?.success && data?.cities?.length > 0) {
+        setCities(data?.cities)
       }
     } catch (error) {
       console.error("Error in handleChange:", error);
@@ -144,7 +155,7 @@ const InstantApplyLayout = () => {
 
         <TablePagination
           component="div"
-          count={instantApplyList.length}
+          count={Array.isArray(instantApplyList) ? instantApplyList.length : 0}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}

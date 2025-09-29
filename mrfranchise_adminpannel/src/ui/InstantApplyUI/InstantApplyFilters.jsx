@@ -32,18 +32,22 @@ const InstantApplyFilters = ({
         sx={{ minWidth: 200 }}
       />
 
-      {/* City */}
-      {cities.length > 0 && (
+      
+
+      {/* State */}
+      {states.length > 0 && (
         <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>City</InputLabel>
+          <InputLabel>State</InputLabel>
           <Select
-            value={selectedCity}
-            onChange={(e) => handleChange("city", e.target.value, setSelectedCity)}
-            label="City"
+            value={selectedState}
+            onChange={(e) =>
+              handleChange("state", e.target.value, setSelectedState)
+            }
+            label="State"
           >
-            {cities.map((city, i) => (
-              <MenuItem key={i} value={city}>
-                {city}
+            {states.map((state, i) => (
+              <MenuItem key={i} value={state}>
+                {state}
               </MenuItem>
             ))}
           </Select>
@@ -70,6 +74,24 @@ const InstantApplyFilters = ({
         </FormControl>
       )}
 
+      {/* City */}
+      {cities.length > 0 && (
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>City</InputLabel>
+          <Select
+            value={selectedCity}
+            onChange={(e) => handleChange("city", e.target.value, setSelectedCity)}
+            label="City"
+          >
+            {cities.map((city, i) => (
+              <MenuItem key={i} value={city}>
+                {city}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+
       {/* Investment Range */}
       {investmentRanges.length > 0 && (
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -90,25 +112,7 @@ const InstantApplyFilters = ({
         </FormControl>
       )}
 
-      {/* State */}
-      {states.length > 0 && (
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>State</InputLabel>
-          <Select
-            value={selectedState}
-            onChange={(e) =>
-              handleChange("state", e.target.value, setSelectedState)
-            }
-            label="State"
-          >
-            {states.map((state, i) => (
-              <MenuItem key={i} value={state}>
-                {state}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
+      
     </Box>
   )
 }
