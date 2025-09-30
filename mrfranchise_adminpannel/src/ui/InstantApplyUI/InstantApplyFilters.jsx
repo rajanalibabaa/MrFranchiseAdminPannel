@@ -1,5 +1,17 @@
-import React from 'react'
-import { Box, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material'
+import React from "react";
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 const InstantApplyFilters = ({
   cities,
@@ -16,23 +28,35 @@ const InstantApplyFilters = ({
   setSelectedState,
   searchTerm,
   setSearchTerm,
-  handleChange
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate,
+  handleChange,
+  handleClear,
+  clearFilterloading,
 }) => {
-  
-
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 2,
+        mb: 2,
+        alignItems: "center",
+      }}
+    >
       {/* Search */}
       <TextField
         size="small"
         label="Search"
         variant="outlined"
         value={searchTerm}
-        onChange={(e) => handleChange("searchTerm", e.target.value, setSearchTerm)}
+        onChange={(e) =>
+          handleChange("searchTerm", e.target.value, setSearchTerm)
+        }
         sx={{ minWidth: 200 }}
       />
-
-      
 
       {/* State */}
       {states.length > 0 && (
@@ -80,7 +104,9 @@ const InstantApplyFilters = ({
           <InputLabel>City</InputLabel>
           <Select
             value={selectedCity}
-            onChange={(e) => handleChange("city", e.target.value, setSelectedCity)}
+            onChange={(e) =>
+              handleChange("city", e.target.value, setSelectedCity)
+            }
             label="City"
           >
             {cities.map((city, i) => (
@@ -112,9 +138,46 @@ const InstantApplyFilters = ({
         </FormControl>
       )}
 
-      
-    </Box>
-  )
-}
+      {/* Date Filters */}
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DatePicker
+          label="From Date"
+          value={fromDate ? dayjs(fromDate) : null}
+          onChange={(newDate) =>
+            handleChange(
+              "fromDate",
+              newDate ? dayjs(newDate).format("YYYY-MM-DD") : "",
+              setFromDate
+            )
+          }
+          slotProps={{ textField: { size: "small", sx: { minWidth: 160 } } }}
+        />
+        <DatePicker
+          label="To Date"
+          value={toDate ? dayjs(toDate) : null}
+          onChange={(newDate) =>
+            handleChange(
+              "toDate",
+              newDate ? dayjs(newDate).format("YYYY-MM-DD") : "",
+              setToDate
+            )
+          }
+          slotProps={{ textField: { size: "small", sx: { minWidth: 160 } } }}
+        />
+      </LocalizationProvider>
 
-export default InstantApplyFilters
+      {/* Clear Button */}
+      <Button
+        variant="outlined"
+        color="secondary"
+        size="small"
+        onClick={handleClear}
+        sx={{ minWidth: 100 }}
+      >
+        {clearFilterloading ? "loading..." : "Clear"}
+      </Button>
+    </Box>
+  );
+};
+
+export default InstantApplyFilters;

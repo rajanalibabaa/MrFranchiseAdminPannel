@@ -12,14 +12,15 @@ import {
 import InstantApplyFilters from "../../../ui/InstantApplyUI/InstantApplyFilters";
 import InstantApplyTable from "../../../ui/InstantApplyUI/InstantApplyTable";
 import InstantApplyDialog from "../../../ui/InstantApplyUI/InstantApplyDialog";
+import dayjs from "dayjs";
 
 const InstantApplyLayout = () => {
   const { adminData } = useSelector((state) => state.admin);
 
-  const [instantApplyList, setInstantApplyList] = useState([ ]);
+  const [instantApplyList, setInstantApplyList] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [limit, setlimit] = useState(10);
 
   // Dropdown arrays
   const [cities, setCities] = useState([]);
@@ -33,11 +34,21 @@ const InstantApplyLayout = () => {
   const [selectedRange, setSelectedRange] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [toDate, setToDate] = useState(null);
+  const [fromDate, setFromDate] = useState(null);
+  const [clearFilter, setclearFilter] = useState(true);
+  const [clearFilterloading, setclearFilterloading] = useState(false);
 
   useEffect(() => {
     const fetchInstantApply = async () => {
       try {
-        if (adminData?.adminData?.uuid && adminData?.adminAccessToken) {
+        if (
+          adminData?.adminData?.uuid &&
+          adminData?.adminAccessToken &&
+          clearFilter
+        ) {
+          setclearFilter(false);
+
           const resdata = await GetApiCall(
             `${Api.admin.get.instantApply.data}/${adminData?.adminData?.uuid}`,
             adminData?.adminAccessToken
@@ -48,7 +59,7 @@ const InstantApplyLayout = () => {
             adminData?.adminAccessToken
           );
 
-          console.log("Initial API Response:", resdata?.data);
+          // console.log("Initial API Response:", resdata?.data);
 
           const listData = resdata?.data?.data?.data;
           setInstantApplyList(Array.isArray(listData) ? listData : []);
@@ -59,6 +70,7 @@ const InstantApplyLayout = () => {
             setDistricts(dropdownData.districts || []);
             setInvestmentRanges(dropdownData.investmentRanges || []);
             setStates(dropdownData.states || []);
+            setclearFilterloading(false);
           }
         }
       } catch (error) {
@@ -67,60 +79,99 @@ const InstantApplyLayout = () => {
     };
 
     fetchInstantApply();
-  }, [adminData]);
+  }, [adminData, clearFilter]);
 
-  const handleChangePage = (event, newPage) => setPage(newPage);
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
 
-  // ✅ Always safeguard against non-arrays
-  const paginatedData = Array.isArray(instantApplyList)
-    ? instantApplyList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-    : [];
 
   const handleChange = async (label, value, setter) => {
     try {
       setter(value); // update local state
 
-      const payload = {
-        searchTerm: label === "searchTerm" ? value : searchTerm,
+      let payload = {
         city: label === "city" ? value : selectedCity,
         district: label === "district" ? value : selectedDistrict,
         state: label === "state" ? value : selectedState,
         investmentRange: label === "investmentRange" ? value : selectedRange,
       };
 
-      const resdata = await PostApiCall(
-        `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-        adminData?.adminAccessToken,
-        { payload }
-      );
+      let resdata;
 
-      
-      const data = resdata?.data?.data
+      if (label === "searchTerm") {
+        payload = {
+          searchTerm: label === "searchTerm" ? value : searchTerm,
+        };
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      } else if (label === "fromDate" || label === "toDate") {
+        setSearchTerm("");
+        payload = {
+          fromDate:
+            label === "fromDate"
+              ? dayjs(value).format("YYYY-MM-DD")
+              : fromDate
+              ? dayjs(fromDate).format("YYYY-MM-DD")
+              : null,
+
+          toDate:
+            label === "toDate"
+              ? dayjs(value).format("YYYY-MM-DD")
+              : toDate
+              ? dayjs(toDate).format("YYYY-MM-DD")
+              : null,
+        };
+        // console.log(payload)
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      } else {
+        setSearchTerm("");
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      }
+
+      const data = resdata?.data?.data;
       console.log("Filter/Search API Response:", data);
       if (resdata?.data?.success && data) {
         setInstantApplyList(Array.isArray(data?.data) ? data?.data : []);
         setPage(0);
       }
       if (resdata?.data?.success && data?.districts?.length > 0) {
-        setDistricts(data?.districts)
+        setDistricts(data?.districts);
       }
       if (resdata?.data?.success && data?.investmentRanges?.length > 0) {
-        setInvestmentRanges(data?.investmentRanges)
+        setInvestmentRanges(data?.investmentRanges);
       }
       if (resdata?.data?.success && data?.states?.length > 0) {
-        setStates(data?.states)
+        setStates(data?.states);
       }
       if (resdata?.data?.success && data?.cities?.length > 0) {
-        setCities(data?.cities)
+        setCities(data?.cities);
       }
     } catch (error) {
       console.error("Error in handleChange:", error);
     }
+  };
+
+  const handleClear = async () => {
+    setSelectedCity("");
+    setSelectedDistrict("");
+    setSelectedRange("");
+    setSelectedState("");
+    setSearchTerm("");
+    setFromDate(null);
+    setToDate(null);
+    setclearFilterloading(true);
+
+    setclearFilter(true);
   };
 
   return (
@@ -146,22 +197,20 @@ const InstantApplyLayout = () => {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           handleChange={handleChange}
+          fromDate={fromDate}
+          setFromDate={setFromDate}
+          setToDate={setToDate}
+          toDate={toDate}
+          handleClear={handleClear}
+          clearFilterloading={clearFilterloading}
         />
 
         <InstantApplyTable
-          paginatedData={paginatedData}
+          instantApplyList={instantApplyList}
           setSelectedItem={setSelectedItem}
         />
 
-        <TablePagination
-          component="div"
-          count={Array.isArray(instantApplyList) ? instantApplyList.length : 0}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25]}
-        />
+
       </TableContainer>
 
       <InstantApplyDialog
