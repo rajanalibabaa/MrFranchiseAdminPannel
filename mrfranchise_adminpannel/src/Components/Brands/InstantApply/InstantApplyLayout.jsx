@@ -21,6 +21,7 @@ const InstantApplyLayout = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [page, setPage] = useState(0);
   const [limit, setlimit] = useState(10);
+  const [totalPages, settotalPages] = useState(0);
 
   // Dropdown arrays
   const [cities, setCities] = useState([]);
@@ -59,7 +60,7 @@ const InstantApplyLayout = () => {
             adminData?.adminAccessToken
           );
 
-          // console.log("Initial API Response:", resdata?.data);
+          console.log("Initial API Response:", resdata?.data);
 
           const listData = resdata?.data?.data?.data;
           setInstantApplyList(Array.isArray(listData) ? listData : []);
@@ -71,6 +72,19 @@ const InstantApplyLayout = () => {
             setInvestmentRanges(dropdownData.investmentRanges || []);
             setStates(dropdownData.states || []);
             setclearFilterloading(false);
+            setPage(
+              (resdata?.data?.data?.pagination?.page ||
+                resdata?.data?.data?.pagination?.currentPage ||
+                1) + 1
+            );
+            settotalPages(
+              resdata?.data?.data?.pagination?.totalPages ||
+                resdata?.data?.data?.pagination?.total
+            );
+            setlimit(
+              resdata?.data?.data?.pagination?.limit ||
+                resdata?.data?.data?.pagination?.limit
+            );
           }
         }
       } catch (error) {
@@ -80,9 +94,6 @@ const InstantApplyLayout = () => {
 
     fetchInstantApply();
   }, [adminData, clearFilter]);
-
-
-
 
   const handleChange = async (label, value, setter) => {
     try {
@@ -142,7 +153,19 @@ const InstantApplyLayout = () => {
       console.log("Filter/Search API Response:", data);
       if (resdata?.data?.success && data) {
         setInstantApplyList(Array.isArray(data?.data) ? data?.data : []);
-        setPage(0);
+        setPage(
+          (resdata?.data?.data?.pagination?.page ||
+            resdata?.data?.data?.pagination?.currentPage ||
+            1) + 1
+        );
+        settotalPages(
+          resdata?.data?.data?.pagination?.totalPages ||
+            resdata?.data?.data?.pagination?.total
+        );
+        setlimit(
+          resdata?.data?.data?.pagination?.limit ||
+            resdata?.data?.data?.pagination?.limit
+        );
       }
       if (resdata?.data?.success && data?.districts?.length > 0) {
         setDistricts(data?.districts);
@@ -172,6 +195,79 @@ const InstantApplyLayout = () => {
     setclearFilterloading(true);
 
     setclearFilter(true);
+  };
+
+  const handlePagination = async () => {
+    try {
+      let payload = {
+        city: selectedCity,
+        district: selectedDistrict,
+        state: selectedState,
+        investmentRange: selectedRange,
+        page: page,
+      };
+  
+      let resdata;
+  
+      if (searchTerm) {
+        payload = {
+          searchTerm: searchTerm,
+          page: page,
+        };
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      } else if (fromDate || toDate) {
+        payload = {
+          fromDate: dayjs(fromDate).format("YYYY-MM-DD"),
+          toDate: dayjs(toDate).format("YYYY-MM-DD"),
+          page: page,
+        };
+  
+        console.log(payload);
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      } else {
+        payload = {
+          page: page,
+        };
+        setSearchTerm("");
+        resdata = await PostApiCall(
+          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
+          adminData?.adminAccessToken,
+          { payload }
+        );
+      }
+  
+      const data = resdata?.data?.data;
+      console.log("Filter/Search API Response:", resdata?.data);
+      if (resdata?.data?.success && data) {
+        setInstantApplyList([
+          ...instantApplyList,
+          ...(Array.isArray(data?.data) ? data?.data : []),
+        ]);
+        setPage(
+          (resdata?.data?.data?.pagination?.page ||
+            resdata?.data?.data?.pagination?.currentPage ||
+            1) + 1
+        );
+        settotalPages(
+          resdata?.data?.data?.pagination?.totalPages ||
+            resdata?.data?.data?.pagination?.total
+        );
+        setlimit(
+          resdata?.data?.data?.pagination?.limit ||
+            resdata?.data?.data?.pagination?.limit
+        );
+      }
+    } catch (error) {
+      console.log("error in pagination",error)
+    } 
   };
 
   return (
@@ -208,9 +304,10 @@ const InstantApplyLayout = () => {
         <InstantApplyTable
           instantApplyList={instantApplyList}
           setSelectedItem={setSelectedItem}
+          page={page}
+          setPage={setPage}
+          handlePagination={handlePagination}
         />
-
-
       </TableContainer>
 
       <InstantApplyDialog

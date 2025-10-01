@@ -1,4 +1,3 @@
-import React, { useCallback, useRef } from "react";
 import {
   Table,
   TableHead,
@@ -10,36 +9,52 @@ import {
   TableContainer,
   Paper,
 } from "@mui/material";
+import { useCallback, useRef, useEffect } from "react"; // Import necessary hooks
 
 const InstantApplyTable = ({
   instantApplyList,
   setSelectedItem,
-  loadMore,
-  hasMore,
-  loading,
+  handlePagination
 }) => {
-  const observer = useRef();
+  
+  
+  const tableContainerRef = useRef(null);
 
-  const lastRowRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          console.log("Last row reached, loading more...");
-          loadMore();
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore, loadMore]
-  );
+  const handleScroll = useCallback(async() => {
+    const container = tableContainerRef.current;
+
+    if (container) {
+      const { scrollHeight, scrollTop, clientHeight } = container;
+
+      
+      if (scrollHeight - scrollTop - clientHeight < 1) {
+        const lastIndex = instantApplyList.length - 1;
+        
+        console.log("Reached the last index:", lastIndex);
+        handlePagination()
+
+      }
+    }
+  }, [instantApplyList,handlePagination]); 
+  
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      
+      return () => {
+        container.removeEventListener("scroll", handleScroll);
+      };
+    }
+  }, [handleScroll]);
 
   return (
+    // Attach the ref to the TableContainer
     <TableContainer
+      ref={tableContainerRef}
       component={Paper}
       sx={{
-        maxHeight: 400, // adjust height as needed
+        maxHeight: 400,
         overflowY: "auto",
       }}
     >
@@ -56,25 +71,21 @@ const InstantApplyTable = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {instantApplyList?.map((item, index) => {
-            const isLast = index === instantApplyList.length - 1;
+          {Array.isArray(instantApplyList) && instantApplyList?.map((item, index) => {
             return (
-              <TableRow
-                key={item.uuid}
-                ref={isLast ? lastRowRef : null} // attach only to last row
-              >
+              <TableRow key={item?.uuid}>
                 <TableCell>
                   <Avatar
-                    src={item.brandLogo}
-                    alt={item.brandName}
+                    src={item?.brandLogo}
+                    alt={item?.brandName}
                     sx={{ width: 56, height: 56 }}
                   />
                 </TableCell>
-                <TableCell>{item.brandName}</TableCell>
-                <TableCell>{item.fullName}</TableCell>
-                <TableCell>{item.email}</TableCell>
-                <TableCell>{item.mobileNumber}</TableCell>
-                <TableCell>{item.investmentRange}</TableCell>
+                <TableCell>{item?.brandName}</TableCell>
+                <TableCell>{item?.fullName}</TableCell>
+                <TableCell>{item?.email}</TableCell>
+                <TableCell>{item?.mobileNumber}</TableCell>
+                <TableCell>{item?.investmentRange}</TableCell>
                 <TableCell>
                   <Button
                     variant="outlined"
