@@ -674,16 +674,12 @@ export const categories = [
     children: [
       {
         groupId:"A",
-        name: "Hotels",
+        name: "Hotels & Resorts",
         children: ["Hotel Booking Services", "Hotels & Resorts"],
       },
+      
       {
         groupId:"B",
-        name: "Resorts",
-        children: ["Hotel Booking Services", "Hotels & Resorts"],
-      },
-      {
-        groupId:"C",
         name: "Travel & Tourism",
         children: [
           "Adventure Tourism",
@@ -698,7 +694,7 @@ export const categories = [
         ],
       },
       {
-        groupId:"D",
+        groupId:"C",
         name: "Travel Agents",
         children: ["Travel Agents", "Travel Booking Services"],
       },
