@@ -34,11 +34,8 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import categories from "./BrandCategories";
-
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Info, InfoOutlined, InfoOutlineRounded } from "@mui/icons-material";
-
-
 const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
   // Define fee unit options
   const royaltyFeeUnits = [
@@ -48,14 +45,12 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     { value: "Lakhs", label: "Lakhs" },
     { value: "No Fee", label: "No Fee" },
   ];
-
   const otherFeeUnits = [
     { value: "select", label: "Select" },
     { value: "Thousands", label: "Thousands" },
     { value: "Lakhs", label: "Lakhs" },
     { value: "No Fee", label: "No Fee" },
   ];
-
   const [currentFicoModel, setCurrentFicoModel] = React.useState({
     investmentRange: "",
     areaRequired: "",
@@ -79,7 +74,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     marginOnSales: "",
     agreementPeriod: "",
   });
-
   const [noFees, setNoFees] = useState({
     franchiseFee: false,
     interiorCost: false,
@@ -89,13 +83,10 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     royaltyFee: false,
     roi: false,
   });
-
   const [savedFicoModels, setSavedFicoModels] = React.useState([]);
   const [currentUSP, setCurrentUSP] = useState("");
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "companyOwnedOutlets" || name === "franchiseOutlets") {
       const companyOwned =
         name === "companyOwnedOutlets"
@@ -106,7 +97,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           ? parseInt(value || 0)
           : parseInt(data.franchiseOutlets || 0);
       const total = companyOwned + franchise;
-
       onChange({
         [name]: value,
         totalOutlets: total.toString(),
@@ -115,21 +105,17 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       onChange({ [name]: value });
     }
   };
-
   const handleFicoChange = (e) => {
     const { name, value } = e.target;
-
     // Skip update if the field is in "No Fee" mode
     if (noFees[name]) {
       return;
     }
-
     setCurrentFicoModel((prev) => {
       const updated = {
         ...prev,
         [name]: value,
       };
-
       // If ROI is being changed, calculate Payback Period
       if (name === "roi" && !noFees.roi) {
         const roi = parseFloat(value);
@@ -144,21 +130,17 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           updated.payBackPeriod = "";
         }
       }
-
       return updated;
     });
   };
-
   const handleFeeUnitChange = (field) => (e) => {
     const { value } = e.target;
-
     if (value === "No Fee") {
       // Set the field to "No Fee" and disable it
       setNoFees((prev) => ({
         ...prev,
         [field]: true,
       }));
-
       setCurrentFicoModel((prev) => ({
         ...prev,
         [field]: "No Fee",
@@ -170,7 +152,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         ...prev,
         [field]: false,
       }));
-
       setCurrentFicoModel((prev) => ({
         ...prev,
         [field]: "",
@@ -182,32 +163,26 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         ...prev,
         [field]: false,
       }));
-
       setCurrentFicoModel((prev) => ({
         ...prev,
         [`${field}Unit`]: value,
       }));
     }
   };
-
   const handleNoFeeToggle = (field) => (event) => {
     const checked = event.target.checked;
-
     // Update the noFees state
     setNoFees((prev) => ({
       ...prev,
       [field]: checked,
     }));
-
     // Update the currentFicoModel state
     setCurrentFicoModel((prev) => {
       const newValue = checked ? "No Fee" : "";
       const newUnit = checked ? "No Fee" : "select";
-
       // Calculate payback period if ROI is being affected
       if (field === "roi") {
         let payBackPeriod = "";
-
         if (!checked && newValue && !isNaN(parseFloat(newValue))) {
           const roiValue = parseFloat(newValue);
           if (roiValue > 0) {
@@ -219,7 +194,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             } ${months} Month${months !== 1 ? "s" : ""}`;
           }
         }
-
         return {
           ...prev,
           [field]: newValue,
@@ -227,7 +201,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           payBackPeriod: payBackPeriod,
         };
       }
-
       return {
         ...prev,
         [field]: newValue,
@@ -235,7 +208,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       };
     });
   };
-
   const handleAddFicoModel = () => {
     // Validate the model before adding
     const requiredFields = [
@@ -247,7 +219,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       "breakEven",
       "marginOnSales",
     ];
-
     // Check required non-fee fields
     for (const field of requiredFields) {
       if (!currentFicoModel[field]) {
@@ -257,7 +228,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         return;
       }
     }
-
     // Check fee units are selected (not "select")
     const feeUnitsToCheck = [
       "franchiseFeeUnit",
@@ -267,7 +237,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       "otherCostUnit",
       "requireWorkingCapitalUnit",
     ];
-
     for (const unit of feeUnitsToCheck) {
       const fieldName = unit.replace("Unit", "");
       if (currentFicoModel[unit] === "select" && !noFees[fieldName]) {
@@ -276,7 +245,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         return;
       }
     }
-
     // Check fee fields have values if not marked as "No Fee"
     const feeFields = [
       "franchiseFee",
@@ -288,7 +256,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       "roi",
       "payBackPeriod",
     ];
-
     for (const field of feeFields) {
       if (
         !currentFicoModel[field] &&
@@ -303,7 +270,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         return;
       }
     }
-
     const formattedFicoModel = {
       ...currentFicoModel,
       franchiseFee: noFees.franchiseFee
@@ -351,11 +317,9 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       roi: noFees.roi ? "No Fee" : currentFicoModel.roi,
       payBackPeriod: noFees.roi ? "No Fee" : currentFicoModel.payBackPeriod,
     };
-
     const updatedFico = [...(data.fico || []), formattedFicoModel];
     onChange({ fico: updatedFico });
     setSavedFicoModels(updatedFico);
-
     // Reset the form
     setCurrentFicoModel({
       investmentRange: "",
@@ -390,14 +354,12 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       roi: false,
     });
   };
-
   const handleDeleteFicoModel = (index) => {
     const updatedFico = [...(data.fico || [])];
     updatedFico.splice(index, 1);
     onChange({ fico: updatedFico });
     setSavedFicoModels(updatedFico);
   };
-
   const franchiseTypes = [
     "Single Unit",
     "Multi Unit ",
@@ -407,7 +369,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     "District Franchise",
     "State Franchise",
   ];
-
   const franchiseModels = [
     "FOFO ",
     "FOCO ",
@@ -417,7 +378,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     "SHOP IN SHOP",
     "CLOUD KITCHEN",
   ];
-
   const investmentRanges = [
     { label: "Below ₹50K", value: "Below - 50k" },
     { label: "₹50K - ₹2 Lakhs", value: "Rs. 50k - 2 Lakhs" },
@@ -431,9 +391,7 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     { label: "₹2 - ₹5 Crores", value: "Rs. 2 Crores - 5 Crores" },
     { label: "Above ₹5 Crores", value: "Rs. 5 Crores - above" },
   ];
-
   const aidFinancing = ["Yes", "No"];
-
   const agreementPeriods = [
     "1 Year",
     "3 Years",
@@ -441,87 +399,83 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     "7 Years",
     "10 Years",
   ];
-
   const [selectedCategory, setSelectedCategory] = useState({
     groupId: data.brandCategories?.groupId || "",
     main: data.brandCategories?.main || "",
     sub: data.brandCategories?.sub || "",
-    child: data.brandCategories?.child || "",
+    child: data.brandCategories?.child
+      ? (Array.isArray(data.brandCategories.child)
+          ? data.brandCategories.child
+          : data.brandCategories.child.split(" - ").filter(Boolean))
+      : [],
   });
-
   const handleMainCategoryChange = (e) => {
     const mainCategory = e.target.value;
     const newCategory = {
       groupId: "",
       main: mainCategory,
       sub: "",
-      child: "",
+      child: [],
     };
-
     setSelectedCategory(newCategory);
     onChange({ brandCategories: newCategory });
   };
-
   const handleSubCategoryChange = (e) => {
     const subCategory = e.target.value;
     const group = categories
       .find((cat) => cat.name === selectedCategory.main)
       ?.children?.find((sub) => sub.name === subCategory);
-
     const newCategory = {
       groupId: group?.groupId || "",
       main: selectedCategory.main,
       sub: subCategory,
-      child: "",
+      child: [],
     };
-
     setSelectedCategory(newCategory);
     onChange({ brandCategories: newCategory });
   };
-
   const handleChildCategoryChange = (e) => {
-    const childCategory = e.target.value;
+    const {
+      target: { value },
+    } = e;
+    const newChild = typeof value === "string" ? value.split(" - ") : value;
     const newCategory = {
       ...selectedCategory,
-      child: childCategory,
+      child: newChild,
     };
-
     setSelectedCategory(newCategory);
-    onChange({ brandCategories: newCategory });
+    // Send as string to backend
+    const toSend = {
+      ...newCategory,
+      child: newChild.join(" - "),
+    };
+    onChange({ brandCategories: toSend });
   };
-
   const handleDescriptionChange = (content) => {
     onChange({ brandDescription: content });
   };
-
   const handleAddUSP = () => {
     const trimmedUSP = currentUSP.trim();
     if (!trimmedUSP) return;
-
     const existingUSPs = (data.uniqueSellingPoints || []).map((usp) =>
       usp.toLowerCase().trim()
     );
-
     if (existingUSPs.includes(trimmedUSP.toLowerCase())) {
       return;
     }
-
     const updatedUSPs = [...(data.uniqueSellingPoints || []), trimmedUSP];
     onChange({ uniqueSellingPoints: updatedUSPs });
     setCurrentUSP("");
   };
-
   const handleRemoveUSP = (index) => {
     const updatedUSPs = [...(data.uniqueSellingPoints || [])];
     updatedUSPs.splice(index, 1);
     onChange({ uniqueSellingPoints: updatedUSPs });
   };
-
   const formatCurrency = (value) => {
     if (!value) return "";
     return value !== "No Fee" ? `${value}.Rs` : value;
   };
-
   return (
     // <Box sx={{ pr: 1, mr: { sm: 0, md: 25 }, ml: { sm: 0, md: 25 } }}>
     <Box sx={{ pr: 1, mr: { sm: 0, md: 10 }, ml: { sm: 0, md: 10 } }}>
@@ -533,7 +487,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       >
         Brand Categories
       </Typography>
-
       <Grid
         container
         spacing={2}
@@ -565,7 +518,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         <Grid item xs={12} sm={4}>
           <FormControl fullWidth size="medium">
             <InputLabel>Main Category</InputLabel>
@@ -589,23 +541,33 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         <Grid item xs={12} sm={4}>
           <FormControl fullWidth size="medium">
             <InputLabel>Sub Category</InputLabel>
             <Select
-              value={selectedCategory.child || ""}
+              multiple
+              value={selectedCategory.child || []}
               label="Sub Category"
               onChange={handleChildCategoryChange}
               error={!!errors.childCategory}
+              renderValue={(selected) =>
+                selected.length > 0
+                  ? selected.join(" - ")
+                  : "Select sub categories"
+              }
             >
               {selectedCategory.sub &&
                 categories
                   .find((cat) => cat.name === selectedCategory.main)
                   ?.children?.find((sub) => sub.name === selectedCategory.sub)
-                  ?.children?.map((child, index) => (
-                    <MenuItem key={index} value={child}>
-                      {child}
+                  ?.children?.map((child) => (
+                    <MenuItem key={child} value={child}>
+                      <Checkbox
+                        checked={
+                          selectedCategory.child.indexOf(child) > -1
+                        }
+                      />
+                      <ListItemText primary={child} />
                     </MenuItem>
                   ))}
             </Select>
@@ -615,7 +577,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           </FormControl>
         </Grid>
       </Grid>
-
       <Typography
         variant="h6"
         fontWeight={700}
@@ -623,7 +584,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       >
         Establishment & Franchise year Details
       </Typography>
-
       <Grid
         container
         spacing={2}
@@ -703,7 +663,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           />
         </Grid>
-
         <Grid item xs={12} sm={6} md={2.4}>
           <Autocomplete
             freeSolo
@@ -778,12 +737,10 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           />
         </Grid>
       </Grid>
-
       {/* Franchise Network */}
       <Typography variant="h6" fontWeight={700} sx={{ color: "#ff9800" }}>
         Franchise Network
       </Typography>
-
       <Grid
         container
         spacing={2}
@@ -808,7 +765,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             required
           />
         </Grid>
-
         <Grid item xs={12} sm={6} md={2.4}>
           <TextField
             fullWidth
@@ -824,7 +780,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             required
           />
         </Grid>
-
         <Grid item xs={12} sm={6} md={2.4}>
           <TextField
             fullWidth
@@ -840,7 +795,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           />
         </Grid>
       </Grid>
-
       {/* Franchise Details Section */}
       <Typography
         variant="h6"
@@ -849,13 +803,11 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       >
         Franchise Business Models
       </Typography>
-
       {errors.fico && typeof errors.fico === "string" && (
         <Typography color="error" sx={{ mb: 2 }}>
           {errors.fico}
         </Typography>
       )}
-
       {/* Current FICO Model Form */}
       <Grid
         container
@@ -894,7 +846,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 2 - Franchise Type */}
         <Grid item>
           <FormControl
@@ -921,7 +872,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 3 - Investment Range */}
         <Grid item>
           <FormControl
@@ -948,7 +898,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 4 - Area Required */}
         <Grid item>
           <FormControl
@@ -997,7 +946,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 5 agreementPeriod */}
         <Grid item>
           <FormControl
@@ -1053,7 +1001,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 6 - Franchise Fee */}
         <Grid item>
           <FormControl fullWidth>
@@ -1097,7 +1044,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 7 - Interior Cost */}
         <Grid item>
           <FormControl fullWidth>
@@ -1141,7 +1087,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 8 - Stock Investment */}
         <Grid item>
           <FormControl fullWidth>
@@ -1185,7 +1130,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 9 - Other Cost */}
         <Grid item>
           <FormControl fullWidth>
@@ -1229,7 +1173,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 10 - Required Investment Capital */}
         <Grid item>
           <FormControl fullWidth>
@@ -1273,7 +1216,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 11 - Royalty Fee */}
         <Grid item>
           <FormControl fullWidth>
@@ -1317,7 +1259,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             />
           </FormControl>
         </Grid>
-
         {/* Column 12 - Break Even */}
         <Grid item>
           <FormControl
@@ -1346,7 +1287,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             )}
           </FormControl>
         </Grid>
-
         {/* Column 13 - ROI */}
         <Grid item>
           <FormControl fullWidth size="medium" required error={!!errors.roi}>
@@ -1391,7 +1331,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             {errors.roi && <FormHelperText error>{errors.roi}</FormHelperText>}
           </FormControl>
         </Grid>
-
         {/* Column 14 - PayBack Period */}
         <Grid item>
           <TextField
@@ -1410,7 +1349,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             disabled={noFees.roi}
           />
         </Grid>
-
         <Grid item>
           <FormControl
             fullWidth
@@ -1461,7 +1399,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           </FormControl>
         </Grid>
       </Grid>
-
       {/* Add Button */}
       <Grid
         item
@@ -1483,18 +1420,15 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           {data.fico?.length > 0 ? "Add more Models" : "Add Models"}
         </Button>
       </Grid>
-
       {data.fico?.length > 0 && (
         <Box sx={{ mt: 4 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Saved Franchise Models
           </Typography>
-
           <Box sx={{ mt: 4 }}>
             <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
               Saved Franchise Models
             </Typography>
-
             <Box sx={{ width: "100%", overflowX: "auto", margin: "0 auto" }}>
               <TableContainer sx={{ maxHeight: 600 }}>
                 <Table
@@ -1542,7 +1476,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
                       ))}
                     </TableRow>
                   </TableHead>
-
                   <TableBody>
                     {data.fico?.map((model, index) => (
                       <TableRow
@@ -1601,7 +1534,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           </Box>
         </Box>
       )}
-
       <Divider
         sx={{
           my: 2,
@@ -1610,13 +1542,11 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           height: "1px",
         }}
       />
-
       {/* Support and Training Section */}
       <Grid item xs={12}>
         <Typography variant="h6" color="#ff9800" sx={{ fontWeight: "bold" }}>
           Support and Training
         </Typography>
-
         <Grid gap={1} item xs={12}>
           {/* Financial Operating Procedure */}
           <Grid item xs={12}>
@@ -1674,7 +1604,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
               </FormHelperText>
             )}
           </Grid>
-
           <Grid item xs={12}>
             <FormControl
               component="fieldset"
@@ -1734,7 +1663,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
               </FormHelperText>
             )}
           </Grid>
-
           <Grid item xs={12}>
             <FormControl
               component="fieldset"
@@ -1798,7 +1726,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
               </FormHelperText>
             )}
           </Grid>
-
           {/* Training Support - Checkbox Group */}
           <Grid item xs={12}>
             <FormControl
@@ -1828,7 +1755,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
                   Training Support Provider:
                 </FormLabel>
               </Box>
-
               <FormGroup
                 sx={{ ml: { md: 5 }, display: "flex", flexDirection: "row" }}
               >
@@ -1878,7 +1804,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           </Grid>
         </Grid>
       </Grid>
-
       <Grid item xs={12}>
         <Typography
           variant="h6"
@@ -1887,7 +1812,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         >
           Brand Description
         </Typography>
-
         <Grid item xs={12}>
           <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
             Unique Selling Points (USP):
@@ -1923,7 +1847,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
                 </Typography>
               )}
           </Typography>
-
           {/* USP Input and Add Button */}
           <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
             <TextField
@@ -1961,7 +1884,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
               Add
             </Button>
           </Box>
-
           {/* Display added USPs */}
           {data.uniqueSellingPoints?.length > 0 && (
             <Paper sx={{ p: 2, mb: 3, border: "1px solid #e0e0e0" }}>
@@ -2008,7 +1930,6 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
             </Paper>
           )}
         </Grid>
-
         <Box sx={{ mt: 2, mb: 4 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
             Brand Description:
@@ -2034,5 +1955,4 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     </Box>
   );
 };
-
 export default FranchiseDetails;
