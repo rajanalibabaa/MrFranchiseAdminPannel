@@ -12,7 +12,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Lock } from "@mui/icons-material";
-import InvestorImage from "../assets/Images/LoginRightContent.jpg";
+import InvestorImage from "../assets/Images/logo.png";
 import Logo from "../assets/Images/logo.png";
 import { useNavigate } from "react-router-dom";
 import { PostApiWithData } from "../api/default/PostApi";
@@ -133,7 +133,8 @@ const AdminLogin = () => {
           padding: 4,
           position: "relative",
           backgroundImage: `url(${InvestorImage})`,
-          backgroundSize: "cover",
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           "&::before": {
             content: '""',
@@ -243,7 +244,7 @@ const AdminLogin = () => {
                 fullWidth
                 variant="contained"
                 onClick={handleSendOTP}
-                sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
+                sx={{ mt: 3, py: 1.5, borderRadius: 2 ,backgroundColor:"#7ad03a",}}
               >
                 {loading ? "Loading..." : "Send Verification Code"}
               </Button>
