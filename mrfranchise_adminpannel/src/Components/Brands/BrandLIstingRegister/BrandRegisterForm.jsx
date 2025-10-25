@@ -317,7 +317,7 @@ const BrandRegisterForm = () => {
 
   const handleHomeClick = () => {
     dispatch(showLoading());
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const handleSubmit = async () => {
@@ -419,7 +419,7 @@ const BrandRegisterForm = () => {
         });
 console.log("Form data prepared for submission:", formDataSend);
         const response = await axios.post(
-          "https://mrfranchisebackend.mrfranchise.in/api/v1/brandlisting/createBrandListing",
+          "http://localhost:5000/api/v1/brandlisting/createBrandListing",
           formDataSend,
           {
             headers: {

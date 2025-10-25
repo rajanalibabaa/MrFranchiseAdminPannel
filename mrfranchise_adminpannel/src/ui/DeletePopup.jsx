@@ -31,7 +31,7 @@ const DeletePopup = ({ open, onClose, brands, newIncomingDeleteId, selectedBrand
          
           
           // Proceed with deletion
-          const deleteUrl = `https://mrfranchisebackend.mrfranchise.in/api/deleteBrandListingByUUID/${selectedBrandId}`;
+          const deleteUrl = `http://localhost:5000/api/deleteBrandListingByUUID/${selectedBrandId}`;
           const response = await axios.delete(deleteUrl);
           
           console.log("Delete response:", response.data);
