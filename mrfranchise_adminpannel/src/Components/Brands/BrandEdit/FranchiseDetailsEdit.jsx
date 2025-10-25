@@ -129,6 +129,93 @@ const FranchiseDetailsEdit = ({
     { label: "₹2 - ₹5 Crores", value: "Rs. 2 Crore - 5 Crores" },
     { label: "Above ₹5 Crores", value: "Rs. 5 Crores - above" },
   ];
+
+  const PrimaryClassifications = ["Pure Vegetarian","Pure Non-Vegetarian","Pure Vegan","Eggless","Jain Food","Mixed (Veg & Non-Veg)","Plant-Based","Organic","Gluten-Free","Dairy-Free","Nut-Free","Low-Carb","Keto-Friendly","Paleo-Friendly","Low-Calorie","High-Protein","Diabetic-Friendly","Halal","Kosher"]
+const TargetAudience=["Family-Friendly","Kids Menu","Senior Citizen Discount","Student Discount","Women Only (e.g., women-only cafes)","Men Only (e.g., men-only bars)","Unisex","All Age Groups"]
+const ServiceModel=["Dine-In","Takeaway","Home Delivery","Drive-Thru","Buffet","Self-Service","Counter Service","Table Service","Food Truck","Kiosk","Cloud Kitchen"]
+const PricingValue=["Budget","Affordable","Mid-Range","Premium","Luxury","Value for Money",]
+const AmbienceExperience=["Casual Dining","Fine Dining","Quick Bite","Romantic","Family","Business Meetings","Party Venue","Themed Restaurant","Outdoor Seating","Rooftop","Garden","Beachfront"]
+const FeaturesAmenities=["Live Music","Sports Screening","Free Wi-Fi","Parking Available","Valet Parking","Kid's Play Area","Pet-Friendly","Wheelchair Accessible","Air Conditioning","Smoking Area","Non-Smoking"]
+const TechnologyIntegration=["Online Ordering","Mobile App","QR Code Menu","Digital Payments","Self-Order Kiosks","Contactless Delivery"]
+const SustainabilityEthics  =["Organic Ingredients","Locally Sourced","Sustainable Sourcing","Eco-Friendly Packaging","Waste Reduction","Energy Efficient","Social Responsibility"]
+const productServiceType = ["North Indian","South Indian","Punjab","Bengali","Gujarati","Italian","Chinese","Thai","Japanese","Korean","French","Mexican","Burgers","Sandwiches","Pizza","Tacos","Biryani","Wraps","Curry","Tandoori","Kebabs","Tea","Juices","Coffee","Smoothies",  ]
+const BusinessOperation= ["Franchise Opportunity","Company-Owned","Chain","Single Unit","Multi-Unit","Area Development","Master Franchise"]
+
+const [currentTags, setCurrentTags] = useState({
+    PrimaryClassifications: [],
+    productServiceTypes: [],
+    TargetAudience: [],
+    ServiceModel: [],
+    PricingValue: [],
+    AmbienceExperience: [],
+    FeaturesAmenities: [],
+    TechnologyIntegration: [],
+    SustainabilityEthics: [],
+    BusinessOperations: [],
+  });
+
+
+ useEffect(() => {
+    if (data.franchiseTags) {
+      console.log("Updating currentTags with data:", data.franchiseTags); // Debug log
+      setCurrentTags({
+        PrimaryClassifications: Array.isArray(data.franchiseTags.PrimaryClassifications) 
+          ? data.franchiseTags.PrimaryClassifications 
+          : [],
+        productServiceTypes: Array.isArray(data.franchiseTags.productServiceTypes) 
+          ? data.franchiseTags.productServiceTypes 
+          : [],
+        TargetAudience: Array.isArray(data.franchiseTags.TargetAudience) 
+          ? data.franchiseTags.TargetAudience 
+          : [],
+        ServiceModel: Array.isArray(data.franchiseTags.ServiceModel) 
+          ? data.franchiseTags.ServiceModel 
+          : [],
+        PricingValue: Array.isArray(data.franchiseTags.PricingValue) 
+          ? data.franchiseTags.PricingValue 
+          : [],
+        AmbienceExperience: Array.isArray(data.franchiseTags.AmbienceExperience) 
+          ? data.franchiseTags.AmbienceExperience 
+          : [],
+        FeaturesAmenities: Array.isArray(data.franchiseTags.FeaturesAmenities) 
+          ? data.franchiseTags.FeaturesAmenities 
+          : [],
+        TechnologyIntegration: Array.isArray(data.franchiseTags.TechnologyIntegration) 
+          ? data.franchiseTags.TechnologyIntegration 
+          : [],
+        SustainabilityEthics: Array.isArray(data.franchiseTags.SustainabilityEthics) 
+          ? data.franchiseTags.SustainabilityEthics 
+          : [],
+        BusinessOperations: Array.isArray(data.franchiseTags.BusinessOperations) 
+          ? data.franchiseTags.BusinessOperations 
+          : [],
+      });
+    }
+  }, [data.franchiseTags]);
+
+  // Handle tag change (FIXED)
+  const handleTagChange = (tagType) => (e) => {
+    const {
+      target: { value },
+    } = e;
+    const newValue = typeof value === 'string' ? value.split(',') : value;
+    
+    console.log(`Updating ${tagType} with:`, newValue); // Debug log
+    
+    setCurrentTags((prev) => ({
+      ...prev,
+      [tagType]: newValue,
+    }));
+    
+    // Update the main form data
+    const updatedFranchiseTags = {
+      ...data.franchiseTags,
+      [tagType]: newValue
+    };
+    
+    onObjectChange("franchiseTags", updatedFranchiseTags);
+  };
+
   const aidFinancingOptions = ["Yes", "No"];
   const agreementPeriods = [
     "1 Year",
@@ -679,6 +766,475 @@ const FranchiseDetailsEdit = ({
           </FormControl>
         </Grid>
       </Grid>
+ <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
+        Franchise Tags
+      </Typography>
+
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { md: "repeat(3, 1fr)", xs: "1fr" },
+          gap: 2,
+          mb: 4,
+          mt: 2,
+        }}
+      >
+        {/* Primary Classification */}
+        <Grid item xs={12}>
+          <FormControl
+            fullWidth
+            error={!!errors.PrimaryClassifications}
+            required
+            size="medium"
+          >
+            <InputLabel>Primary Classification</InputLabel>
+            <Select
+              multiple
+              value={currentTags.PrimaryClassifications || []}
+              onChange={handleTagChange('PrimaryClassifications')}
+              name="PrimaryClassifications"
+              label="Primary Classification"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 500,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '10px',
+                    padding: '10px',
+                  },
+                },
+              }}
+            >
+              {PrimaryClassifications.map((classification) => (
+                <MenuItem key={classification} value={classification}>
+                  <Checkbox
+                    checked={(currentTags.PrimaryClassifications || []).indexOf(classification) > -1}
+                  />
+                  <ListItemText primary={classification} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.PrimaryClassifications && (
+              <FormHelperText error>
+                {errors.PrimaryClassifications}
+              </FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Product/Service Types */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.productServiceTypes}
+            required
+            size="medium"
+          >
+            <InputLabel>Product/Service Types</InputLabel>
+            <Select
+              multiple
+              value={currentTags.productServiceTypes || []}
+              onChange={handleTagChange('productServiceTypes')}
+              name="productServiceTypes"
+              label="Product/Service Types"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 400,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {productServiceType.map((type) => (
+                <MenuItem key={type} value={type}>
+                  <Checkbox
+                    checked={(currentTags.productServiceTypes || []).indexOf(type) > -1}
+                  />
+                  <ListItemText primary={type} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.productServiceTypes && (
+              <FormHelperText error>{errors.productServiceTypes}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Target Audience */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.TargetAudience}
+            required
+            size="medium"
+          >
+            <InputLabel>Target Audience</InputLabel>
+            <Select
+              multiple
+              value={currentTags.TargetAudience || []}
+              onChange={handleTagChange('TargetAudience')}
+              name="TargetAudience"
+              label="Target Audience"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 350,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {TargetAudience.map((audience) => (
+                <MenuItem key={audience} value={audience}>
+                  <Checkbox
+                    checked={(currentTags.TargetAudience || []).indexOf(audience) > -1}
+                  />
+                  <ListItemText primary={audience} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.TargetAudience && (
+              <FormHelperText error>{errors.TargetAudience}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Service Model */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.ServiceModel}
+            required
+            size="medium"
+          >
+            <InputLabel>Service Model</InputLabel>
+            <Select
+              multiple
+              value={currentTags.ServiceModel || []}
+              onChange={handleTagChange('ServiceModel')}
+              name="ServiceModel"
+              label="Service Model"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 350,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {ServiceModel.map((model) => (
+                <MenuItem key={model} value={model}>
+                  <Checkbox
+                    checked={(currentTags.ServiceModel || []).indexOf(model) > -1}
+                  />
+                  <ListItemText primary={model} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.ServiceModel && (
+              <FormHelperText error>{errors.ServiceModel}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Pricing Value */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.PricingValue}
+            required
+            size="medium"
+          >
+            <InputLabel>Pricing Value</InputLabel>
+            <Select
+              multiple
+              value={currentTags.PricingValue || []}
+              onChange={handleTagChange('PricingValue')}
+              name="PricingValue"
+              label="Pricing Value"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                    width: 250,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {PricingValue.map((price) => (
+                <MenuItem key={price} value={price}>
+                  <Checkbox
+                    checked={(currentTags.PricingValue || []).indexOf(price) > -1}
+                  />
+                  <ListItemText primary={price} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.PricingValue && (
+              <FormHelperText error>{errors.PricingValue}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Ambience Experience */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.AmbienceExperience}
+            required
+            size="medium"
+          >
+            <InputLabel>Ambience & Experience</InputLabel>
+            <Select
+              multiple
+              value={currentTags.AmbienceExperience || []}
+              onChange={handleTagChange('AmbienceExperience')}
+              name="AmbienceExperience"
+              label="Ambience & Experience"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 380,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {AmbienceExperience.map((ambience) => (
+                <MenuItem key={ambience} value={ambience}>
+                  <Checkbox
+                    checked={(currentTags.AmbienceExperience || []).indexOf(ambience) > -1}
+                  />
+                  <ListItemText primary={ambience} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.AmbienceExperience && (
+              <FormHelperText error>{errors.AmbienceExperience}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Features & Amenities */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.FeaturesAmenities}
+            required
+            size="medium"
+          >
+            <InputLabel>Features & Amenities</InputLabel>
+            <Select
+              multiple
+              value={currentTags.FeaturesAmenities || []}
+              onChange={handleTagChange('FeaturesAmenities')}
+              name="FeaturesAmenities"
+              label="Features & Amenities"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 400,
+                    width: 350,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {FeaturesAmenities.map((feature) => (
+                <MenuItem key={feature} value={feature}>
+                  <Checkbox
+                    checked={(currentTags.FeaturesAmenities || []).indexOf(feature) > -1}
+                  />
+                  <ListItemText primary={feature} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.FeaturesAmenities && (
+              <FormHelperText error>{errors.FeaturesAmenities}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Technology Integration */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.TechnologyIntegration}
+            required
+            size="medium"
+          >
+            <InputLabel>Technology Integration</InputLabel>
+            <Select
+              multiple
+              value={currentTags.TechnologyIntegration || []}
+              onChange={handleTagChange('TechnologyIntegration')}
+              name="TechnologyIntegration"
+              label="Technology Integration"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                    width: 320,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {TechnologyIntegration.map((tech) => (
+                <MenuItem key={tech} value={tech}>
+                  <Checkbox
+                    checked={(currentTags.TechnologyIntegration || []).indexOf(tech) > -1}
+                  />
+                  <ListItemText primary={tech} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.TechnologyIntegration && (
+              <FormHelperText error>{errors.TechnologyIntegration}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Sustainability & Ethics */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.SustainabilityEthics}
+            required
+            size="medium"
+          >
+            <InputLabel>Sustainability & Ethics</InputLabel>
+            <Select
+              multiple
+              value={currentTags.SustainabilityEthics || []}
+              onChange={handleTagChange('SustainabilityEthics')}
+              name="SustainabilityEthics"
+              label="Sustainability & Ethics"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 350,
+                    width: 320,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {SustainabilityEthics.map((sustainability) => (
+                <MenuItem key={sustainability} value={sustainability}>
+                  <Checkbox
+                    checked={(currentTags.SustainabilityEthics || []).indexOf(sustainability) > -1}
+                  />
+                  <ListItemText primary={sustainability} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.SustainabilityEthics && (
+              <FormHelperText error>{errors.SustainabilityEthics}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        {/* Business Operations */}
+        <Grid item>
+          <FormControl
+            fullWidth
+            error={!!errors.BusinessOperations}
+            required
+            size="medium"
+          >
+            <InputLabel>Business Operations</InputLabel>
+            <Select
+              multiple
+              value={currentTags.BusinessOperations || []}
+              onChange={handleTagChange('BusinessOperations')}
+              name="BusinessOperations"
+              label="Business Operations"
+              renderValue={(selected) => selected.join(', ')}
+              disabled={!isEditing}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                    width: 280,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    columnGap: '8px',
+                    padding: '8px',
+                  },
+                },
+              }}
+            >
+              {BusinessOperation.map((operation) => (
+                <MenuItem key={operation} value={operation}>
+                  <Checkbox
+                    checked={(currentTags.BusinessOperations || []).indexOf(operation) > -1}
+                  />
+                  <ListItemText primary={operation} />
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.BusinessOperations && (
+              <FormHelperText error>{errors.BusinessOperations}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+      </Grid>
+
+
       <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
         Establishment & Franchise year Details
       </Typography>
