@@ -21,6 +21,14 @@ import { useParams } from "react-router-dom";
 
 const flattenBrandData = (brandDoc) => {
   if (!brandDoc) return {};
+  
+  // Get the franchiseTags from the API response
+  const franchiseTagsFromAPI = brandDoc.franchiseDetails?.franchiseTags || {};
+  
+  console.log("=== FLATTEN DEBUG ===");
+  console.log("Original franchiseTags:", franchiseTagsFromAPI);
+  console.log("Type:", typeof franchiseTagsFromAPI);
+
   return {
     // Brand Details
     fullName: brandDoc.brandDetails?.fullName || "",
@@ -53,8 +61,7 @@ const flattenBrandData = (brandDoc) => {
     aidFinancing: brandDoc.franchiseDetails?.aidFinancing || "",
     brandDescription: brandDoc.franchiseDetails?.brandDescription || "",
     companyOwnedOutlets: brandDoc.franchiseDetails?.companyOwnedOutlets || "",
-    consultationOrAssistance:
-      brandDoc.franchiseDetails?.consultationOrAssistance || "",
+    consultationOrAssistance: brandDoc.franchiseDetails?.consultationOrAssistance || "",
     establishedYear: brandDoc.franchiseDetails?.establishedYear || "",
     franchiseDevelopment: brandDoc.franchiseDetails?.franchiseDevelopment || "",
     franchiseOutlets: brandDoc.franchiseDetails?.franchiseOutlets || "",
@@ -63,10 +70,12 @@ const flattenBrandData = (brandDoc) => {
     fico: brandDoc.franchiseDetails?.fico || [],
     trainingSupport: brandDoc.franchiseDetails?.trainingSupport || [],
     uniqueSellingPoints: brandDoc.franchiseDetails?.uniqueSellingPoints || [],
+    
+    // Franchise Tags - Use the actual data from API
+    franchiseTags: franchiseTagsFromAPI,
 
     // Expansion Data
-    currentOutletLocations: brandDoc.expansionlocationdata
-      ?.currentOutletLocations || {
+    currentOutletLocations: brandDoc.expansionlocationdata?.currentOutletLocations || {
       domestic: { locations: [] },
       international: { country: [] },
     },
@@ -74,8 +83,8 @@ const flattenBrandData = (brandDoc) => {
       domestic: { locations: [] },
       international: { country: [] },
     },
-    isInternationalExpansion:
-      brandDoc.expansionlocationdata?.isInternationalExpansion || false,
+    isInternationalExpansion: brandDoc.expansionlocationdata?.isInternationalExpansion || false,
+    
     // Uploads
     brandLogo: brandDoc.uploads?.logo || [],
     exteriorOutlet: brandDoc.uploads?.exteriorOutlet || [],
@@ -87,6 +96,7 @@ const flattenBrandData = (brandDoc) => {
     awards: brandDoc.uploads?.awards || [],
   };
 };
+
 const BrandListingEdit = () => {
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
@@ -373,86 +383,159 @@ const handleObjectChange = (field, keyOrValue, maybeValue) => {
   //   }
   // };
 
-  const handleSave = async () => {
-    const uuid = UUID
-     
-    setSaveStatus({ loading: true, success: false, error: "" });
+ const handleSave = async () => {
+  const uuid = UUID
+   
+  setSaveStatus({ loading: true, success: false, error: "" });
 
-    try {
-      // Step 1: Update brand details and franchise details
-      const formDataToSend = new FormData();
+  try {
+    // Step 1: Update brand details and franchise details
+    const formDataToSend = new FormData();
 
-      // Prepare the data structure that matches the backend expectation
-      const updateData = {
-        brandDetails: {
-          fullName: formData.fullName,
-          email: formData.email,
-          mobileNumber: formData.mobileNumber,
-          whatsappNumber: formData.whatsappNumber,
-          companyName: formData.companyName,
-          brandName: formData.brandName,
-          tagLine: formData.tagLine,
-          ceoName: formData.ceoName,
-          ceoEmail: formData.ceoEmail,
-          ceoMobile: formData.ceoMobile,
-          officeEmail: formData.officeEmail,
-          officeMobile: formData.officeMobile,
-          headOfficeAddress: formData.headOfficeAddress,
-          country: formData.country,
-          state: formData.state,
-          district: formData.district,
-          city: formData.city,
-          pincode: formData.pincode,
-          website: formData.website,
-          facebook: formData.facebook,
-          instagram: formData.instagram,
-          linkedin: formData.linkedin,
-          gstNumber: formData.gstNumber,
-          pancardNumber: formData.pancardNumber,
+    // Handle the naming inconsistency for franchiseTags
+    const franchiseTagsForBackend = { ...formData.franchiseTags };
+    
+    // If frontend has productServiceTypes, copy it to ProductServiceTypes for backend
+    if (franchiseTagsForBackend.productServiceTypes) {
+      franchiseTagsForBackend.ProductServiceTypes = franchiseTagsForBackend.productServiceTypes;
+    }
+
+    const updateData = {
+      brandDetails: {
+        fullName: formData.fullName,
+        email: formData.email,
+        mobileNumber: formData.mobileNumber,
+        whatsappNumber: formData.whatsappNumber,
+        companyName: formData.companyName,
+        brandName: formData.brandName,
+        tagLine: formData.tagLine,
+        ceoName: formData.ceoName,
+        ceoEmail: formData.ceoEmail,
+        ceoMobile: formData.ceoMobile,
+        officeEmail: formData.officeEmail,
+        officeMobile: formData.officeMobile,
+        headOfficeAddress: formData.headOfficeAddress,
+        country: formData.country,
+        state: formData.state,
+        district: formData.district,
+        city: formData.city,
+        pincode: formData.pincode,
+        website: formData.website,
+        facebook: formData.facebook,
+        instagram: formData.instagram,
+        linkedin: formData.linkedin,
+        gstNumber: formData.gstNumber,
+        pancardNumber: formData.pancardNumber,
+      },
+      franchiseDetails: {
+        brandCategories: formData.brandCategories,
+        aidFinancing: formData.aidFinancing,
+        brandDescription: formData.brandDescription,
+        companyOwnedOutlets: formData.companyOwnedOutlets,
+        consultationOrAssistance: formData.consultationOrAssistance,
+        establishedYear: formData.establishedYear,
+        franchiseDevelopment: formData.franchiseDevelopment,
+        franchiseOutlets: formData.franchiseOutlets,
+        franchiseSinceYear: formData.franchiseSinceYear,
+        totalOutlets: formData.totalOutlets,
+        fico: formData.fico,
+        trainingSupport: formData.trainingSupport,
+        uniqueSellingPoints: formData.uniqueSellingPoints,
+        franchiseTags: franchiseTagsForBackend,
+      },
+    };
+
+    // Append JSON data as strings
+    formDataToSend.append(
+      "brandDetails",
+      JSON.stringify(updateData.brandDetails)
+    );
+    formDataToSend.append(
+      "franchiseDetails",
+      JSON.stringify(updateData.franchiseDetails)
+    );
+    formDataToSend.append(
+      "addExpansionLocationData",
+      JSON.stringify(addExpansionData)
+    );
+    formDataToSend.append(
+      "removeExpansionLocationData",
+      JSON.stringify(removeExpansionData)
+    );
+    formDataToSend.append(
+      "isInternationalExpansion",
+      formData.isInternationalExpansion
+    );
+
+    console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
+
+    // First update the brand details
+    const detailsResponse = await axios.patch(
+      `http://localhost:5000/api/v1/brandlisting/updateBrandListingByUUID/${uuid}`,
+      formDataToSend,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-        franchiseDetails: {
-          brandCategories: formData.brandCategories,
-          aidFinancing: formData.aidFinancing,
-          brandDescription: formData.brandDescription,
-          companyOwnedOutlets: formData.companyOwnedOutlets,
-          consultationOrAssistance: formData.consultationOrAssistance,
-          establishedYear: formData.establishedYear,
-          franchiseDevelopment: formData.franchiseDevelopment,
-          franchiseOutlets: formData.franchiseOutlets,
-          franchiseSinceYear: formData.franchiseSinceYear,
-          totalOutlets: formData.totalOutlets,
-          fico: formData.fico,
-          trainingSupport: formData.trainingSupport,
-          uniqueSellingPoints: formData.uniqueSellingPoints,
-        },
-      };
+      }
+    );
 
-      // Append JSON data as strings
-      formDataToSend.append(
-        "brandDetails",
-        JSON.stringify(updateData.brandDetails)
+    if (!detailsResponse.data.success) {
+      throw new Error(
+        detailsResponse.data.message || "Failed to save brand details."
       );
-      formDataToSend.append(
-        "franchiseDetails",
-        JSON.stringify(updateData.franchiseDetails)
-      );
-      formDataToSend.append(
-        "addExpansionLocationData",
-        JSON.stringify(addExpansionData)
-      );
-      formDataToSend.append(
-        "removeExpansionLocationData",
-        JSON.stringify(removeExpansionData)
-      );
-      formDataToSend.append(
-        "isInternationalExpansion",
-        formData.isInternationalExpansion
-      );
+    }
 
-      // First update the brand details
-      const detailsResponse = await axios.patch(
-        `http://localhost:5000/api/v1/brandlisting/updateBrandListingByUUID/${uuid}`,
-        formDataToSend,
+    // Step 2: Handle file uploads and deletions
+    const uploadFormData = new FormData();
+    let hasFilesToUpload = false;
+
+    // Append files to upload
+    const fileFields = [
+      "brandLogo",
+      "exteriorOutlet",
+      "franchisePromotionVideo",
+      "gstCertificate",
+      "interiorOutlet",
+      "pancard",
+      "businessPlan",
+      "awardDoc",
+    ];
+
+    fileFields.forEach((field) => {
+      if (files[field] && files[field].length > 0) {
+        files[field].forEach((file) => {
+          if (file instanceof File) {
+            uploadFormData.append(field, file);
+            hasFilesToUpload = true;
+          }
+        });
+      }
+    });
+
+    if (formData.awards && formData.awards.length > 0) {
+      const awardsData = formData.awards.map((award) => ({
+        awardDescription: award.awardDescription,
+      }));
+      uploadFormData.append("awardDescriptions", JSON.stringify(awardsData));
+      hasFilesToUpload = true;
+    }
+
+    if (Object.keys(filesToDelete).length > 0) {
+      uploadFormData.append("imageDeleteData", JSON.stringify(filesToDelete));
+      hasFilesToUpload = true;
+    }
+
+    if (awardsToDelete.length > 0) {
+      uploadFormData.append("awardsToDelete", JSON.stringify(awardsToDelete));
+      hasFilesToUpload = true;
+    }
+
+    // Only make the upload request if there are files to upload or delete
+    if (hasFilesToUpload) {
+      const uploadResponse = await axios.patch(
+        `http://localhost:5000/api/v1/brandlisting/updateBrandImageById/${uuid}`,
+        uploadFormData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -460,132 +543,67 @@ const handleObjectChange = (field, keyOrValue, maybeValue) => {
         }
       );
 
-      if (!detailsResponse.data.success) {
+      if (!uploadResponse.data.success) {
         throw new Error(
-          detailsResponse.data.message || "Failed to save brand details."
+          uploadResponse.data.message || "Failed to upload files."
         );
       }
-
-      // Step 2: Handle file uploads and deletions
-      const uploadFormData = new FormData();
-      let hasFilesToUpload = false;
-
-      // Append files to upload
-      const fileFields = [
-        "brandLogo",
-        "exteriorOutlet",
-        "franchisePromotionVideo",
-        "gstCertificate",
-        "interiorOutlet",
-        "pancard",
-        "businessPlan",
-        "awardDoc",
-      ];
-
-      fileFields.forEach((field) => {
-        if (files[field] && files[field].length > 0) {
-          files[field].forEach((file) => {
-            if (file instanceof File) {
-              uploadFormData.append(field, file);
-              hasFilesToUpload = true;
-            }
-          });
-        }
-      });
-
-      // In handleSave function, update the awards handling:
-      if (formData.awards && formData.awards.length > 0) {
-        // Send both descriptions and existing image URLs
-        const awardsData = formData.awards.map((award) => ({
-          awardDescription: award.awardDescription,
-          // awardImage is handled separately via file upload
-        }));
-        uploadFormData.append("awardDescriptions", JSON.stringify(awardsData));
-        hasFilesToUpload = true;
-      }
-
-      // Append files to delete
-      if (Object.keys(filesToDelete).length > 0) {
-        // console.log("Files to delete ========== :", filesToDelete);
-        uploadFormData.append("imageDeleteData", JSON.stringify(filesToDelete));
-        hasFilesToUpload = true;
-      }
-
-      // Append awards to delete
-      if (awardsToDelete.length > 0) {
-        console.log("Awards to delete ========== :", awardsToDelete);
-        uploadFormData.append("awardsToDelete", JSON.stringify(awardsToDelete));
-        hasFilesToUpload = true;
-      }
-
-      console.log("Uploading files:", uploadFormData);
-
-      // Only make the upload request if there are files to upload or delete
-      if (hasFilesToUpload) {
-        const uploadResponse = await axios.patch(
-          `http://localhost:5000/api/v1/brandlisting/updateBrandImageById/${uuid}`,
-          uploadFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        if (!uploadResponse.data.success) {
-          throw new Error(
-            uploadResponse.data.message || "Failed to upload files."
-          );
-        }
-      }
-
-      // Refresh the data after successful update
-      const refreshResponse = await getApi(
-        `http://localhost:5000/api/v1/brandlisting/getBrandById/${uuid}`
-      );
-      const updatedBrand = refreshResponse?.data?.data;
-
-      if (refreshResponse.data.success) {
-        const flatData = flattenBrandData(updatedBrand);
-        setFormData(flatData);
-        setOriginalData(updatedBrand);
-        setSaveStatus({ loading: false, success: true, error: "" });
-        setIsEditing(false);
-
-        // Clear files and deletions after successful upload
-        setFiles({
-          brandLogo: [],
-          exteriorOutlet: [],
-          franchisePromotionVideo: [],
-          gstCertificate: [],
-          interiorOutlet: [],
-          pancard: [],
-          businessPlan: [],
-          awardDoc: [],
-        });
-        setFilesToDelete({
-          brandLogo: [],
-          exteriorOutlet: [],
-          franchisePromotionVideo: [],
-          gstCertificate: [],
-          interiorOutlet: [],
-          pancard: [],
-          businessPlan: [],
-          awardDoc: [],
-        });
-        setAwardsToDelete([]);
-      } else {
-        throw new Error("Failed to refresh data after update.");
-      }
-    } catch (err) {
-      console.error("Save error:", err);
-      setSaveStatus({
-        loading: false,
-        success: false,
-        error: err.response?.data?.message || err.message || "Save failed.",
-      });
     }
-  };
+
+    // IMPORTANT: Refresh the data after successful update
+    console.log("Refreshing data after save...");
+    const refreshResponse = await getApi(
+      `http://localhost:5000/api/v1/brandlisting/getBrandById/${uuid}`
+    );
+    
+    if (refreshResponse.data.success) {
+      const updatedBrand = refreshResponse?.data?.data;
+      console.log("Updated brand data from API:", updatedBrand);
+      
+      const flatData = flattenBrandData(updatedBrand);
+      console.log("Flattened data after refresh:", flatData);
+      
+      // Update both formData and originalData
+      setFormData(flatData);
+      setOriginalData(updatedBrand);
+      
+      setSaveStatus({ loading: false, success: true, error: "" });
+      setIsEditing(false);
+
+      // Clear files and deletions after successful upload
+      setFiles({
+        brandLogo: [],
+        exteriorOutlet: [],
+        franchisePromotionVideo: [],
+        gstCertificate: [],
+        interiorOutlet: [],
+        pancard: [],
+        businessPlan: [],
+        awardDoc: [],
+      });
+      setFilesToDelete({
+        brandLogo: [],
+        exteriorOutlet: [],
+        franchisePromotionVideo: [],
+        gstCertificate: [],
+        interiorOutlet: [],
+        pancard: [],
+        businessPlan: [],
+        awardDoc: [],
+      });
+      setAwardsToDelete([]);
+    } else {
+      throw new Error("Failed to refresh data after update.");
+    }
+  } catch (err) {
+    console.error("Save error:", err);
+    setSaveStatus({
+      loading: false,
+      success: false,
+      error: err.response?.data?.message || err.message || "Save failed.",
+    });
+  }
+};
 
   const handleCancel = () => {
     setFormData(flattenBrandData(originalData));

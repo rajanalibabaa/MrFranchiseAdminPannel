@@ -156,42 +156,45 @@ const [currentTags, setCurrentTags] = useState({
 
 
  useEffect(() => {
-    if (data.franchiseTags) {
-      console.log("Updating currentTags with data:", data.franchiseTags); // Debug log
-      setCurrentTags({
-        PrimaryClassifications: Array.isArray(data.franchiseTags.PrimaryClassifications) 
-          ? data.franchiseTags.PrimaryClassifications 
-          : [],
-        productServiceTypes: Array.isArray(data.franchiseTags.productServiceTypes) 
-          ? data.franchiseTags.productServiceTypes 
-          : [],
-        TargetAudience: Array.isArray(data.franchiseTags.TargetAudience) 
-          ? data.franchiseTags.TargetAudience 
-          : [],
-        ServiceModel: Array.isArray(data.franchiseTags.ServiceModel) 
-          ? data.franchiseTags.ServiceModel 
-          : [],
-        PricingValue: Array.isArray(data.franchiseTags.PricingValue) 
-          ? data.franchiseTags.PricingValue 
-          : [],
-        AmbienceExperience: Array.isArray(data.franchiseTags.AmbienceExperience) 
-          ? data.franchiseTags.AmbienceExperience 
-          : [],
-        FeaturesAmenities: Array.isArray(data.franchiseTags.FeaturesAmenities) 
-          ? data.franchiseTags.FeaturesAmenities 
-          : [],
-        TechnologyIntegration: Array.isArray(data.franchiseTags.TechnologyIntegration) 
-          ? data.franchiseTags.TechnologyIntegration 
-          : [],
-        SustainabilityEthics: Array.isArray(data.franchiseTags.SustainabilityEthics) 
-          ? data.franchiseTags.SustainabilityEthics 
-          : [],
-        BusinessOperations: Array.isArray(data.franchiseTags.BusinessOperations) 
-          ? data.franchiseTags.BusinessOperations 
-          : [],
-      });
-    }
-  }, [data.franchiseTags]);
+  if (data.franchiseTags) {
+    console.log("Updating currentTags with data:", data.franchiseTags); 
+    
+    setCurrentTags({
+      PrimaryClassifications: Array.isArray(data.franchiseTags.PrimaryClassifications) 
+        ? data.franchiseTags.PrimaryClassifications 
+        : [],
+      productServiceTypes: Array.isArray(data.franchiseTags.productServiceTypes) 
+        ? data.franchiseTags.productServiceTypes 
+        : (Array.isArray(data.franchiseTags.ProductServiceTypes) 
+            ? data.franchiseTags.ProductServiceTypes 
+            : []),
+      TargetAudience: Array.isArray(data.franchiseTags.TargetAudience) 
+        ? data.franchiseTags.TargetAudience 
+        : [],
+      ServiceModel: Array.isArray(data.franchiseTags.ServiceModel) 
+        ? data.franchiseTags.ServiceModel 
+        : [],
+      PricingValue: Array.isArray(data.franchiseTags.PricingValue) 
+        ? data.franchiseTags.PricingValue 
+        : [],
+      AmbienceExperience: Array.isArray(data.franchiseTags.AmbienceExperience) 
+        ? data.franchiseTags.AmbienceExperience 
+        : [],
+      FeaturesAmenities: Array.isArray(data.franchiseTags.FeaturesAmenities) 
+        ? data.franchiseTags.FeaturesAmenities 
+        : [],
+      TechnologyIntegration: Array.isArray(data.franchiseTags.TechnologyIntegration) 
+        ? data.franchiseTags.TechnologyIntegration 
+        : [],
+      SustainabilityEthics: Array.isArray(data.franchiseTags.SustainabilityEthics) 
+        ? data.franchiseTags.SustainabilityEthics 
+        : [],
+      BusinessOperations: Array.isArray(data.franchiseTags.BusinessOperations) 
+        ? data.franchiseTags.BusinessOperations 
+        : [],
+    });
+  }
+}, [data.franchiseTags]);
 
   // Handle tag change (FIXED)
   const handleTagChange = (tagType) => (e) => {
