@@ -242,9 +242,6 @@ export default categories;
 
 
 
-
-
-
 // // import React from "react";
 
 // // export const categories = [
@@ -451,7 +448,8 @@ export default categories;
 // //       {
 // //         groupId:"G",
 // //         name: "Real Estate",
-// //         children: ["Commercial Real Estate", "Residential Real Estate"],
+// //         children: ["Commercial Real Estate",
+//  "Residential Real Estate"],
 // //       },
 // //       {
 // //         groupId:"H",
@@ -952,7 +950,8 @@ export default categories;
 // //       {
 // //         groupId:"A",
 // //         name: "Books & Stationery",
-// //         children: ["Books & Stationery", "Books & Stationery Stores"],
+// //         children: ["Books & Stationery",
+//  "Books & Stationery Stores"],
 // //       },
 // //       {
 // //         groupId:"B",
@@ -967,7 +966,8 @@ export default categories;
 // //       {
 // //         groupId:"C",
 // //         name: "E-Retail",
-// //         children: ["E-Commerce", "E-Commerce Stores"],
+// //         children: ["E-Commerce",
+//  "E-Commerce Stores"],
 // //       },
 // //       {
 // //         groupId:"D",
