@@ -7,6 +7,7 @@ import filterBrandsReducer from "../Slices/FilterBrandSlice.jsx";
 import loadingReducer from "../Slices/LoadingSlice.jsx";
 import newIncomingReducer from "../Slices/newIncomingSlice.jsx";
 import adminReducer from "../Slices/admin/authSlice.jsx";
+import applicationReducer from '../Slices/InstantApplyCreationSlice.jsx'
 
 // Combine reducers
 const rootReducer = combineReducers({
@@ -14,7 +15,8 @@ const rootReducer = combineReducers({
   filterDropdown: filterDropdownReducer,
   filterBrands: filterBrandsReducer,
   brands: newIncomingReducer,
-  admin: adminReducer
+  admin: adminReducer,
+  applications:applicationReducer
 });
 
 // Persist config
