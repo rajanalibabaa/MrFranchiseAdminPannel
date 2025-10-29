@@ -43,12 +43,12 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     investmentRange: "",
     planToInvest: "",
     readyToInvest: "",
-    categories: [],
+    categories: [], // This should be an array
     brandName: "",
     isManualEntry: true,
   });
 
-  // Category related states
+  // Category related states - for UI interaction only
   const [currentCategory, setCurrentCategory] = useState({
     main: "",
     sub: "",
@@ -97,6 +97,49 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     [validationErrors]
   );
 
+  // Handle category selection and automatically add to categories array
+  const handleCategoryChange = (level, value) => {
+    let newCurrentCategory = { ...currentCategory };
+    
+    if (level === 'main') {
+      newCurrentCategory = { main: value, sub: "", child: "" };
+    } else if (level === 'sub') {
+      newCurrentCategory = { ...currentCategory, sub: value, child: "" };
+    } else if (level === 'child') {
+      newCurrentCategory = { ...currentCategory, child: value };
+    }
+
+    setCurrentCategory(newCurrentCategory);
+
+    // If we have at least main and sub category, add to categories array
+    if (newCurrentCategory.main && newCurrentCategory.sub) {
+      const categoryObject = {
+        main: newCurrentCategory.main,
+        sub: newCurrentCategory.sub,
+        child: newCurrentCategory.child || ""
+      };
+
+      // Check if this combination already exists
+      const exists = formData.categories.some(cat => 
+        cat.main === categoryObject.main && 
+        cat.sub === categoryObject.sub && 
+        cat.child === categoryObject.child
+      );
+
+      if (!exists) {
+        setFormData(prev => ({
+          ...prev,
+          categories: [categoryObject] // For now, just replace with one category
+        }));
+
+        // Clear validation error
+        if (validationErrors.categories) {
+          setValidationErrors(prev => ({ ...prev, categories: "" }));
+        }
+      }
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
     const requiredFields = [
@@ -115,30 +158,19 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       }
     });
 
-    // Category validation
-    if (formData.categories.length === 0) {
-      errors.categories = "Please add at least one business category";
+    // Category validation - check if categories array has at least one item
+    if (!Array.isArray(formData.categories) || formData.categories.length === 0) {
+      errors.categories = "Please select at least one business category";
     }
 
     // Email validation
-    if (
-      formData.investorEmail &&
-      !/\S+@\S+\.\S+/.test(formData.investorEmail)
-    ) {
-      errors.investorEmail = "Please enter a valid email address";
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
     }
 
     // Mobile number validation
-    if (
-      formData.mobileNumber &&
-      !/^\d{10}$/.test(formData.mobileNumber.replace(/\s/g, ""))
-    ) {
+    if (formData.mobileNumber && !/^\d{10}$/.test(formData.mobileNumber.replace(/\s/g, ""))) {
       errors.mobileNumber = "Please enter a valid 10-digit mobile number";
-    }
-
-    // Brand name validation (optional - only if you want to require it)
-    if (!selectedBrand && !formData.brandName?.trim()) {
-      errors.brandName = "Please enter a brand name or select a brand";
     }
 
     setValidationErrors(errors);
@@ -151,9 +183,10 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
       console.log("Form submission started");
       console.log("Form data:", formData);
+      console.log("Categories array:", formData.categories);
 
       if (!validateForm()) {
-        console.log("Form validation failed");
+        console.log("Form validation failed", validationErrors);
         return;
       }
 
@@ -187,21 +220,14 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
         investmentRange: formData.investmentRange,
         planToInvest: formData.planToInvest,
         readyToInvest: formData.readyToInvest,
-        categories: formData.categories.length ? formData.categories : [],
-        brandName:
-          selectedBrand?.[0]?.brandDetails?.brandName ||
-          formData.brandName ||
-          "Manual Entry",
+        categories: formData.categories, // This is now properly an array
+        brandName: selectedBrand?.[0]?.brandDetails?.brandName || formData.brandName || "Manual Entry",
         isManualEntry: !selectedBrand || selectedBrand.length === 0,
         leadType: "manual",
       };
 
-      // Remove brandId if it's null to avoid backend issues
-      if (!payload.brandId) {
-        delete payload.brandId;
-      }
-
       console.log("Payload to be submitted:", payload);
+      console.log("Categories in payload:", payload.categories);
 
       try {
         const result = await dispatch(submitApplication(payload)).unwrap();
@@ -231,12 +257,11 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
         onClose && onClose();
       } catch (error) {
         console.error("Submission error:", error);
-        const errorMessage =
-          error?.message || error?.data?.message || "Unknown error occurred";
+        const errorMessage = error?.message || error?.data?.message || "Unknown error occurred";
         alert(`❌ Failed to submit application: ${errorMessage}`);
       }
     },
-    [formData, selectedBrand, dispatch, navigate, onClose]
+    [formData, selectedBrand, dispatch, navigate, onClose, validationErrors]
   );
 
   return (
@@ -267,12 +292,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
         <Grid container spacing={3}>
           {/* Personal Information Section */}
           <Grid item xs={12}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              color="warning"
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
               Personal Information
             </Typography>
 
@@ -324,45 +344,21 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
           {/* Business Categories Section */}
           <Grid item xs={12}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              color="warning.main"
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" gutterBottom color="warning.main" sx={{ mb: 2 }}>
               Business Categories *
             </Typography>
 
             <Grid container spacing={2}>
               {/* Main Category */}
               <Grid item xs={12} sm={4}>
-                <FormControl
-                  fullWidth
-                  error={!!validationErrors.categories}
-                  size="medium"
-                >
+                <FormControl fullWidth error={!!validationErrors.categories} size="medium" >
                   <InputLabel>Industry *</InputLabel>
                   <Select
-                    value={formData.categories?.main || ""}
-                    onChange={(e) => {
-                      const main = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        categories: {
-                          main,
-                          sub: "",
-                          child: "",
-                        },
-                      }));
-                      if (validationErrors.categories) {
-                        setValidationErrors((prev) => ({
-                          ...prev,
-                          categories: "",
-                        }));
-                      }
-                    }}
+                    value={currentCategory.main}
+                    onChange={(e) => handleCategoryChange('main', e.target.value)}
                     label="Industry *"
-                    sx={{ width: "30vh" }}
+                    sx={{width:'40vh'}}
+                    
                   >
                     {categories.map((cat) => (
                       <MenuItem key={cat.name} value={cat.name}>
@@ -375,36 +371,22 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
               {/* Sub Category */}
               <Grid item xs={12} sm={4}>
-                <FormControl
-                  fullWidth
-                  disabled={!formData.categories?.main}
-                  size="medium"
-                >
+                <FormControl fullWidth disabled={!currentCategory.main} size="medium">
                   <InputLabel>Category *</InputLabel>
                   <Select
-                    value={formData.categories?.sub || ""}
-                    onChange={(e) => {
-                      const sub = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        categories: {
-                          ...prev.categories,
-                          sub,
-                          child: "",
-                        },
-                      }));
-                    }}
+                    value={currentCategory.sub}
+                    onChange={(e) => handleCategoryChange('sub', e.target.value)}
                     label="Category *"
-                    sx={{ width: "30vh" }}
+                     sx={{width:'40vh'}}
                   >
-                    {formData.categories?.main
+                    {currentCategory.main
                       ? categories
-                          .find((cat) => cat.name === formData.categories.main)
-                          .children.map((sub) => (
+                          .find((cat) => cat.name === currentCategory.main)
+                          ?.children?.map((sub) => (
                             <MenuItem key={sub.name} value={sub.name}>
                               {sub.name}
                             </MenuItem>
-                          ))
+                          )) || []
                       : []}
                   </Select>
                 </FormControl>
@@ -412,43 +394,51 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
               {/* Child Category */}
               <Grid item xs={12} sm={4}>
-                <FormControl
-                  fullWidth
-                  disabled={!formData.categories?.sub}
-                  size="medium"
-                >
+                <FormControl fullWidth disabled={!currentCategory.sub} size="medium">
                   <InputLabel>Specific Tags</InputLabel>
                   <Select
-                    value={formData.categories?.child || ""}
-                    onChange={(e) => {
-                      const child = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        categories: {
-                          ...prev.categories,
-                          child,
-                        },
-                      }));
-                    }}
-                    label="Specific Business"
-                    sx={{ width: "30vh" }}
+                    value={currentCategory.child}
+                    onChange={(e) => handleCategoryChange('child', e.target.value)}
+                    label="Specific Tags"
+                     sx={{width:'40vh'}}
                   >
-                    {formData.categories?.sub
+                    {currentCategory.sub
                       ? categories
-                          .find((cat) => cat.name === formData.categories.main)
-                          .children.find(
-                            (sub) => sub.name === formData.categories.sub
-                          )
-                          .children.map((child) => (
+                          .find((cat) => cat.name === currentCategory.main)
+                          ?.children?.find((sub) => sub.name === currentCategory.sub)
+                          ?.children?.map((child) => (
                             <MenuItem key={child} value={child}>
                               {child}
                             </MenuItem>
-                          ))
+                          )) || []
                       : []}
                   </Select>
                 </FormControl>
               </Grid>
             </Grid>
+
+            {/* Display selected categories */}
+            {formData.categories.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Selected Categories:
+                </Typography>
+                {formData.categories.map((cat, index) => (
+                  <Chip
+                    key={index}
+                    label={`${cat.main} > ${cat.sub}${cat.child ? ` > ${cat.child}` : ''}`}
+                    color="primary"
+                    sx={{ mr: 1, mb: 1 }}
+                    onDelete={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        categories: prev.categories.filter((_, i) => i !== index)
+                      }));
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
 
             {validationErrors.categories && (
               <FormHelperText error sx={{ mt: 1 }}>
@@ -459,12 +449,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
           {/* Location Information Section */}
           <Grid item xs={12}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              color="warning"
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
               Location Information
             </Typography>
 
@@ -505,20 +490,18 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 />
               </Grid>
             </Grid>
+          </Grid>
 
-            <Typography
-              variant="h6"
-              gutterBottom
-              color="warning"
-              sx={{ mb: 2 }}
-            >
+          {/* Investment Plans Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
               Investment Plans
             </Typography>
 
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
-                  // fullWidth
+                  fullWidth
                   label="Investment Range"
                   name="investmentRange"
                   select
@@ -528,7 +511,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                   helperText={validationErrors.investmentRange}
                   required
                   size="medium"
-                  sx={{ width: "30vh" }}
+                   sx={{width:'40vh'}}
                 >
                   {investmentRanges.map((range) => (
                     <MenuItem key={range} value={range}>
@@ -538,7 +521,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 </TextField>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   label="Plan to Invest"
@@ -550,7 +533,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                   helperText={validationErrors.planToInvest}
                   required
                   size="medium"
-                  sx={{ width: "30vh" }}
+                   sx={{width:'40vh'}}
                 >
                   {planToInvestOptions.map((option) => (
                     <MenuItem key={option} value={option}>
@@ -560,7 +543,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 </TextField>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   label="Ready to Invest"
@@ -572,7 +555,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                   helperText={validationErrors.readyToInvest}
                   required
                   size="medium"
-                  sx={{ width: "30vh" }}
+                   sx={{width:'40vh'}}
                 >
                   {readyToInvestOptions.map((option) => (
                     <MenuItem key={option} value={option}>
@@ -583,9 +566,6 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
               </Grid>
             </Grid>
           </Grid>
-
-          {/* Investment Plans Section */}
-          <Grid item xs={12}></Grid>
 
           {/* Submit Button Section */}
           <Grid item xs={12}>

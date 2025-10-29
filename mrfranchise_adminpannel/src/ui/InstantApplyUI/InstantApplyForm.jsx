@@ -12,7 +12,6 @@ const InstantApplyForm = ({ selectedBrand, onClose }) => {
 
   return (
     <Box sx={{ width: '100%', maxWidth: 1200, mx: 'auto', p: 2 }}>
-      <Paper elevation={1} sx={{ mb: 2 }}>
         <Tabs 
           value={tabValue} 
           onChange={handleTabChange} 
@@ -22,7 +21,6 @@ const InstantApplyForm = ({ selectedBrand, onClose }) => {
           <Tab label="Manual Submission" />
           <Tab label="Bulk Upload (Excel)" />
         </Tabs>
-      </Paper>
 
       <Box hidden={tabValue !== 0}>
         <ManualSubmissionForm 

@@ -232,12 +232,12 @@ const ExcelUploadForm = () => {
   return (
     <Paper sx={{ p: 3, maxWidth: 1100, mx: "auto" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-        <Typography variant="h5" color="primary">
+        <Typography variant="h5" color="warning">
           Manual Lead Bulk Upload (Excel / CSV / Google Sheet)
         </Typography>
         <Button
           variant="outlined"
-          color="secondary"
+          color="error"
           startIcon={<Refresh />}
           onClick={handleRefresh}
         >
@@ -255,13 +255,14 @@ const ExcelUploadForm = () => {
           onChange={handleFileUpload}
         />
         <label htmlFor="excel-upload">
-          <Button variant="contained" startIcon={<CloudUpload />} component="span" sx={{ mr: 2 }}>
+          <Button variant="contained"  startIcon={<CloudUpload />} component="span" sx={{ mr: 2,backgroundColor: "#ff9900ff" }}>
             Upload Excel/CSV
           </Button>
         </label>
         <Button
           variant="outlined"
           startIcon={<Download />}
+          sx={{backgroundColor:'#5dc036ff',color:'white'}}
           onClick={() => window.open("/manual_leads_template.xlsx", "_blank")}
         >
           Sample Excel

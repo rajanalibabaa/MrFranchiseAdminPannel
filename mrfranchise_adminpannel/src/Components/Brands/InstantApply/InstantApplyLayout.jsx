@@ -329,12 +329,10 @@ const InstantApplyLayout = () => {
       <Paper elevation={2} sx={{ margin: 2 }}>
         {/* Header */}
         <Box sx={{ p: 2, pb: 0 }}>
-          <Typography variant="h5" sx={{ mb: 1 }}>
+          <Typography variant="h5" textAlign={'center'} color="warning" sx={{ mb: 1 }}>
             Instant Apply Management
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Manage investment applications, add new entries, and bulk upload data
-          </Typography>
+         
         </Box>
 
         {/* Tabs */}
@@ -350,8 +348,11 @@ const InstantApplyLayout = () => {
             <Tab 
               icon={<ListIcon />} 
               label={
-                <Badge badgeContent={instantApplyList.length} color="primary" max={999}>
-                  Applications List
+                <Badge 
+                // badgeContent={instantApplyList.length}
+                 color="warning" 
+                 max={999}>
+                  Direct Leads List 
                 </Badge>
               }
               iconPosition="start"
@@ -359,13 +360,13 @@ const InstantApplyLayout = () => {
             />
             <Tab 
               icon={<AddIcon />} 
-              label="Add New Application"
+              label="Manual Lead Submission"
               iconPosition="start"
               {...a11yProps(1)} 
             />
             <Tab 
               icon={<CloudUploadIcon />} 
-              label="Bulk Upload"
+              label="Lead Bulk Upload"
               iconPosition="start"
               {...a11yProps(2)} 
             />
