@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PauseCircleIcon from "@mui/icons-material/PauseCircle";
+import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import { Edit } from "lucide-react";
 
 const TableOutlet = ({
@@ -28,6 +30,8 @@ const TableOutlet = ({
   hasMore,
   loading,
   pagination,
+  handlePauseToggle,
+  pauseShow
 }) => {
   const observer = useRef();
 
@@ -46,7 +50,7 @@ const TableOutlet = ({
   );
 
   // Filter brands based on search term
-  const filteredBrandList = filteredBrands.filter(brand => {
+  const filteredBrandList = filteredBrands?.filter(brand => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
@@ -58,9 +62,12 @@ const TableOutlet = ({
     );
   });
 
+ 
+
+  
   return (
     <Paper>
-      <TableContainer style={{ maxHeight: "64vh", overflow: "auto" }}>
+      <TableContainer style={{ maxHeight: !pauseShow ? "64vh" : "80vh", overflow: "auto" }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -68,14 +75,19 @@ const TableOutlet = ({
               <TableCell>Brand Name</TableCell>
               <TableCell>Category (Sub)</TableCell>
               <TableCell>Investment Range</TableCell>
-              <TableCell>Details</TableCell>
+              {!pauseShow && <TableCell>Details</TableCell>}
+              
               {editShow && <TableCell>Edit</TableCell>}
-              <TableCell>Delete</TableCell>
-              {!editShow && <TableCell>Approve</TableCell>}
+              {editShow && <TableCell>Pause</TableCell>}
+              {pauseShow && !editShow &&<TableCell>Pause</TableCell>}
+              {!pauseShow && <TableCell>Delete</TableCell>}
+
+              {/* <TableCell>Delete</TableCell> */}
+              {!editShow && !pauseShow &&<TableCell>Approve</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBrandList.length > 0 ? (
+            {filteredBrandList?.length > 0 ? (
               filteredBrandList.map((brand, index) => (
                 <TableRow
                   key={brand?.uuid || `row-${index}`}
@@ -111,7 +123,8 @@ const TableOutlet = ({
                       brand?.investmentRange ||
                       "N/A"}
                   </TableCell>
-                  <TableCell>
+                  {!pauseShow && (
+                    <TableCell>
                     <Box>
                       <Button
                         onClick={() => handleInfoOpen(brand?.uuid)}
@@ -125,6 +138,7 @@ const TableOutlet = ({
                       </Button>
                     </Box>
                   </TableCell>
+                  )}
 
                   {editShow && (
                     <TableCell>
@@ -136,7 +150,40 @@ const TableOutlet = ({
                       </IconButton>
                     </TableCell>
                   )}
-                  <TableCell>
+                    {
+                    pauseShow && (
+                       <TableCell>
+                    <IconButton
+                      onClick={() => handlePauseToggle(brand)}
+                      sx={{ color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff" }}
+                    >
+                      {brand?.isBrandPause ? (
+                        <PauseCircleIcon />
+                      ) : (
+                        <PlayCircleFilledWhiteIcon />
+                      )}
+                    </IconButton>
+                  </TableCell>
+                    )
+                  }
+                    {
+                    editShow && (
+                       <TableCell>
+                    <IconButton
+                      onClick={() => handlePauseToggle(brand)}
+                      sx={{ color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff" }}
+                    >
+                      {brand?.isBrandPause ? (
+                        <PauseCircleIcon />
+                      ) : (
+                        <PlayCircleFilledWhiteIcon />
+                      )}
+                    </IconButton>
+                  </TableCell>
+                    )
+                  }
+                  {!pauseShow && (
+                    <TableCell>
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(brand?.uuid)}
@@ -144,6 +191,7 @@ const TableOutlet = ({
                       <Delete />
                     </IconButton>
                   </TableCell>
+                  )}
                   {!editShow && (
                     <TableCell>
                       {brand?.seen === false && (
@@ -170,11 +218,11 @@ const TableOutlet = ({
         {/* Loader & End message */}
         <div style={{ textAlign: "center", padding: "10px" }}>
           {loading && <CircularProgress size={24} />}
-          {!hasMore && filteredBrandList.length > 0 && <p>No more brands</p>}
-          {pagination.total > 0 && (
+          {!hasMore && filteredBrandList?.length > 0 && <p>No more brands</p>}
+          {pagination?.total > 0 && (
             <p>
-              Showing {filteredBrandList.length} of {pagination.total} brands
-              (Page {pagination.currentPage} of {pagination.totalPages})
+              Showing {filteredBrandList?.length} of {pagination?.total} brands
+              (Page {pagination?.currentPage} of {pagination?.totalPages})
             </p>
           )}
         </div>
