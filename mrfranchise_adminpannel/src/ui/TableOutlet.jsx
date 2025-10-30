@@ -12,11 +12,12 @@ import {
   Box,
   Button,
 } from "@mui/material";
-import { Delete } from "@mui/icons-material";
+import { CheckCircle, Delete } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import { Edit } from "lucide-react";
+import { Payment } from "@mui/icons-material";
 
 const TableOutlet = ({
   filteredBrands,
@@ -31,7 +32,8 @@ const TableOutlet = ({
   loading,
   pagination,
   handlePauseToggle,
-  pauseShow
+  pauseShow,
+  handlepayment
 }) => {
   const observer = useRef();
 
@@ -80,7 +82,8 @@ const TableOutlet = ({
               {editShow && <TableCell>Edit</TableCell>}
               {editShow && <TableCell>Pause</TableCell>}
               {pauseShow && !editShow &&<TableCell>Pause</TableCell>}
-              {!pauseShow && <TableCell>Delete</TableCell>}
+               {editShow && <TableCell>Payment</TableCell>}
+              {/* {!pauseShow && <TableCell>Delete</TableCell>} */}
 
               {/* <TableCell>Delete</TableCell> */}
               {!editShow && !pauseShow &&<TableCell>Approve</TableCell>}
@@ -182,7 +185,19 @@ const TableOutlet = ({
                   </TableCell>
                     )
                   }
-                  {!pauseShow && (
+                   {editShow && (
+                    <TableCell>
+                    <IconButton
+                      color= {brand?.payment ? "success": "error"}
+                      onClick={() => handlepayment(brand)}
+                    >
+                      <CheckCircle />
+                    </IconButton>
+                  </TableCell>
+                  )}
+                  
+                  
+                  {/* {!pauseShow && (
                     <TableCell>
                     <IconButton
                       color="error"
@@ -191,7 +206,7 @@ const TableOutlet = ({
                       <Delete />
                     </IconButton>
                   </TableCell>
-                  )}
+                  )} */}
                   {!editShow && (
                     <TableCell>
                       {brand?.seen === false && (

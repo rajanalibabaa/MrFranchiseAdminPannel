@@ -28,6 +28,7 @@ const PausePlayPopup = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [disabled, setDisabled] = useState(false); 
   const token = adminData?.adminAccessToken || null;
 
   const dispatch = useDispatch();
@@ -51,31 +52,34 @@ const PausePlayPopup = ({
 
     try {
       setLoading(true);
+      setDisabled(true);
       setError("");
       setSuccess("");
 
       const url = `${Api.admin.post.brand.pausePlay}/${data.uuid}`;
       const res = await PostApiCall(url, token);
-      // console.log(res.data)
-      const msg = res.data?.message
+      const msg = res?.data?.message || "Action completed successfully.";
 
-      if (res.data?.data?.brandDetails?.isBrandPause === false) {
-        handleplay(data.uuid);
-        setSuccess(msg);
-      } else {
-        setSuccess(msg);
+      const brandPaused =
+        res?.data?.data?.brandDetails?.isBrandPause === true;
+
+      if (!brandPaused) {
+        handleplay?.(data.uuid);
       }
 
+      setSuccess(msg);
       dispatch(toggleBrandPausePlay(data.uuid));
       onConfirmPausePlay(data);
 
       setTimeout(() => {
         onClose();
         setSuccess("");
+        setDisabled(false);
       }, 1500);
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
+      setDisabled(false);
     } finally {
       setLoading(false);
     }
@@ -112,7 +116,7 @@ const PausePlayPopup = ({
             label="Enter brand name to confirm"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={loading}
+            disabled={disabled || loading}
           />
 
           {error && (
@@ -138,7 +142,7 @@ const PausePlayPopup = ({
           variant="contained"
           color={actionColor}
           onClick={handleConfirm}
-          disabled={!inputValue.trim() || loading}
+          disabled={!inputValue.trim() || loading || disabled}
           startIcon={
             loading && (
               <CircularProgress size={18} color="inherit" thickness={5} />

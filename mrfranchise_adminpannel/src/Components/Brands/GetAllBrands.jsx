@@ -15,6 +15,7 @@ import {
   setPage,
 } from "../../Redux/Slices/FilterBrandSlice";
 import PausePlayPopup from "../../ui/PausePlayPopup.jsx";
+import PaymentPopup from "../../ui/PaymentPopup.jsx";
 
 
 
@@ -29,6 +30,7 @@ const GetAllBrands = () => {
 
   const [open, setOpen] = useState(false);
   const [openBrandPausepopup, setOpenBrandPausepopup] = useState(false);
+  const [openPaymentPopup, setOpenPaymentPopup] = useState(false);
   const [openBrandInfo, setOpenBrandInfo] = useState(false);
   const [selectedBrandId, setSelectedBrandId] = useState(null);
   const [brandDetails, setBrandDetails] = useState(null);
@@ -118,6 +120,11 @@ const GetAllBrands = () => {
       setOpenBrandPausepopup(true);
        setData(brand)
   };
+  const handlepayment = async(brand) => {
+    console.log(brand)
+     setOpenPaymentPopup(true)
+     setData(brand)      
+  };
 
   
 
@@ -147,6 +154,7 @@ const GetAllBrands = () => {
         pagination={pagination}
         handlePauseToggle={handlePauseToggle}
         playshow={true}
+        handlepayment={handlepayment}
       />
 
       {/* Delete Popup */}
@@ -176,6 +184,14 @@ const GetAllBrands = () => {
         brands={brands}
         handleplay={()=>{}}
       />
+    )}
+     {openPaymentPopup && (
+      <PaymentPopup
+        open={openPaymentPopup}
+        onClose={() => setOpenPaymentPopup(false)}
+        data={data}
+      />
+
     )}
     </Box>
   );
