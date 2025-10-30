@@ -200,7 +200,7 @@ const Count = () => {
           <Typography variant="subtitle1" fontWeight="bold"
              sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
           >
-            Instant Apply
+            F&B Instant Apply
           </Typography>
           <Typography
             variant="h5"

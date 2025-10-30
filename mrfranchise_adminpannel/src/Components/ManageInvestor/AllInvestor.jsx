@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import InvestorTableOutlet from "../../ui/InvestorTableOutlet";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
@@ -47,19 +47,29 @@ const AllInvestor = () => {
   const [captchaInput, setCaptchaInput] = useState("");
   const CAPTCHA_WORD = "DOWNLOAD";
 
-  useEffect(() => {
-    const fetchInvestors = async () => {
-      try {
-        const response = await GetApiCall(Api.admin.investor.getAllInvestors);
-        setInvestors(response.data || []);
-        setFilteredInvestors(response.data || []);
-      } catch (error) {
-        console.error("Error fetching Investors:", error);
-      }
-    };
+  // Add refresh counter for force re-render
+  const [refreshKey, setRefreshKey] = useState(0);
 
-    fetchInvestors();
+  // Memoize the fetch function
+  const fetchInvestors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await GetApiCall(Api.admin.investor.getAllInvestors);
+      const investorData = response.data || [];
+      setInvestors(investorData);
+      setFilteredInvestors(investorData);
+      setError("");
+    } catch (error) {
+      console.error("Error fetching Investors:", error);
+      setError("Failed to fetch investors");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchInvestors();
+  }, [fetchInvestors, refreshKey]);
 
   useEffect(() => {
     applyFilters();
@@ -131,6 +141,32 @@ const AllInvestor = () => {
   const handleEdit = (investor) => {
     navigate(`/dashboard/edit-investor/${investor._id}`, { state: { investor } });
   };
+
+  // Handle delete operation
+  const handleDelete = useCallback(async (investorId) => {
+    try {
+      // Optimistically update the UI immediately
+      setInvestors(prev => prev.filter(inv => inv._id !== investorId));
+      setFilteredInvestors(prev => prev.filter(inv => inv._id !== investorId));
+      
+      console.log("Investor deleted successfully, UI updated");
+      
+      // Optionally refresh from server after a short delay
+      setTimeout(() => {
+        setRefreshKey(prev => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Delete operation failed:", error);
+      // If delete fails, refresh to restore the data
+      setRefreshKey(prev => prev + 1);
+    }
+  }, []);
+
+  // Force refresh function
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   // Excel Download function
   const downloadExcel = () => {
@@ -238,17 +274,35 @@ const AllInvestor = () => {
             </Typography>
           </Box>
 
-          {/* Download Excel Button */}
+          {/* Action Buttons */}
           <Box
             sx={{
+              display: "flex",
+              gap: 1,
               [theme => theme.breakpoints.down("sm")]: {
                 alignSelf: "flex-end",
                 width: "100%",
-                display: "flex",
                 justifyContent: "flex-end",
               },
             }}
           >
+            {/* Refresh Button */}
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleRefresh}
+              disabled={loading}
+              sx={{
+                px: { xs: 1, sm: 2 },
+                py: { xs: 0.7, sm: 1 },
+                fontSize: { xs: "0.65rem", sm: "0.875rem" },
+                minWidth: { xs: "70px", sm: "100px" },
+              }}
+            >
+              {loading ? "Loading..." : "Refresh"}
+            </Button>
+
+            {/* Download Excel Button */}
             <Button
               variant="contained"
               color="success"
@@ -294,6 +348,9 @@ const AllInvestor = () => {
         investors={filteredInvestors}
         searchTerm={searchTerm}
         handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        onRefresh={handleRefresh}
+        loading={loading}
       />
 
       {/* Captcha Dialog */}
