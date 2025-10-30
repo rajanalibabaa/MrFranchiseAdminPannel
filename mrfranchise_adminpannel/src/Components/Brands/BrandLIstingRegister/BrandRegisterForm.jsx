@@ -296,12 +296,13 @@ const BrandRegisterForm = () => {
           );
           isValid = Object.keys(errors.expansionLocationDetails).length === 0;
           break;
-        case 3:
-          errors.uploads = validateUploadsDetails(formData.uploads || {});
-          isValid = Object.keys(errors.uploads).length === 0;
-          break;
+        // case 3:
+        //   errors.uploads = validateUploadsDetails(formData.uploads || {});
+        //   isValid = Object.keys(errors.uploads).length === 0;
+        //   break;
         default:
           break;
+          
       }
 
       setValidationErrors(errors);
