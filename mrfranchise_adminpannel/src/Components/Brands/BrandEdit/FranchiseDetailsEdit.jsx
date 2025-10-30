@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
   TextField,
+  Collapse,
+  Stack ,
+  Chip ,
+  Drawer ,
+  AppBar ,
+  Toolbar,
   FormControl,
   FormLabel,
   FormControlLabel,
@@ -37,7 +43,8 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { Delete as DeleteIcon, Edit as EditIcon, InfoOutlined } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
+import { Delete as DeleteIcon, Edit as EditIcon, InfoOutlined , ExpandMore, ExpandLess} from "@mui/icons-material";
 import categories from "../BrandLIstingRegister/BrandCategories";
 const FranchiseDetailsEdit = ({
   data = {},
@@ -85,6 +92,7 @@ const FranchiseDetailsEdit = ({
     marginOnSales: "",
     agreementPeriod: "",
   });
+  
   const [noFees, setNoFees] = useState({
     franchiseFee: false,
     interiorCost: false,
@@ -95,7 +103,18 @@ const FranchiseDetailsEdit = ({
     roi: false,
   });
   const [currentUSP, setCurrentUSP] = useState("");
-  const [editIndex, setEditIndex] = useState(null);
+    const [showSelectedBar, setShowSelectedBar] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+const [showSelectedServiceTags, setShowSelectedServiceTags] = useState(false);
+const [serviceTagDrawerOpen, setServiceTagDrawerOpen] = useState(false);
+const [tempSelectedChild, setTempSelectedChild] = useState([]);
+const [tempSelectedServiceTags, setTempSelectedServiceTags] = useState([]); 
+
+ const [selectedServiceTags, setSelectedServiceTags] = useState(
+    data.serviceTags ? ie(Array.isArray(data.serviceTags) ? data.serviceTags : data.serviceTags.split(" | ").filter(Boolean)) : []
+  );
+
+    const [editIndex, setEditIndex] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const franchiseTypes = [
@@ -138,8 +157,21 @@ const AmbienceExperience=["Casual Dining","Fine Dining","Quick Bite","Romantic",
 const FeaturesAmenities=["Live Music","Sports Screening","Free Wi-Fi","Parking Available","Valet Parking","Kid's Play Area","Pet-Friendly","Wheelchair Accessible","Air Conditioning","Smoking Area","Non-Smoking"]
 const TechnologyIntegration=["Online Ordering","Mobile App","QR Code Menu","Digital Payments","Self-Order Kiosks","Contactless Delivery"]
 const SustainabilityEthics  =["Organic Ingredients","Locally Sourced","Sustainable Sourcing","Eco-Friendly Packaging","Waste Reduction","Energy Efficient","Social Responsibility"]
-const productServiceType = ["North Indian","South Indian","Punjab","Bengali","Gujarati","Italian","Chinese","Thai","Japanese","Korean","French","Mexican","Burgers","Sandwiches","Pizza","Tacos","Biryani","Wraps","Curry","Tandoori","Kebabs","Tea","Juices","Coffee","Smoothies",  ]
+// const productServiceType = ["North Indian","South Indian","Punjab","Bengali","Gujarati","Italian","Chinese","Thai","Japanese","Korean","French","Mexican","Burgers","Sandwiches","Pizza","Tacos","Biryani","Wraps","Curry","Tandoori","Kebabs","Tea","Juices","Coffee","Smoothies",  ]
 const BusinessOperation= ["Franchise Opportunity","Company-Owned","Chain","Single Unit","Multi-Unit","Area Development","Master Franchise"]
+
+const serviceTagGroups = {
+  "Primary Classification": PrimaryClassifications,
+  // "Product / Service Types": productServiceType,
+  "Target Audience": TargetAudience,
+  "Service Model": ServiceModel,
+  "Pricing Value": PricingValue,
+  "Ambience & Experience": AmbienceExperience,
+  "Features & Amenities": FeaturesAmenities,
+  "Technology Integration": TechnologyIntegration,
+  "Sustainability & Ethics": SustainabilityEthics,
+  "Business Operations": BusinessOperation,
+};
 
 const [currentTags, setCurrentTags] = useState({
     PrimaryClassifications: [],
@@ -156,65 +188,110 @@ const [currentTags, setCurrentTags] = useState({
 
 
  useEffect(() => {
-    if (data.franchiseTags) {
-      console.log("Updating currentTags with data:", data.franchiseTags); // Debug log
-      setCurrentTags({
-        PrimaryClassifications: Array.isArray(data.franchiseTags.PrimaryClassifications) 
-          ? data.franchiseTags.PrimaryClassifications 
-          : [],
-        productServiceTypes: Array.isArray(data.franchiseTags.productServiceTypes) 
-          ? data.franchiseTags.productServiceTypes 
-          : [],
-        TargetAudience: Array.isArray(data.franchiseTags.TargetAudience) 
-          ? data.franchiseTags.TargetAudience 
-          : [],
-        ServiceModel: Array.isArray(data.franchiseTags.ServiceModel) 
-          ? data.franchiseTags.ServiceModel 
-          : [],
-        PricingValue: Array.isArray(data.franchiseTags.PricingValue) 
-          ? data.franchiseTags.PricingValue 
-          : [],
-        AmbienceExperience: Array.isArray(data.franchiseTags.AmbienceExperience) 
-          ? data.franchiseTags.AmbienceExperience 
-          : [],
-        FeaturesAmenities: Array.isArray(data.franchiseTags.FeaturesAmenities) 
-          ? data.franchiseTags.FeaturesAmenities 
-          : [],
-        TechnologyIntegration: Array.isArray(data.franchiseTags.TechnologyIntegration) 
-          ? data.franchiseTags.TechnologyIntegration 
-          : [],
-        SustainabilityEthics: Array.isArray(data.franchiseTags.SustainabilityEthics) 
-          ? data.franchiseTags.SustainabilityEthics 
-          : [],
-        BusinessOperations: Array.isArray(data.franchiseTags.BusinessOperations) 
-          ? data.franchiseTags.BusinessOperations 
-          : [],
-      });
+  if (data.franchiseTags) {
+    console.log("🔍 DEBUG - Raw franchiseTags from props:", data.franchiseTags);
+    
+    setCurrentTags({
+      PrimaryClassifications: Array.isArray(data.franchiseTags.PrimaryClassifications) 
+        ? data.franchiseTags.PrimaryClassifications 
+        : [],
+      // ProductServiceTypes: Array.isArray(data.franchiseTags.ProductServiceTypes) 
+      //   ? data.franchiseTags.ProductServiceTypes 
+      //   : [],
+      TargetAudience: Array.isArray(data.franchiseTags.TargetAudience) 
+        ? data.franchiseTags.TargetAudience 
+        : [],
+      ServiceModel: Array.isArray(data.franchiseTags.ServiceModel) 
+        ? data.franchiseTags.ServiceModel 
+        : [],
+      PricingValue: Array.isArray(data.franchiseTags.PricingValue) 
+        ? data.franchiseTags.PricingValue 
+        : [],
+      AmbienceExperience: Array.isArray(data.franchiseTags.AmbienceExperience) 
+        ? data.franchiseTags.AmbienceExperience 
+        : [],
+      FeaturesAmenities: Array.isArray(data.franchiseTags.FeaturesAmenities) 
+        ? data.franchiseTags.FeaturesAmenities 
+        : [],
+      TechnologyIntegration: Array.isArray(data.franchiseTags.TechnologyIntegration) 
+        ? data.franchiseTags.TechnologyIntegration 
+        : [],
+      SustainabilityEthics: Array.isArray(data.franchiseTags.SustainabilityEthics) 
+        ? data.franchiseTags.SustainabilityEthics 
+        : [],
+      BusinessOperations: Array.isArray(data.franchiseTags.BusinessOperations) 
+        ? data.franchiseTags.BusinessOperations 
+        : [],
+    });
+  } else {
+    console.log("❌ DEBUG - No franchiseTags in data:", data);
+  }
+}, [data.franchiseTags]);
+
+const handleOpenDrawer = () => {
+  console.log("✅ handleOpenDrawer triggered!");
+  
+  // Handle both array and string formats for child categories
+  let currentChildTags = [];
+  
+  if (selectedCategory.child) {
+    if (Array.isArray(selectedCategory.child)) {
+      currentChildTags = [...selectedCategory.child];
+    } else if (typeof selectedCategory.child === 'string') {
+      // Split by " | " or " - " depending on your data format
+      currentChildTags = selectedCategory.child.split(" | ").filter(Boolean);
     }
-  }, [data.franchiseTags]);
+  }
+  
+  console.log("🔍 Current child tags:", currentChildTags);
+  setTempSelectedChild(currentChildTags);
+  setDrawerOpen(true);
+};
+
+
+const handleChildToggle = (child) => {
+  setTempSelectedChild((prevSelected) =>
+    prevSelected.includes(child)
+      ? prevSelected.filter((item) => item !== child)
+      : [...prevSelected, child]
+  );
+};
+
+const handleDone = () => {
+  const newCategory = {
+    ...selectedCategory,
+    child: tempSelectedChild,
+  };
+  setSelectedCategory(newCategory);
+  
+  // Send as string to backend to maintain consistency
+  onObjectChange("brandCategories", {
+    ...newCategory,
+    child: tempSelectedChild.join(" | "), // Use consistent separator
+  });
+  
+  setDrawerOpen(false);
+};
 
   // Handle tag change (FIXED)
-  const handleTagChange = (tagType) => (e) => {
-    const {
-      target: { value },
-    } = e;
-    const newValue = typeof value === 'string' ? value.split(',') : value;
-    
-    console.log(`Updating ${tagType} with:`, newValue); // Debug log
-    
-    setCurrentTags((prev) => ({
-      ...prev,
-      [tagType]: newValue,
-    }));
-    
-    // Update the main form data
-    const updatedFranchiseTags = {
-      ...data.franchiseTags,
-      [tagType]: newValue
-    };
-    
-    onObjectChange("franchiseTags", updatedFranchiseTags);
+ const handleTagChange = (tagType) => (e) => {
+  const { target: { value } } = e;
+  console.log(`🔄 Updating ${tagType} with:`, value);
+  console.log(`📊 Before update - currentTags:`, currentTags);
+  
+  // Update local state first
+  const updatedTags = {
+    ...currentTags,
+    [tagType]: value,
   };
+  
+  console.log(`📈 After update - updatedTags:`, updatedTags);
+  setCurrentTags(updatedTags);
+  
+  // Update the main form data - pass the ENTIRE updated franchiseTags object
+  console.log("📤 Sending updated franchiseTags to parent:", updatedTags);
+  onObjectChange("franchiseTags", updatedTags);
+};
 
   const aidFinancingOptions = ["Yes", "No"];
   const agreementPeriods = [
@@ -287,6 +364,14 @@ const [currentTags, setCurrentTags] = useState({
       });
     }
   }, [editIndex, data.fico]);
+  useEffect(() => {
+  if (data.franchiseTags) {
+    const allTags = Object.values(data.franchiseTags).flat().filter(Boolean);
+    setSelectedServiceTags(allTags);
+    setTempSelectedServiceTags(allTags);
+  }
+}, [data.franchiseTags]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "companyOwnedOutlets" || name === "franchiseOutlets") {
@@ -568,16 +653,106 @@ const [currentTags, setCurrentTags] = useState({
   const handleCancelEdit = () => {
     resetFicoForm();
   };
-  const [selectedCategory, setSelectedCategory] = useState({
-    groupId: data.brandCategories?.groupId || "",
-    main: data.brandCategories?.main || "",
-    sub: data.brandCategories?.sub || "",
-    child: data.brandCategories?.child
-      ? (Array.isArray(data.brandCategories.child)
-          ? data.brandCategories.child
-          : data.brandCategories.child.split(" - ").filter(Boolean))
-      : [],
+ // Update the selectedCategory initialization in your component
+const [selectedCategory, setSelectedCategory] = useState({
+  groupId: data.brandCategories?.groupId || "",
+  main: data.brandCategories?.main || "",
+  sub: data.brandCategories?.sub || "",
+  child: data.brandCategories?.child
+    ? (Array.isArray(data.brandCategories.child)
+        ? data.brandCategories.child
+        : data.brandCategories.child.split(" | ").filter(Boolean))
+    : [],
+});
+
+// Add this useEffect to sync with props
+useEffect(() => {
+  if (data.brandCategories) {
+    setSelectedCategory({
+      groupId: data.brandCategories.groupId || "",
+      main: data.brandCategories.main || "",
+      sub: data.brandCategories.sub || "",
+      child: data.brandCategories.child
+        ? (Array.isArray(data.brandCategories.child)
+            ? data.brandCategories.child
+            : data.brandCategories.child.split(" | ").filter(Boolean))
+        : [],
+    });
+  }
+}, [data.brandCategories]);
+const handleOpenServiceTagDrawer = () => {
+  const tagsObj = data.franchiseTags || {};
+  
+  // Flatten all arrays into one list
+  const allSelected = Object.values(tagsObj).flat().filter(Boolean);
+  
+  setTempSelectedServiceTags(allSelected);
+  setServiceTagDrawerOpen(true);
+};
+
+const handleServiceTagToggle = (tag) => {
+  setTempSelectedServiceTags((prev) =>
+    prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]
+  );
+};
+
+const handleServiceTagDone = () => {
+  const updatedTags = {};
+
+  // Group tags by which category they belong to
+  Object.entries(serviceTagGroups).forEach(([groupLabel, options]) => {
+    // Map group labels to property names correctly
+    let propertyName;
+    switch(groupLabel) {
+      case "Primary Classification":
+        propertyName = "PrimaryClassifications";
+        break;
+      // case "Product / Service Types":
+      //   propertyName = "ProductServiceTypes";
+      //   break;
+      case "Target Audience":
+        propertyName = "TargetAudience";
+        break;
+      case "Service Model":
+        propertyName = "ServiceModel";
+        break;
+      case "Pricing Value":
+        propertyName = "PricingValue";
+        break;
+      case "Ambience & Experience":
+        propertyName = "AmbienceExperience";
+        break;
+      case "Features & Amenities":
+        propertyName = "FeaturesAmenities";
+        break;
+      case "Technology Integration":
+        propertyName = "TechnologyIntegration";
+        break;
+      case "Sustainability & Ethics":
+        propertyName = "SustainabilityEthics";
+        break;
+      case "Business Operations":
+        propertyName = "BusinessOperations";
+        break;
+      default:
+        propertyName = groupLabel.replace(/[^a-zA-Z]/g, "");
+    }
+    
+    updatedTags[propertyName] = options.filter((opt) => tempSelectedServiceTags.includes(opt));
   });
+
+  // Save to parent
+  onObjectChange("franchiseTags", updatedTags);
+
+  // Update local state
+  setCurrentTags(updatedTags);
+  
+  // Update selectedServiceTags for display
+  setSelectedServiceTags(tempSelectedServiceTags);
+  
+  setServiceTagDrawerOpen(false);
+};
+
   const handleMainCategoryChange = (e) => {
     const mainCategory = e.target.value;
     const newCategory = {
@@ -648,9 +823,17 @@ const [currentTags, setCurrentTags] = useState({
     onArrayChange("trainingSupport", newValue);
   };
   const formatCurrency = (value) => {
-    if (!value) return "";
-    return value !== "No Fee" ? `${value}.Rs` : value;
-  };
+  if (!value || value === "No Fee" || value === "select") return value || "N/A";
+  
+  // If value already contains the unit, return as is
+  if (typeof value === 'string' && (value.includes('Lakhs') || value.includes('Thousands') || value.includes('%'))) {
+    return value;
+  }
+  
+  // Otherwise, add .Rs suffix
+  return `${value}.Rs`;
+};
+
   return (
     <Box sx={{ pr: 1, mr: { sm: 0, md: 10 }, ml: { sm: 0, md: 10 } }}>
       {/* Delete Confirmation Dialog */}
@@ -669,43 +852,77 @@ const [currentTags, setCurrentTags] = useState({
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* Brand Categories Section */}
       <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
         Brand Categories
       </Typography>
       <Grid
-        container
-        spacing={2}
-        sx={{
-          mt: 3,
-          display: "grid",
-          gridTemplateColumns: { md: "repeat(4, 1fr)", xs: "1fr" },
-          gap: 2,
-          mb: 2,
+         container
+  spacing={2}
+  sx={{
+    mb: 4,
+    alignItems: "flex-start",
+  }}
+      >
+         <Grid item xs={12} md={3}>
+    <FormControl fullWidth size="medium">
+      <InputLabel id="industries-label">Industries</InputLabel>
+      <Select
+        labelId="industries-label"
+        id="industries-select"
+        value={selectedCategory.main || ""}
+        label="Industries"
+        onChange={handleMainCategoryChange}
+        disabled={!isEditing}
+        sx={{ minHeight: 56 }}
+        MenuProps={{
+          PaperProps: { sx: { maxHeight: 320 } },
         }}
       >
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth size="medium">
-            <InputLabel>Industries</InputLabel>
-            <Select
-              value={selectedCategory.main || ""}
-              label="Industries"
-              onChange={handleMainCategoryChange}
-              error={!!errors.mainCategory}
-              disabled={!isEditing}
-            >
-              {categories.map((category) => (
-                <MenuItem key={category.name} value={category.name}>
-                  {category.name}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.mainCategory && (
-              <FormHelperText error>{errors.mainCategory}</FormHelperText>
-            )}
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={4}>
+        {categories.map((category) => (
+          <MenuItem key={category.name} value={category.name}>
+            {category.name}
+          </MenuItem>
+        ))}
+      </Select>
+      {errors.mainCategory && (
+        <FormHelperText error>{errors.mainCategory}</FormHelperText>
+      )}
+    </FormControl>
+  </Grid>
+
+       <Grid item xs={12} md={3}>
+    <FormControl fullWidth size="medium">
+      <InputLabel id="main-cat-label">Main Category</InputLabel>
+      <Select
+        labelId="main-cat-label"
+        id="main-cat-select"
+        value={selectedCategory.sub || ""}
+        label="Main Category"
+        onChange={handleSubCategoryChange}
+        disabled={!isEditing || !selectedCategory.main}
+        sx={{ minHeight: 56 }}
+        MenuProps={{
+          PaperProps: { sx: { maxHeight: 320 } },
+        }}
+      >
+        {selectedCategory.main &&
+          categories
+            .find((cat) => cat.name === selectedCategory.main)
+            ?.children?.map((subCategory) => (
+              <MenuItem key={subCategory.name} value={subCategory.name}>
+                {subCategory.name}
+              </MenuItem>
+            ))}
+      </Select>
+      {errors.subCategory && (
+        <FormHelperText error>{errors.subCategory}</FormHelperText>
+      )}
+    </FormControl>
+  </Grid>
+  
+   {/* <Grid item xs={12} sm={4}>
           <FormControl fullWidth size="medium">
             <InputLabel>Main Category</InputLabel>
             <Select
@@ -728,49 +945,372 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.subCategory}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth size="medium">
-            <InputLabel>Sub Category</InputLabel>
-            <Select
-              multiple
-              value={selectedCategory.child || []}
-              label="Sub Category"
-              onChange={handleChildCategoryChange}
-              error={!!errors.childCategory}
-              renderValue={(selected) =>
-                selected.length > 0
-                  ? selected.join(" - ")
-                  : "Select sub categories"
-              }
-              disabled={!isEditing || !selectedCategory.sub}
-            >
-              {selectedCategory.sub &&
-                categories
-                  .find((cat) => cat.name === selectedCategory.main)
-                  ?.children?.find((sub) => sub.name === selectedCategory.sub)
-                  ?.children?.map((child) => (
-                    <MenuItem key={child} value={child}>
-                      <Checkbox
-                        checked={
-                          selectedCategory.child.indexOf(child) > -1
-                        }
-                      />
-                      <ListItemText primary={child} />
-                    </MenuItem>
-                  ))}
-            </Select>
-            {errors.childCategory && (
-              <FormHelperText error>{errors.childCategory}</FormHelperText>
-            )}
-          </FormControl>
-        </Grid>
-      </Grid>
- <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
-        Franchise Tags
-      </Typography>
+        </Grid> */}
 
-      <Grid
+       {/* Product Tag */}
+<Grid item xs={12} md={3}>
+  <FormControl fullWidth size="medium">
+    <InputLabel shrink htmlFor="sub-cat-field">Product Tag</InputLabel>
+    <TextField
+      id="sub-cat-field"
+      variant="outlined"
+      value={
+        selectedCategory.child?.length
+          ? `${selectedCategory.child.length} tag(s) selected`
+          : 'Select Product Tags'
+      }
+      placeholder="Select Product Tags"
+      onClick={handleOpenDrawer}
+      InputProps={{ readOnly: true }}
+      disabled={!isEditing} // Remove the !selectedCategory.sub condition
+      sx={{
+        minHeight: 56,
+        '& .MuiInputBase-input': {
+          cursor: isEditing ? 'pointer' : 'default',
+          userSelect: 'none',
+        },
+      }}
+    />
+  </FormControl>
+</Grid>
+
+   {/* Service Tag */}
+  <Grid item xs={12} md={3}>
+    <FormControl fullWidth size="medium">
+      <InputLabel shrink htmlFor="service-tag-field">Service Tag</InputLabel>
+      <TextField
+        id="service-tag-field"
+        variant="outlined"
+        value={
+          selectedServiceTags.length
+            ? `${selectedServiceTags.length} tag(s) selected`
+            : "Select Service Tags"
+        }
+        placeholder="Select Service Tags"
+        onClick={handleOpenServiceTagDrawer}
+        InputProps={{ readOnly: true }}
+        disabled={!isEditing || !selectedCategory.sub}
+        sx={{
+          minHeight: 56,
+          '& .MuiInputBase-input': {
+            cursor: isEditing ? 'pointer' : 'default',
+            userSelect: 'none',
+          },
+        }}
+      />
+    </FormControl>
+  </Grid>
+
+      </Grid>
+      
+ {!!selectedCategory.child?.length &&(
+      <Box sx={{ mt: 2, width: '100%' }}>
+        <Box
+          onClick={() => setShowSelectedBar((v) => !v)}
+          sx={{
+            px: 2,
+            py: 1,
+            mb:3,
+            bgcolor: 'grey.100',
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={700}>
+            View Selected Product Tags 
+          </Typography>
+          {showSelectedBar ? <ExpandLess /> : <ExpandMore />}
+        </Box>
+
+        <Collapse in={showSelectedBar}>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            gap={1}
+            sx={{ px: 2, py: 2,  borderRadius: 1 }}
+          >
+            {selectedCategory.child.map((child) => (
+              <Chip
+                key={child}
+                label={child}
+                size="small"
+                // onDelete={isEditing ? () => handleChildToggle(child) : undefined}
+              />
+            ))}
+          </Stack>
+        </Collapse>
+      </Box>
+    )}
+    {/* View Selected Service Tags Section */}
+{!!selectedServiceTags.length &&(
+  <Box sx={{ mt: 2, width: '100%' }}>
+    <Box
+      onClick={() => setShowSelectedServiceTags((v) => !v)}
+      sx={{
+        px: 2,
+        py: 1,
+        mb: 3,
+        bgcolor: 'grey.100',
+        borderRadius: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+    >
+      <Typography variant="subtitle1" fontWeight={700}>
+        View Selected Service Tags 
+      </Typography>
+      {showSelectedServiceTags ? <ExpandLess /> : <ExpandMore />}
+    </Box>
+
+    <Collapse in={showSelectedServiceTags}>
+      <Box sx={{ px: 2, py: 2 }}>
+        {/* Group service tags by category */}
+        {Object.entries(serviceTagGroups).map(([groupLabel, options]) => {
+          const selectedInGroup = options.filter(opt => 
+            tempSelectedServiceTags.includes(opt)
+          );
+          
+          if (selectedInGroup.length === 0) return null;
+          
+          return (
+            <Box key={groupLabel} sx={{ mb: 2 }}>
+              <Typography 
+                variant="subtitle2" 
+                fontWeight={600} 
+                sx={{ color: '#ff9800', mb: 1 }}
+              >
+                {groupLabel}:
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {selectedInGroup.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    size="small"
+                    // color="primary"
+                    variant="outlined"
+                    // onDelete={isEditing ? () => handleServiceTagToggle(tag) : undefined}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          );
+        })}
+      </Box>
+    </Collapse>
+  </Box>
+)}
+
+{/* Drawer for Service tags */}
+<Drawer
+  anchor="top"
+  open={serviceTagDrawerOpen}
+  onClose={() => setServiceTagDrawerOpen(false)}
+  PaperProps={{ sx: { height: "95vh" } }}
+>
+  <AppBar position="sticky" color="default" elevation={1}>
+    <Toolbar sx={{ justifyContent: "space-between" }}>
+      <Typography variant="h6" sx={{ color: "#ff9800" }}>
+        All Service Tags
+      </Typography>
+      <IconButton onClick={() => setServiceTagDrawerOpen(false)}>
+        <CloseIcon />
+      </IconButton>
+    </Toolbar>
+  </AppBar>
+
+  <Box sx={{ p: 2, overflowY: "auto", height: "calc(80vh - 64px)" }}>
+    {Object.entries(serviceTagGroups).map(([groupLabel, options]) => (
+      <Box key={groupLabel} sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ fontWeight: 700, mb: 1, color: "#ff9800" }}
+        >
+          {groupLabel}
+        </Typography>
+
+       <Grid container spacing={1}>
+  {options.map((opt) => (
+    <Grid item xs={12} sm={6} md={3} key={opt}>
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={tempSelectedServiceTags.includes(opt)}
+            onChange={() => handleServiceTagToggle(opt)}
+            color="primary"
+          />
+        }
+        label={
+          <Typography variant="body2">
+            {opt}
+          </Typography>
+        }
+        sx={{
+          width: '100%',
+          margin: 0,
+          '& .MuiFormControlLabel-label': {
+            width: '100%',
+          }
+        }}
+      />
+    </Grid>
+  ))}
+</Grid>
+      </Box>
+    ))}
+  </Box>
+
+  <Box
+    sx={{
+      position: "sticky",
+      bottom: 0,
+      p: 2,
+      bgcolor: "background.paper",
+      borderTop: "1px solid rgba(0,0,0,0.12)",
+      display: "flex",
+      justifyContent: "space-between",
+    }}
+  >
+    <Typography>{tempSelectedServiceTags.length} tag(s) selected</Typography>
+    <Box>
+      <Button
+        onClick={() => setServiceTagDrawerOpen(false)}
+        sx={{ mr: 2 }}
+        variant="outlined"
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleServiceTagDone}
+        sx={{ backgroundColor: "#ff9800", color: "#fff" }}
+      >
+        Done
+      </Button>
+    </Box>
+  </Box>
+</Drawer>
+{/* Drawer for Product Tags */}
+
+<Drawer
+  anchor="top"
+  open={drawerOpen}
+  onClose={() => setDrawerOpen(false)}
+  PaperProps={{ sx: { height: "95vh" } }}
+>
+  <AppBar position="sticky" color="default" elevation={1}>
+    <Toolbar sx={{ justifyContent: "space-between" }}>
+      <Typography variant="h6" sx={{ color: "#ff9800" }}>
+        Select Product Tags - All Categories
+      </Typography>
+      <IconButton onClick={() => setDrawerOpen(false)}>
+        <CloseIcon />
+      </IconButton>
+    </Toolbar>
+  </AppBar>
+
+  <Box sx={{ p: 2, overflowY: "auto", height: "calc(80vh - 64px)" }}>
+    {/* Show ALL categories and their children */}
+    {categories.map((category) => (
+      <Box key={category.name} sx={{ mb: 4 }}>
+        <Typography
+          variant="h6"
+          sx={{ 
+            fontWeight: 700, 
+            mb: 2, 
+            color: "#ff9800",
+            borderBottom: "2px solid #ff9800",
+            pb: 1
+          }}
+        >
+          {category.name}
+        </Typography>
+        
+        {category.children?.map((subCategory) => (
+          <Box key={subCategory.name} sx={{ mb: 3, ml: 2 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, mb: 1, color: "text.primary" }}
+            >
+              {subCategory.name}
+            </Typography>
+            
+            <Grid container spacing={1}>
+              {subCategory.children?.map((child) => (
+                <Grid item xs={12} sm={6} md={3} key={child}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={tempSelectedChild.includes(child)}
+                        onChange={() => handleChildToggle(child)}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">
+                        {child}
+                      </Typography>
+                    }
+                    sx={{
+                      width: '100%',
+                      margin: 0,
+                      '& .MuiFormControlLabel-label': {
+                        width: '100%',
+                      }
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        ))}
+      </Box>
+    ))}
+  </Box>
+
+  <Box
+    sx={{
+      position: "sticky",
+      bottom: 0,
+      p: 2,
+      bgcolor: "background.paper",
+      borderTop: "1px solid rgba(0,0,0,0.12)",
+      display: "flex",
+      justifyContent: "space-between",
+    }}
+  >
+    <Typography>{tempSelectedChild.length} tag(s) selected</Typography>
+    <Box>
+      <Button
+        onClick={() => setDrawerOpen(false)}
+        sx={{ mr: 2 }}
+        variant="outlined"
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleDone}
+        sx={{ backgroundColor: "#ff9800", color: "#fff" }}
+      >
+        Done
+      </Button>
+    </Box>
+  </Box>
+</Drawer>
+
+ {/* <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
+        Franchise Tags
+      </Typography> */}
+
+      {/* <Grid
         container
         spacing={2}
         sx={{
@@ -780,9 +1320,10 @@ const [currentTags, setCurrentTags] = useState({
           mb: 4,
           mt: 2,
         }}
-      >
+      > */}
+
         {/* Primary Classification */}
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <FormControl
             fullWidth
             error={!!errors.PrimaryClassifications}
@@ -826,10 +1367,10 @@ const [currentTags, setCurrentTags] = useState({
               </FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Product/Service Types */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.productServiceTypes}
@@ -871,10 +1412,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.productServiceTypes}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Target Audience */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.TargetAudience}
@@ -916,10 +1457,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.TargetAudience}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Service Model */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.ServiceModel}
@@ -961,10 +1502,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.ServiceModel}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Pricing Value */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.PricingValue}
@@ -1006,10 +1547,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.PricingValue}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Ambience Experience */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.AmbienceExperience}
@@ -1051,10 +1592,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.AmbienceExperience}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Features & Amenities */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.FeaturesAmenities}
@@ -1096,10 +1637,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.FeaturesAmenities}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Technology Integration */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.TechnologyIntegration}
@@ -1141,10 +1682,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.TechnologyIntegration}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Sustainability & Ethics */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.SustainabilityEthics}
@@ -1186,10 +1727,10 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.SustainabilityEthics}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
+        </Grid> */}
 
         {/* Business Operations */}
-        <Grid item>
+        {/* <Grid item>
           <FormControl
             fullWidth
             error={!!errors.BusinessOperations}
@@ -1231,8 +1772,8 @@ const [currentTags, setCurrentTags] = useState({
               <FormHelperText error>{errors.BusinessOperations}</FormHelperText>
             )}
           </FormControl>
-        </Grid>
-      </Grid>
+        </Grid> */}
+      {/* </Grid> */}
 
 
       <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: "#ff9800" }}>
