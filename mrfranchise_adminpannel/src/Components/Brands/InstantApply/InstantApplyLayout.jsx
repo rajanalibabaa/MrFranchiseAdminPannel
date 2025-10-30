@@ -7,16 +7,35 @@ import {
   TableContainer,
   Paper,
   Typography,
-  TablePagination,
+  Tabs,
+  Tab,
+  Box,
+  Badge,
+  Divider,
 } from "@mui/material";
+import {
+  List as ListIcon,
+  Add as AddIcon,
+  CloudUpload as CloudUploadIcon,
+  Analytics as AnalyticsIcon
+} from '@mui/icons-material';
 import InstantApplyFilters from "../../../ui/InstantApplyUI/InstantApplyFilters";
 import InstantApplyTable from "../../../ui/InstantApplyUI/InstantApplyTable";
 import InstantApplyDialog from "../../../ui/InstantApplyUI/InstantApplyDialog";
+import InstantApplyForm from "../../../ui/InstantApplyUI/InstantApplyForm";
 import dayjs from "dayjs";
+
+// Import the new components we created
+import ManualSubmissionForm from "../../InstantapplyFunctions/InstantapplyManualFunction";
+import ExcelUploadForm from "../../InstantapplyFunctions/ExcelUploadInstantApplyForm";
 
 const InstantApplyLayout = () => {
   const { adminData } = useSelector((state) => state.admin);
+  
+  // Tab state
+  const [tabValue, setTabValue] = useState(0);
 
+  // Existing states
   const [instantApplyList, setInstantApplyList] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [page, setPage] = useState(0);
@@ -40,6 +59,40 @@ const InstantApplyLayout = () => {
   const [clearFilter, setclearFilter] = useState(true);
   const [clearFilterloading, setclearFilterloading] = useState(false);
 
+  // Mock selected brand for forms - you might want to get this from props or context
+  const [selectedBrand] = useState([
+    {
+      uuid: adminData?.adminData?.uuid,
+      brandDetails: {
+        brandName: adminData?.adminData?.brandName || 'Admin Brand'
+      }
+    }
+  ]);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  // Custom TabPanel component
+  const TabPanel = ({ children, value, index, ...other }) => (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`instant-apply-tabpanel-${index}`}
+      aria-labelledby={`instant-apply-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+
+  // Tab props for accessibility
+  const a11yProps = (index) => ({
+    id: `instant-apply-tab-${index}`,
+    'aria-controls': `instant-apply-tabpanel-${index}`,
+  });
+
+  // Existing useEffect and functions remain the same
   useEffect(() => {
     const fetchInstantApply = async () => {
       try {
@@ -97,7 +150,7 @@ const InstantApplyLayout = () => {
 
   const handleChange = async (label, value, setter) => {
     try {
-      setter(value); // update local state
+      setter(value);
 
       let payload = {
         city: label === "city" ? value : selectedCity,
@@ -126,7 +179,6 @@ const InstantApplyLayout = () => {
               : fromDate
               ? dayjs(fromDate).format("YYYY-MM-DD")
               : null,
-
           toDate:
             label === "toDate"
               ? dayjs(value).format("YYYY-MM-DD")
@@ -134,7 +186,6 @@ const InstantApplyLayout = () => {
               ? dayjs(toDate).format("YYYY-MM-DD")
               : null,
         };
-        // console.log(payload)
         resdata = await PostApiCall(
           `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
           adminData?.adminAccessToken,
@@ -193,7 +244,6 @@ const InstantApplyLayout = () => {
     setFromDate(null);
     setToDate(null);
     setclearFilterloading(true);
-
     setclearFilter(true);
   };
 
@@ -206,9 +256,9 @@ const InstantApplyLayout = () => {
         investmentRange: selectedRange,
         page: page,
       };
-  
+
       let resdata;
-  
+
       if (searchTerm) {
         payload = {
           searchTerm: searchTerm,
@@ -225,8 +275,7 @@ const InstantApplyLayout = () => {
           toDate: dayjs(toDate).format("YYYY-MM-DD"),
           page: page,
         };
-  
-        console.log(payload);
+
         resdata = await PostApiCall(
           `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
           adminData?.adminAccessToken,
@@ -243,9 +292,8 @@ const InstantApplyLayout = () => {
           { payload }
         );
       }
-  
+
       const data = resdata?.data?.data;
-      console.log("Filter/Search API Response:", resdata?.data);
       if (resdata?.data?.success && data) {
         setInstantApplyList([
           ...instantApplyList,
@@ -266,55 +314,194 @@ const InstantApplyLayout = () => {
         );
       }
     } catch (error) {
-      console.log("error in pagination",error)
-    } 
+      console.log("error in pagination", error);
+    }
+  };
+
+  // Function to refresh the list after successful submission
+  const handleRefreshList = () => {
+    setclearFilter(true);
+    setTabValue(0); // Switch back to list view
   };
 
   return (
-    <>
-      <TableContainer component={Paper} sx={{ margin: 2, p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Instant Apply List
-        </Typography>
+    <Box sx={{ width: '100%' }}>
+      <Paper elevation={2} sx={{ margin: 2 }}>
+        {/* Header */}
+        <Box sx={{ p: 2, pb: 0 }}>
+          <Typography variant="h5" textAlign={'center'} color="warning" sx={{ mb: 1 }}>
+            Instant Apply Management
+          </Typography>
+         
+        </Box>
 
-        <InstantApplyFilters
-          cities={cities}
-          districts={districts}
-          investmentRanges={investmentRanges}
-          states={states}
-          selectedCity={selectedCity}
-          setSelectedCity={setSelectedCity}
-          selectedDistrict={selectedDistrict}
-          setSelectedDistrict={setSelectedDistrict}
-          selectedRange={selectedRange}
-          setSelectedRange={setSelectedRange}
-          selectedState={selectedState}
-          setSelectedState={setSelectedState}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          handleChange={handleChange}
-          fromDate={fromDate}
-          setFromDate={setFromDate}
-          setToDate={setToDate}
-          toDate={toDate}
-          handleClear={handleClear}
-          clearFilterloading={clearFilterloading}
-        />
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            aria-label="instant apply tabs"
+            sx={{ px: 2 }}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab 
+              icon={<ListIcon />} 
+              label={
+                <Badge 
+                // badgeContent={instantApplyList.length}
+                 color="warning" 
+                 max={999}>
+                  Direct Leads List 
+                </Badge>
+              }
+              iconPosition="start"
+              {...a11yProps(0)} 
+            />
+            <Tab 
+              icon={<AddIcon />} 
+              label="Manual Lead Submission"
+              iconPosition="start"
+              {...a11yProps(1)} 
+            />
+            <Tab 
+              icon={<CloudUploadIcon />} 
+              label="Lead Bulk Upload"
+              iconPosition="start"
+              {...a11yProps(2)} 
+            />
+            {/* <Tab 
+              icon={<AnalyticsIcon />} 
+              label="Analytics"
+              iconPosition="start"
+              {...a11yProps(3)} 
+            /> */}
+          </Tabs>
+        </Box>
 
-        <InstantApplyTable
-          instantApplyList={instantApplyList}
-          setSelectedItem={setSelectedItem}
-          page={page}
-          setPage={setPage}
-          handlePagination={handlePagination}
-        />
-      </TableContainer>
+        {/* Tab Panels */}
+        <TabPanel value={tabValue} index={0}>
+          {/* Existing List View */}
+          <Box sx={{ px: 2 }}>
+            <InstantApplyFilters
+              cities={cities}
+              districts={districts}
+              investmentRanges={investmentRanges}
+              states={states}
+              selectedCity={selectedCity}
+              setSelectedCity={setSelectedCity}
+              selectedDistrict={selectedDistrict}
+              setSelectedDistrict={setSelectedDistrict}
+              selectedRange={selectedRange}
+              setSelectedRange={setSelectedRange}
+              selectedState={selectedState}
+              setSelectedState={setSelectedState}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              handleChange={handleChange}
+              fromDate={fromDate}
+              setFromDate={setFromDate}
+              setToDate={setToDate}
+              toDate={toDate}
+              handleClear={handleClear}
+              clearFilterloading={clearFilterloading}
+            />
 
+            <Divider sx={{ my: 2 }} />
+
+            <InstantApplyTable
+              instantApplyList={instantApplyList}
+              setSelectedItem={setSelectedItem}
+              page={page}
+              setPage={setPage}
+              handlePagination={handlePagination}
+            />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          {/* Manual Form */}
+          <Box sx={{ px: 2 }}>
+            <ManualSubmissionForm 
+              selectedBrand={selectedBrand}
+              onClose={handleRefreshList}
+              onSuccess={handleRefreshList}
+            />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          {/* Bulk Upload */}
+          <Box sx={{ px: 2 }}>
+            <ExcelUploadForm 
+              selectedBrand={selectedBrand}
+              onSuccess={handleRefreshList}
+            />
+          </Box>
+        </TabPanel>
+
+        {/* <TabPanel value={tabValue} index={3}>
+          {/* Analytics/Stats View 
+          <Box sx={{ px: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Application Analytics
+            </Typography>
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: 2, 
+              mb: 3 
+            }}>
+              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="primary">
+                  {instantApplyList.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Applications
+                </Typography>
+              </Paper>
+              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="success.main">
+                  {states.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  States Covered
+                </Typography>
+              </Paper>
+              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="warning.main">
+                  {cities.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Cities Covered
+                </Typography>
+              </Paper>
+              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="info.main">
+                  {investmentRanges.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Investment Ranges
+                </Typography>
+              </Paper>
+            </Box>
+            
+            {/* You can add more analytics components here *
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
+              📊 More detailed analytics coming soon...
+            </Typography>
+          </Box>
+        </TabPanel> */}
+      </Paper>
+
+      {/* Dialogs */}
       <InstantApplyDialog
         selectedItem={selectedItem}
         onClose={() => setSelectedItem(null)}
       />
-    </>
+      
+      
+    </Box>
   );
 };
 

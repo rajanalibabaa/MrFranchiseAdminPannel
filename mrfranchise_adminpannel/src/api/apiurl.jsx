@@ -34,6 +34,9 @@ export const Api = {
         data : `${BASE_URL}/instantapply/getAllInstantApply`,
         dropdown : `${BASE_URL}/instantapply/getInstantApplyDropDownData`,
         filterandsearch : `${BASE_URL}/instantapply/getInstantApplySearchData`,
+      },
+      brands:{
+        allpauseBrand:`${BASE_URL}/getAllPauseBrand`,
       }
     },
 
@@ -43,6 +46,9 @@ export const Api = {
         verifyOTP : `${BASE_URL}/login/verifyAdminLoginOTP`,
       },
       logout :`${BASE_URL_2}/logout`,
+      brand:{
+        pausePlay:`${BASE_URL}/toggleBrandPausePlay`,
+      }
     }
   },
 };

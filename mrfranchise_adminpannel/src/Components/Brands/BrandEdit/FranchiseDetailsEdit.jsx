@@ -791,7 +791,7 @@ const handleServiceTagDone = () => {
     // Send as string to backend
     const toSend = {
       ...newCategory,
-      child: newChild.join(" - "),
+      child: newChild.join(" | "),
     };
     onObjectChange("brandCategories", toSend);
   };

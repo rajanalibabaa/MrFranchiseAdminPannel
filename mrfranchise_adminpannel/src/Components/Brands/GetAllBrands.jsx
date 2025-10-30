@@ -5,7 +5,7 @@ import { Api } from "../../api/apiurl";
 import DeletePopup from "../../ui/DeletePopup";
 import BrandInfoPopup from "../../ui/BrandInfoPopup";
 
-import { Badge, Box, Tabs, Tab, styled } from "@mui/material";
+import { Badge, Box, Tabs, Tab,  } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import BrandFilter from "./BrandFilter/BrandFilter";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,6 +14,7 @@ import {
   setFilter, 
   setPage,
 } from "../../Redux/Slices/FilterBrandSlice";
+import PausePlayPopup from "../../ui/PausePlayPopup.jsx";
 
 
 
@@ -27,11 +28,13 @@ const GetAllBrands = () => {
   );
 
   const [open, setOpen] = useState(false);
+  const [openBrandPausepopup, setOpenBrandPausepopup] = useState(false);
   const [openBrandInfo, setOpenBrandInfo] = useState(false);
   const [selectedBrandId, setSelectedBrandId] = useState(null);
   const [brandDetails, setBrandDetails] = useState(null);
-  const [activeTab, setActiveTab] = useState(0); // 0 = All Brands, 1 = New Incoming
-
+  const [activeTab, setActiveTab] = useState(0); 
+  const [data,setData] = useState(null)
+  
 
 
   // Fetch brands when filters change
@@ -110,6 +113,14 @@ const GetAllBrands = () => {
     }
   };
 
+  const handlePauseToggle = async(brand) => {
+    
+      setOpenBrandPausepopup(true);
+       setData(brand)
+  };
+
+  
+
   // Tab change
   return (
     <Box>
@@ -134,6 +145,8 @@ const GetAllBrands = () => {
         hasMore={pagination.hasNext}
         loading={loading}
         pagination={pagination}
+        handlePauseToggle={handlePauseToggle}
+        playshow={true}
       />
 
       {/* Delete Popup */}
@@ -154,6 +167,16 @@ const GetAllBrands = () => {
           brandDetails={brandDetails}
         />
       )}
+      {/* BrandPause Popup */}
+     {openBrandPausepopup && (
+      <PausePlayPopup
+        open={openBrandPausepopup}
+        onClose={() => setOpenBrandPausepopup(false)}
+        data={data}
+        brands={brands}
+        handleplay={()=>{}}
+      />
+    )}
     </Box>
   );
 };
