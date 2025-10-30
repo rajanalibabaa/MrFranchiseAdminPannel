@@ -15,6 +15,7 @@ import { Api } from "../../api/apiurl";
 import { useDispatch } from "react-redux";
 import { goToNewIncoming } from "../../Redux/Slices/newIncomingSlice";
 import socket from "../../utils/socket";
+import FbCount from "./FoodandBevaragesCount";
 
 const Count = () => {
   const [brandsData, setBrandsData] = useState(null);
@@ -207,7 +208,8 @@ const Count = () => {
             color="success.main"
             sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
           >
-            {brandsData.instantApplyCount}
+              <FbCount/>
+
           </Typography>
         </CardContent>
       </Card>
