@@ -48,6 +48,7 @@ export const Api = {
       logout :`${BASE_URL_2}/logout`,
       brand:{
         pausePlay:`${BASE_URL}/toggleBrandPausePlay`,
+        payment:`${BASE_URL}/togglePayment`,
       }
     }
   },

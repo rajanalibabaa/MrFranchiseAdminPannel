@@ -38,7 +38,7 @@ export const fetchFilteredBrands = createAsyncThunk(
 
       const response = await axios.get(`${API_BASE_URL}filter/getAllBrandsAndFilter?${params.toString()}`);
       
-      // console.log("Fetched Brands Response:", response.data);
+      console.log("Fetched Brands Response:", response.data);
       // Normalize the brand data to ensure consistent structure
       const normalizedBrands = response.data.data?.brands?.map(brand => ({
         ...brand,
@@ -163,6 +163,19 @@ const filterBrandSlice = createSlice({
         return brand;
       });
     },
+    toggleBrandPayment: (state, action) => {
+      const brandId = action.payload;
+
+      state.brands = state.brands.map((brand) => {
+        if (brand.uuid === brandId) {
+          return {
+            ...brand,
+            payment: !brand.payment, 
+          };
+        }
+        return brand;
+      });
+    },
 
   },
   extraReducers: (builder) => {
@@ -203,6 +216,7 @@ export const {
   appendBrands,
   deleteBrand,
   toggleBrandPausePlay,
+  toggleBrandPayment,
 
 } = filterBrandSlice.actions;
 
