@@ -32,11 +32,13 @@ export const Api = {
       },
       instantApply : {
         data : `${BASE_URL_2}/instantapply/getAllLeads`,
+        freeleadS:`${BASE_URL_2}/instantapply/getFreeLeads`,
         dropdown : `${BASE_URL}/instantapply/getInstantApplyDropDownData`,
         filterandsearch : `${BASE_URL}/instantapply/getInstantApplySearchData`,
       },
       brands:{
         allpauseBrand:`${BASE_URL}/getAllPauseBrand`,
+        
       }
     },
 
