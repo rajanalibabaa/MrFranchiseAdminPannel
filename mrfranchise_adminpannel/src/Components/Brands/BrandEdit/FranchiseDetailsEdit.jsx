@@ -892,7 +892,33 @@ const handleServiceTagDone = () => {
     </FormControl>
   </Grid>
 
-       <Grid item xs={12} md={3}>
+  
+  
+   {/* <Grid item xs={12} sm={4}>
+          <FormControl fullWidth size="medium">
+            <InputLabel>Main Category</InputLabel>
+            <Select
+              value={selectedCategory.sub || ""}
+              label="Main Category"
+              onChange={handleSubCategoryChange}
+              error={!!errors.subCategory}
+              disabled={!isEditing || !selectedCategory.main}
+            >
+              {selectedCategory.main &&
+                categories
+                  .find((cat) => cat.name === selectedCategory.main)
+                  ?.children?.map((subCategory) => (
+                    <MenuItem key={subCategory.name} value={subCategory.name}>
+                      {subCategory.name}
+                    </MenuItem>
+                  ))}
+            </Select>
+            {errors.subCategory && (
+              <FormHelperText error>{errors.subCategory}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid> */}
+     <Grid item xs={12} md={3}>
     <FormControl fullWidth size="medium">
       <InputLabel id="main-cat-label">Main Category</InputLabel>
       <Select
@@ -921,32 +947,6 @@ const handleServiceTagDone = () => {
       )}
     </FormControl>
   </Grid>
-  
-   {/* <Grid item xs={12} sm={4}>
-          <FormControl fullWidth size="medium">
-            <InputLabel>Main Category</InputLabel>
-            <Select
-              value={selectedCategory.sub || ""}
-              label="Main Category"
-              onChange={handleSubCategoryChange}
-              error={!!errors.subCategory}
-              disabled={!isEditing || !selectedCategory.main}
-            >
-              {selectedCategory.main &&
-                categories
-                  .find((cat) => cat.name === selectedCategory.main)
-                  ?.children?.map((subCategory) => (
-                    <MenuItem key={subCategory.name} value={subCategory.name}>
-                      {subCategory.name}
-                    </MenuItem>
-                  ))}
-            </Select>
-            {errors.subCategory && (
-              <FormHelperText error>{errors.subCategory}</FormHelperText>
-            )}
-          </FormControl>
-        </Grid> */}
-
        {/* Product Tag */}
 <Grid item xs={12} md={3}>
   <FormControl fullWidth size="medium">
