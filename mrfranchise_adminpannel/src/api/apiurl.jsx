@@ -31,12 +31,14 @@ export const Api = {
         usersCount:`${BASE_URL}/userCount`,
       },
       instantApply : {
-        data : `${BASE_URL}/instantapply/getAllInstantApply`,
+        data : `${BASE_URL_2}/instantapply/getAllLeads`,
+        freeleadS:`${BASE_URL_2}/instantapply/getFreeLeads`,
         dropdown : `${BASE_URL}/instantapply/getInstantApplyDropDownData`,
         filterandsearch : `${BASE_URL}/instantapply/getInstantApplySearchData`,
       },
       brands:{
         allpauseBrand:`${BASE_URL}/getAllPauseBrand`,
+        
       }
     },
 
@@ -48,6 +50,7 @@ export const Api = {
       logout :`${BASE_URL_2}/logout`,
       brand:{
         pausePlay:`${BASE_URL}/toggleBrandPausePlay`,
+        payment:`${BASE_URL}/togglePayment`,
       }
     }
   },

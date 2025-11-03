@@ -15,6 +15,8 @@ import { Api } from "../../api/apiurl";
 import { useDispatch } from "react-redux";
 import { goToNewIncoming } from "../../Redux/Slices/newIncomingSlice";
 import socket from "../../utils/socket";
+import FbCount from "./FoodandBevaragesCount";
+import LeadToggleControl from "./AutomationLeadPause";
 
 const Count = () => {
   const [brandsData, setBrandsData] = useState(null);
@@ -207,12 +209,32 @@ const Count = () => {
             color="success.main"
             sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
           >
-            {brandsData.instantApplyCount}
+              <FbCount/>
+
           </Typography>
         </CardContent>
       </Card>
     </Grid>
+    
   </Grid>
+  <Grid item xs={3} sx={{ flex: "0 0 auto" }}>
+    
+        
+          <Typography variant="subtitle1" fontWeight="bold"
+             sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            Lead -  Pause / Run 
+          </Typography>
+          <Typography
+            variant="h5"
+            color="success.main"
+            sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
+          >
+              <LeadToggleControl/>
+
+          </Typography>
+    
+    </Grid>
 </Box>
 
   );

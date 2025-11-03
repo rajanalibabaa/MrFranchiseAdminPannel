@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { GetApiCall } from "../../../api/default/GetApi";
 import { PostApiCall } from "../../../api/default/PostApi";
@@ -12,22 +12,22 @@ import {
   Box,
   Badge,
   Divider,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import {
   List as ListIcon,
   Add as AddIcon,
   CloudUpload as CloudUploadIcon,
-  Analytics as AnalyticsIcon
 } from '@mui/icons-material';
 import InstantApplyFilters from "../../../ui/InstantApplyUI/InstantApplyFilters";
 import InstantApplyTable from "../../../ui/InstantApplyUI/InstantApplyTable";
 import InstantApplyDialog from "../../../ui/InstantApplyUI/InstantApplyDialog";
-import InstantApplyForm from "../../../ui/InstantApplyUI/InstantApplyForm";
-import dayjs from "dayjs";
 
 // Import the new components we created
 import ManualSubmissionForm from "../../InstantapplyFunctions/InstantapplyManualFunction";
 import ExcelUploadForm from "../../InstantapplyFunctions/ExcelUploadInstantApplyForm";
+import axios from "axios";
 
 const InstantApplyLayout = () => {
   const { adminData } = useSelector((state) => state.admin);
@@ -38,28 +38,38 @@ const InstantApplyLayout = () => {
   // Existing states
   const [instantApplyList, setInstantApplyList] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [page, setPage] = useState(0);
-  const [limit, setlimit] = useState(10);
-  const [totalPages, settotalPages] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(100); // Updated to 100 as per backend
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
-  // Dropdown arrays
+  // Error and loading states
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [clearFilterLoading, setClearFilterLoading] = useState(false);
+
+  // Dropdown arrays - Fixed structure
   const [cities, setCities] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [investmentRanges, setInvestmentRanges] = useState([]);
+  const [categories, setCategories] = useState([]); // Added categories
+  const [industries, setIndustries] = useState([]); // Added industries
   const [states, setStates] = useState([]);
 
-  // Selected filters
+  // Selected filters - Added all filters
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedRange, setSelectedRange] = useState("");
   const [selectedState, setSelectedState] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(""); // Added category filter
+  const [selectedIndustry, setSelectedIndustry] = useState(""); // Added industry filter
   const [searchTerm, setSearchTerm] = useState("");
-  const [toDate, setToDate] = useState(null);
-  const [fromDate, setFromDate] = useState(null);
-  const [clearFilter, setclearFilter] = useState(true);
-  const [clearFilterloading, setclearFilterloading] = useState(false);
+  const [selectedApplyBy, setSelectedApplyBy] = useState("");
 
-  // Mock selected brand for forms - you might want to get this from props or context
+  const SCHEMA_NAME = 'FoodAndBeverageLeads';
+
+  // Mock selected brand for forms
   const [selectedBrand] = useState([
     {
       uuid: adminData?.adminData?.uuid,
@@ -92,237 +102,282 @@ const InstantApplyLayout = () => {
     'aria-controls': `instant-apply-tabpanel-${index}`,
   });
 
-  // Existing useEffect and functions remain the same
-  useEffect(() => {
-    const fetchInstantApply = async () => {
-      try {
-        if (
-          adminData?.adminData?.uuid &&
-          adminData?.adminAccessToken &&
-          clearFilter
-        ) {
-          setclearFilter(false);
+  // Fixed fetch function with proper filter handling including all filters
+  const fetchLeads = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-          const resdata = await GetApiCall(
-            `${Api.admin.get.instantApply.data}/${adminData?.adminData?.uuid}`,
-            adminData?.adminAccessToken
-          );
+      // Build query parameters with proper encoding
+      const queryParams = new URLSearchParams();
+      
+      // Always add pagination and sorting
+      queryParams.append('page', pageNum.toString());
+      queryParams.append('limit', limit.toString());
+      queryParams.append('sortBy', 'createdAt');
+      queryParams.append('sortOrder', 'desc');
 
-          const dropdownres = await GetApiCall(
-            `${Api.admin.get.instantApply.dropdown}/${adminData?.adminData?.uuid}`,
-            adminData?.adminAccessToken
-          );
+      // Add filters only if they have values
+      if (selectedState?.trim()) {
+        queryParams.append('state', selectedState.trim());
+      }
+      if (selectedCity?.trim()) {
+        queryParams.append('city', selectedCity.trim());
+      }
+      if (selectedDistrict?.trim()) {
+        queryParams.append('district', selectedDistrict.trim());
+      }
+      if (selectedRange?.trim()) {
+        queryParams.append('investmentRange', selectedRange.trim());
+      }
+      if (selectedCategory?.trim()) {
+        queryParams.append('category', selectedCategory.trim());
+      }
+      if (selectedIndustry?.trim()) {
+        queryParams.append('industry', selectedIndustry.trim());
+      }
+      if (selectedApplyBy?.trim()) {
+        queryParams.append('applyBy', selectedApplyBy.trim());
+      }
+      
+      // Use fullName for search
+      if (searchTerm?.trim()) {
+        queryParams.append('fullName', searchTerm.trim());
+      }
 
-          console.log("Initial API Response:", resdata?.data);
+      const apiUrl = `${Api.admin.get.instantApply.data}/${SCHEMA_NAME}?${queryParams.toString()}`;
 
-          const listData = resdata?.data?.data?.data;
-          setInstantApplyList(Array.isArray(listData) ? listData : []);
+      const response = await axios.get(apiUrl);
 
-          if (dropdownres?.data?.success) {
-            const dropdownData = dropdownres.data.data || {};
-            setCities(dropdownData.cities || []);
-            setDistricts(dropdownData.districts || []);
-            setInvestmentRanges(dropdownData.investmentRanges || []);
-            setStates(dropdownData.states || []);
-            setclearFilterloading(false);
-            setPage(
-              (resdata?.data?.data?.pagination?.page ||
-                resdata?.data?.data?.pagination?.currentPage ||
-                1) + 1
-            );
-            settotalPages(
-              resdata?.data?.data?.pagination?.totalPages ||
-                resdata?.data?.data?.pagination?.total
-            );
-            setlimit(
-              resdata?.data?.data?.pagination?.limit ||
-                resdata?.data?.data?.pagination?.limit
-            );
+      if (response?.data?.success) {
+        const responseData = response.data.data;
+        const newLeads = responseData.data || [];
+        const pagination = responseData.pagination || {};
+
+
+        // Handle duplicate keys by ensuring unique identification
+        if (isLoadMore) {
+          setInstantApplyList(prev => {
+            const existingIds = new Set(prev.map(item => item._id));
+            const uniqueNewLeads = newLeads.filter(lead => !existingIds.has(lead._id));
+            return [...prev, ...uniqueNewLeads];
+          });
+        } else {
+          setInstantApplyList(newLeads);
+          // Extract unique values for dropdowns from the data
+          if (newLeads.length > 0) {
+            extractDropdownValues(newLeads);
+          } else {
+            // Clear dropdown options if no data
+            resetDropdownValues();
           }
         }
-      } catch (error) {
-        console.error("Error fetching Instant Apply:", error);
-      }
-    };
 
-    fetchInstantApply();
-  }, [adminData, clearFilter]);
-
-  const handleChange = async (label, value, setter) => {
-    try {
-      setter(value);
-
-      let payload = {
-        city: label === "city" ? value : selectedCity,
-        district: label === "district" ? value : selectedDistrict,
-        state: label === "state" ? value : selectedState,
-        investmentRange: label === "investmentRange" ? value : selectedRange,
-      };
-
-      let resdata;
-
-      if (label === "searchTerm") {
-        payload = {
-          searchTerm: label === "searchTerm" ? value : searchTerm,
-        };
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
-      } else if (label === "fromDate" || label === "toDate") {
-        setSearchTerm("");
-        payload = {
-          fromDate:
-            label === "fromDate"
-              ? dayjs(value).format("YYYY-MM-DD")
-              : fromDate
-              ? dayjs(fromDate).format("YYYY-MM-DD")
-              : null,
-          toDate:
-            label === "toDate"
-              ? dayjs(value).format("YYYY-MM-DD")
-              : toDate
-              ? dayjs(toDate).format("YYYY-MM-DD")
-              : null,
-        };
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
+        setTotalPages(pagination.totalPages || 0);
+        setTotalCount(pagination.totalCount || 0);
+        setHasNextPage(pagination.hasNextPage || false);
+        setPage(pagination.currentPage || pageNum);
+        
       } else {
-        setSearchTerm("");
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
-      }
+        // Handle no data scenarios
+        
+        if (!isLoadMore) {
+          setInstantApplyList([]);
+          setTotalCount(0);
+          setTotalPages(0);
+          resetDropdownValues();
+        }
 
-      const data = resdata?.data?.data;
-      console.log("Filter/Search API Response:", data);
-      if (resdata?.data?.success && data) {
-        setInstantApplyList(Array.isArray(data?.data) ? data?.data : []);
-        setPage(
-          (resdata?.data?.data?.pagination?.page ||
-            resdata?.data?.data?.pagination?.currentPage ||
-            1) + 1
-        );
-        settotalPages(
-          resdata?.data?.data?.pagination?.totalPages ||
-            resdata?.data?.data?.pagination?.total
-        );
-        setlimit(
-          resdata?.data?.data?.pagination?.limit ||
-            resdata?.data?.data?.pagination?.limit
-        );
-      }
-      if (resdata?.data?.success && data?.districts?.length > 0) {
-        setDistricts(data?.districts);
-      }
-      if (resdata?.data?.success && data?.investmentRanges?.length > 0) {
-        setInvestmentRanges(data?.investmentRanges);
-      }
-      if (resdata?.data?.success && data?.states?.length > 0) {
-        setStates(data?.states);
-      }
-      if (resdata?.data?.success && data?.cities?.length > 0) {
-        setCities(data?.cities);
+        // Set appropriate error message
+        const hasActiveFilters = selectedState || selectedCity || selectedDistrict || 
+                                selectedRange || selectedCategory || selectedIndustry || 
+                                selectedApplyBy || searchTerm;
+
+        if (hasActiveFilters) {
+          setError("No leads found matching the applied filters.");
+        } else {
+          setError(`No leads available for ${SCHEMA_NAME}.`);
+        }
       }
     } catch (error) {
-      console.error("Error in handleChange:", error);
+      console.error("Error fetching leads:", error);
+      let errorMessage = "Network error occurred";
+      
+      if (error.response) {
+        console.log("Error response:", error.response);
+        if (error.response.status === 404) {
+          errorMessage = "No leads found matching the current filters.";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || "Invalid request parameters.";
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. Please try again later.";
+        } else {
+          errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = "Network connection error. Please check your internet connection.";
+      } else {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      
+      if (!isLoadMore) {
+        setInstantApplyList([]);
+        setTotalCount(0);
+        setTotalPages(0);
+        resetDropdownValues();
+      }
+    } finally {
+      setLoading(false);
+      setClearFilterLoading(false);
     }
+  }, [selectedState, selectedCity, selectedDistrict, selectedRange, selectedCategory, selectedIndustry, selectedApplyBy, searchTerm, limit]);
+
+  // Reset dropdown values
+  const resetDropdownValues = () => {
+    setStates([]);
+    setCities([]);
+    setDistricts([]);
+    setInvestmentRanges([]);
+    setCategories([]);
+    setIndustries([]);
   };
 
-  const handleClear = async () => {
+  // Extract unique values as simple string arrays including all fields
+  const extractDropdownValues = (data) => {
+    const uniqueStates = [...new Set(data.map(item => item.state).filter(Boolean))];
+    const uniqueCities = [...new Set(data.map(item => item.city).filter(Boolean))];
+    const uniqueDistricts = [...new Set(data.map(item => item.district).filter(Boolean))];
+    const uniqueRanges = [...new Set(data.map(item => item.investmentRange).filter(Boolean))];
+    const uniqueCategories = [...new Set(data.map(item => item.category).filter(Boolean))];
+    const uniqueIndustries = [...new Set(data.map(item => item.industry).filter(Boolean))];
+
+    // Set as simple string arrays, not objects
+    setStates(uniqueStates.sort());
+    setCities(uniqueCities.sort());
+    setDistricts(uniqueDistricts.sort());
+    setInvestmentRanges(uniqueRanges.sort());
+    setCategories(uniqueCategories.sort());
+    setIndustries(uniqueIndustries.sort());
+
+    // console.log("Extracted dropdown values:", {
+    //   states: uniqueStates,
+    //   cities: uniqueCities,
+    //   districts: uniqueDistricts,
+    //   ranges: uniqueRanges,
+    //   categories: uniqueCategories,
+    //   industries: uniqueIndustries
+    // });
+  };
+
+  // Initial load
+  useEffect(() => {
+   
+    
+    if (adminData?.adminData?.uuid && adminData?.adminAccessToken) {
+      fetchLeads(1, false);
+    }
+  }, [adminData?.adminData?.uuid, adminData?.adminAccessToken, fetchLeads]);
+
+  // Improved filter change handler including all filters
+  const handleChange = useCallback((label, value, setter) => {
+    
+    // Update the relevant state
+    switch (label) {
+      case 'searchTerm':
+        setSearchTerm(value);
+        break;
+      case 'state':
+        setSelectedState(value);
+        // Reset dependent filters
+        setSelectedCity("");
+        setSelectedDistrict("");
+        break;
+      case 'city':
+        setSelectedCity(value);
+        break;
+      case 'district':
+        setSelectedDistrict(value);
+        break;
+      case 'investmentRange':
+        setSelectedRange(value);
+        break;
+      case 'category':
+        setSelectedCategory(value);
+        break;
+      case 'industry':
+        setSelectedIndustry(value);
+        break;
+      case 'applyBy':
+        setSelectedApplyBy(value);
+        break;
+      default:
+        console.warn(`Unknown filter label: ${label}`);
+    }
+    
+    // Reset page to 1 when filters change
+    setPage(1);
+  }, []);
+
+  // Trigger fetch when filter states change (with debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (adminData?.adminData?.uuid) {
+        fetchLeads(1, false);
+      }
+    }, 500); // Increased debounce to 500ms for better UX
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    selectedState, 
+    selectedCity, 
+    selectedDistrict, 
+    selectedRange, 
+    selectedCategory, 
+    selectedIndustry, 
+    selectedApplyBy, 
+    searchTerm, 
+    fetchLeads, 
+    adminData?.adminData?.uuid
+  ]);
+
+  // Clear filters handler
+  const handleClear = useCallback(() => {
+    
+    // Clear all filter states
     setSelectedCity("");
     setSelectedDistrict("");
     setSelectedRange("");
     setSelectedState("");
+    setSelectedCategory("");
+    setSelectedIndustry("");
     setSearchTerm("");
-    setFromDate(null);
-    setToDate(null);
-    setclearFilterloading(true);
-    setclearFilter(true);
-  };
+    setSelectedApplyBy("");
+    setError(null);
+    setPage(1);
+    setClearFilterLoading(true);
+    
+    // Fetch all data without filters after a short delay
+    setTimeout(() => {
+      fetchLeads(1, false);
+    }, 100);
+  }, [fetchLeads]);
 
-  const handlePagination = async () => {
-    try {
-      let payload = {
-        city: selectedCity,
-        district: selectedDistrict,
-        state: selectedState,
-        investmentRange: selectedRange,
-        page: page,
-      };
-
-      let resdata;
-
-      if (searchTerm) {
-        payload = {
-          searchTerm: searchTerm,
-          page: page,
-        };
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
-      } else if (fromDate || toDate) {
-        payload = {
-          fromDate: dayjs(fromDate).format("YYYY-MM-DD"),
-          toDate: dayjs(toDate).format("YYYY-MM-DD"),
-          page: page,
-        };
-
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
-      } else {
-        payload = {
-          page: page,
-        };
-        setSearchTerm("");
-        resdata = await PostApiCall(
-          `${Api.admin.get.instantApply.filterandsearch}/${adminData?.adminData?.uuid}`,
-          adminData?.adminAccessToken,
-          { payload }
-        );
-      }
-
-      const data = resdata?.data?.data;
-      if (resdata?.data?.success && data) {
-        setInstantApplyList([
-          ...instantApplyList,
-          ...(Array.isArray(data?.data) ? data?.data : []),
-        ]);
-        setPage(
-          (resdata?.data?.data?.pagination?.page ||
-            resdata?.data?.data?.pagination?.currentPage ||
-            1) + 1
-        );
-        settotalPages(
-          resdata?.data?.data?.pagination?.totalPages ||
-            resdata?.data?.data?.pagination?.total
-        );
-        setlimit(
-          resdata?.data?.data?.pagination?.limit ||
-            resdata?.data?.data?.pagination?.limit
-        );
-      }
-    } catch (error) {
-      console.log("error in pagination", error);
+  // Handle pagination (load more)
+  const handlePagination = useCallback(() => {
+    if (hasNextPage && !loading) {
+      fetchLeads(page + 1, true);
     }
-  };
+  }, [hasNextPage, loading, page, fetchLeads]);
 
   // Function to refresh the list after successful submission
-  const handleRefreshList = () => {
-    setclearFilter(true);
+  const handleRefreshList = useCallback(() => {
+    setError(null);
+    setPage(1);
+    fetchLeads(1, false);
     setTabValue(0); // Switch back to list view
-  };
+  }, [fetchLeads]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -330,10 +385,29 @@ const InstantApplyLayout = () => {
         {/* Header */}
         <Box sx={{ p: 2, pb: 0 }}>
           <Typography variant="h5" textAlign={'center'} color="warning" sx={{ mb: 1 }}>
-            Instant Apply Management
+            Instant Apply Management ({SCHEMA_NAME})
           </Typography>
-         
+          
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <Typography variant="caption" display="block" textAlign="center" sx={{ mb: 1, color: 'text.secondary' }}>
+              Brand ID: {adminData?.adminData?.uuid} | Schema: {SCHEMA_NAME} | Limit: {limit}
+            </Typography>
+          )}
         </Box>
+
+        {/* Error Alert */}
+        {error && (
+          <Box sx={{ px: 2, pb: 2 }}>
+            <Alert 
+              severity={error.includes('No leads found') || error.includes('No leads available') ? 'info' : 'warning'}
+              sx={{ mb: 2 }}
+              onClose={() => setError(null)}
+            >
+              {error}
+            </Alert>
+          </Box>
+        )}
 
         {/* Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -349,10 +423,11 @@ const InstantApplyLayout = () => {
               icon={<ListIcon />} 
               label={
                 <Badge 
-                // badgeContent={instantApplyList.length}
-                 color="warning" 
-                 max={999}>
-                  Direct Leads List 
+                  badgeContent={totalCount || 0}
+                  color="warning" 
+                  max={9999}
+                >
+                  Food & Beverages Leads
                 </Badge>
               }
               iconPosition="start"
@@ -370,23 +445,26 @@ const InstantApplyLayout = () => {
               iconPosition="start"
               {...a11yProps(2)} 
             />
-            {/* <Tab 
-              icon={<AnalyticsIcon />} 
-              label="Analytics"
-              iconPosition="start"
-              {...a11yProps(3)} 
-            /> */}
           </Tabs>
         </Box>
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
-          {/* Existing List View */}
+          {/* List View */}
           <Box sx={{ px: 2 }}>
+            {loading && !clearFilterLoading && instantApplyList.length === 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                <CircularProgress />
+                <Typography sx={{ ml: 2 }}>Loading leads...</Typography>
+              </Box>
+            )}
+            
             <InstantApplyFilters
               cities={cities}
               districts={districts}
               investmentRanges={investmentRanges}
+              categories={categories} // Added categories
+              industries={industries} // Added industries
               states={states}
               selectedCity={selectedCity}
               setSelectedCity={setSelectedCity}
@@ -394,17 +472,20 @@ const InstantApplyLayout = () => {
               setSelectedDistrict={setSelectedDistrict}
               selectedRange={selectedRange}
               setSelectedRange={setSelectedRange}
+              selectedCategory={selectedCategory} // Added category props
+              setSelectedCategory={setSelectedCategory}
+              selectedIndustry={selectedIndustry} // Added industry props
+              setSelectedIndustry={setSelectedIndustry}
               selectedState={selectedState}
               setSelectedState={setSelectedState}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              selectedApplyBy={selectedApplyBy}
+              setSelectedApplyBy={setSelectedApplyBy}
               handleChange={handleChange}
-              fromDate={fromDate}
-              setFromDate={setFromDate}
-              setToDate={setToDate}
-              toDate={toDate}
               handleClear={handleClear}
-              clearFilterloading={clearFilterloading}
+              clearFilterloading={clearFilterLoading}
+              loading={loading}
             />
 
             <Divider sx={{ my: 2 }} />
@@ -414,7 +495,11 @@ const InstantApplyLayout = () => {
               setSelectedItem={setSelectedItem}
               page={page}
               setPage={setPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              hasNextPage={hasNextPage}
               handlePagination={handlePagination}
+              loading={loading}
             />
           </Box>
         </TabPanel>
@@ -439,59 +524,6 @@ const InstantApplyLayout = () => {
             />
           </Box>
         </TabPanel>
-
-        {/* <TabPanel value={tabValue} index={3}>
-          {/* Analytics/Stats View 
-          <Box sx={{ px: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Application Analytics
-            </Typography>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-              gap: 2, 
-              mb: 3 
-            }}>
-              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="primary">
-                  {instantApplyList.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Applications
-                </Typography>
-              </Paper>
-              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="success.main">
-                  {states.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  States Covered
-                </Typography>
-              </Paper>
-              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="warning.main">
-                  {cities.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Cities Covered
-                </Typography>
-              </Paper>
-              <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="info.main">
-                  {investmentRanges.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Investment Ranges
-                </Typography>
-              </Paper>
-            </Box>
-            
-            {/* You can add more analytics components here *
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
-              📊 More detailed analytics coming soon...
-            </Typography>
-          </Box>
-        </TabPanel> */}
       </Paper>
 
       {/* Dialogs */}
@@ -499,8 +531,6 @@ const InstantApplyLayout = () => {
         selectedItem={selectedItem}
         onClose={() => setSelectedItem(null)}
       />
-      
-      
     </Box>
   );
 };

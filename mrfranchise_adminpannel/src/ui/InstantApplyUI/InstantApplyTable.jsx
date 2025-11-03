@@ -413,7 +413,8 @@ const InstantApplyTable = ({
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                       color: '#1e293b'
                     }}>
-                      {item?.mobileNumber}
+                      {item?.investorMobileNumber
+}
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ padding: { xs: '8px 4px', sm: '12px 8px' } }}>
