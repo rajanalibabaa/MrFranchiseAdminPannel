@@ -33,7 +33,9 @@ const TableOutlet = ({
   pagination,
   handlePauseToggle,
   pauseShow,
-  handlepayment
+  handlepayment,
+  paidShow,
+  handleOpenFreeLeadPausePopup,
 }) => {
   const observer = useRef();
 
@@ -52,24 +54,23 @@ const TableOutlet = ({
   );
 
   // Filter brands based on search term
-  const filteredBrandList = filteredBrands?.filter(brand => {
+  const filteredBrandList = filteredBrands?.filter((brand) => {
     if (!searchTerm) return true;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return (
-      (brand.brandname || '').toLowerCase().includes(searchLower) ||
-      (brand.brandName || '').toLowerCase().includes(searchLower) ||
-      (brand.brandCategories?.sub || '').toLowerCase().includes(searchLower) ||
-      (brand.brandCategories?.child || '').toLowerCase().includes(searchLower)
+      (brand.brandname || "").toLowerCase().includes(searchLower) ||
+      (brand.brandName || "").toLowerCase().includes(searchLower) ||
+      (brand.brandCategories?.sub || "").toLowerCase().includes(searchLower) ||
+      (brand.brandCategories?.child || "").toLowerCase().includes(searchLower)
     );
   });
 
- 
-
-  
   return (
     <Paper>
-      <TableContainer style={{ maxHeight: !pauseShow ? "64vh" : "80vh", overflow: "auto" }}>
+      <TableContainer
+        style={{ maxHeight: !pauseShow ? "64vh" : "80vh", overflow: "auto" }}
+      >
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -77,16 +78,22 @@ const TableOutlet = ({
               <TableCell>Brand Name</TableCell>
               <TableCell>Category (Sub)</TableCell>
               <TableCell>Investment Range</TableCell>
-              {!pauseShow && <TableCell>Details</TableCell>}
-              
-              {editShow && <TableCell>Edit</TableCell>}
-              {editShow && <TableCell>Pause</TableCell>}
-              {pauseShow && !editShow &&<TableCell>Pause</TableCell>}
-               {editShow && <TableCell>Payment</TableCell>}
+              {!pauseShow && !paidShow && <TableCell>Details</TableCell>}
+
+              {editShow && !paidShow && <TableCell>Edit</TableCell>}
+              {editShow && !paidShow && <TableCell>Pause</TableCell>}
+              {editShow && !paidShow && <TableCell>LeadPause</TableCell>}
+              {paidShow && <TableCell>Paid</TableCell>}
+              {pauseShow && !editShow && !paidShow && (
+                <TableCell>Pause</TableCell>
+              )}
+              {editShow && !paidShow && <TableCell>Payment</TableCell>}
               {/* {!pauseShow && <TableCell>Delete</TableCell>} */}
 
               {/* <TableCell>Delete</TableCell> */}
-              {!editShow && !pauseShow &&<TableCell>Approve</TableCell>}
+              {!editShow && !pauseShow && !paidShow && (
+                <TableCell>Approve</TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -94,7 +101,9 @@ const TableOutlet = ({
               filteredBrandList.map((brand, index) => (
                 <TableRow
                   key={brand?.uuid || `row-${index}`}
-                  ref={index === filteredBrandList.length - 1 ? lastRowRef : null}
+                  ref={
+                    index === filteredBrandList.length - 1 ? lastRowRef : null
+                  }
                 >
                   <TableCell>
                     {brand?.uploads?.logo || brand?.logo ? (
@@ -121,29 +130,30 @@ const TableOutlet = ({
                       "N/A"}
                   </TableCell>
                   <TableCell>
-                    {brand?.brandfranchisedetails?.franchiseDetails?.fico?.investmentRange ||
+                    {brand?.brandfranchisedetails?.franchiseDetails?.fico
+                      ?.investmentRange ||
                       brand?.fico?.investmentRange ||
                       brand?.investmentRange ||
                       "N/A"}
                   </TableCell>
-                  {!pauseShow && (
+                  {!pauseShow && !paidShow && (
                     <TableCell>
-                    <Box>
-                      <Button
-                        onClick={() => handleInfoOpen(brand?.uuid)}
-                        sx={{
-                          py: 0,
-                          backgroundColor: "#3adf34ff",
-                          color: "white",
-                        }}
-                      >
-                        Info
-                      </Button>
-                    </Box>
-                  </TableCell>
+                      <Box>
+                        <Button
+                          onClick={() => handleInfoOpen(brand?.uuid)}
+                          sx={{
+                            py: 0,
+                            backgroundColor: "#3adf34ff",
+                            color: "white",
+                          }}
+                        >
+                          Info
+                        </Button>
+                      </Box>
+                    </TableCell>
                   )}
 
-                  {editShow && (
+                  {editShow && !paidShow && (
                     <TableCell>
                       <IconButton
                         sx={{ color: "green" }}
@@ -153,50 +163,79 @@ const TableOutlet = ({
                       </IconButton>
                     </TableCell>
                   )}
-                    {
-                    pauseShow && (
-                       <TableCell>
-                    <IconButton
-                      onClick={() => handlePauseToggle(brand)}
-                      sx={{ color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff" }}
-                    >
-                      {brand?.isBrandPause ? (
-                        <PauseCircleIcon />
-                      ) : (
-                        <PlayCircleFilledWhiteIcon />
-                      )}
-                    </IconButton>
-                  </TableCell>
-                    )
-                  }
-                    {
-                    editShow && (
-                       <TableCell>
-                    <IconButton
-                      onClick={() => handlePauseToggle(brand)}
-                      sx={{ color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff" }}
-                    >
-                      {brand?.isBrandPause ? (
-                        <PauseCircleIcon />
-                      ) : (
-                        <PlayCircleFilledWhiteIcon />
-                      )}
-                    </IconButton>
-                  </TableCell>
-                    )
-                  }
-                   {editShow && (
+                  {pauseShow && !paidShow && (
                     <TableCell>
-                    <IconButton
-                      color= {brand?.payment ? "success": "error"}
-                      onClick={() => handlepayment(brand)}
-                    >
-                      <CheckCircle />
-                    </IconButton>
-                  </TableCell>
+                      <IconButton
+                        onClick={() => handlePauseToggle(brand)}
+                        sx={{
+                          color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        }}
+                      >
+                        {brand?.isBrandPause ? (
+                          <PauseCircleIcon />
+                        ) : (
+                          <PlayCircleFilledWhiteIcon />
+                        )}
+                      </IconButton>
+                    </TableCell>
                   )}
-                  
-                  
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handlepayment(brand)}
+                        sx={{
+                          color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        }}
+                      >
+                        {brand?.payment ? (
+                          <PauseCircleIcon />
+                        ) : (
+                          <PlayCircleFilledWhiteIcon />
+                        )}
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {editShow && !paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handlePauseToggle(brand)}
+                        sx={{
+                          color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        }}
+                      >
+                        {brand?.isBrandPause ? (
+                          <PauseCircleIcon />
+                        ) : (
+                          <PlayCircleFilledWhiteIcon />
+                        )}
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {editShow && !paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleOpenFreeLeadPausePopup(brand)}
+                        sx={{
+                          color: brand?.isFreeLeadPaused
+                            ? "#ec1717ff"
+                            : "#34780cff",
+                        }}
+                      >
+                        <CheckCircle />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {editShow && !paidShow && (
+                    <TableCell>
+                      <IconButton
+                        color={brand?.payment ? "success" : "error"}
+                        onClick={() => handlepayment(brand)}
+                      >
+                        <CheckCircle />
+                      </IconButton>
+                    </TableCell>
+                  )}
+
                   {/* {!pauseShow && (
                     <TableCell>
                     <IconButton
@@ -207,7 +246,7 @@ const TableOutlet = ({
                     </IconButton>
                   </TableCell>
                   )} */}
-                  {!editShow && (
+                  {!editShow && !paidShow && (
                     <TableCell>
                       {brand?.seen === false && (
                         <IconButton onClick={() => handleApprove(brand?.uuid)}>
