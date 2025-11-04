@@ -16,6 +16,7 @@ import {
 } from "../../Redux/Slices/FilterBrandSlice";
 import PausePlayPopup from "../../ui/PausePlayPopup.jsx";
 import PaymentPopup from "../../ui/PaymentPopup.jsx";
+import FreeLeadPausePopup from "../../ui/FreeLeadPausePopup.jsx";
 
 
 
@@ -30,6 +31,7 @@ const GetAllBrands = () => {
 
   const [open, setOpen] = useState(false);
   const [openBrandPausepopup, setOpenBrandPausepopup] = useState(false);
+  const [openFreeLeadPausePopup, setOpenFreeLeadPausePopup] = useState(false);
   const [openPaymentPopup, setOpenPaymentPopup] = useState(false);
   const [openBrandInfo, setOpenBrandInfo] = useState(false);
   const [selectedBrandId, setSelectedBrandId] = useState(null);
@@ -121,9 +123,14 @@ const GetAllBrands = () => {
        setData(brand)
   };
   const handlepayment = async(brand) => {
-    console.log(brand)
      setOpenPaymentPopup(true)
      setData(brand)      
+  };
+
+  const handleOpenFreeLeadPausePopup = async (brand) => {
+    console.log(brand);
+    setData(brand);
+    setOpenFreeLeadPausePopup(true);
   };
 
   
@@ -155,6 +162,7 @@ const GetAllBrands = () => {
         handlePauseToggle={handlePauseToggle}
         playshow={true}
         handlepayment={handlepayment}
+        handleOpenFreeLeadPausePopup={handleOpenFreeLeadPausePopup}
       />
 
       {/* Delete Popup */}
@@ -190,6 +198,15 @@ const GetAllBrands = () => {
         open={openPaymentPopup}
         onClose={() => setOpenPaymentPopup(false)}
         data={data}
+      />
+
+    )}
+     {openFreeLeadPausePopup && (
+      <FreeLeadPausePopup
+        open={openFreeLeadPausePopup}
+        onClose={() => setOpenFreeLeadPausePopup(false)}
+        data={data}
+        setOpenFreeLeadPausePopup={setOpenFreeLeadPausePopup}
       />
 
     )}
