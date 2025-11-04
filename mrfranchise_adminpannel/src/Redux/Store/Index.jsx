@@ -8,6 +8,7 @@ import loadingReducer from "../Slices/LoadingSlice.jsx";
 import newIncomingReducer from "../Slices/newIncomingSlice.jsx";
 import adminReducer from "../Slices/admin/authSlice.jsx";
 import applicationReducer from '../Slices/InstantApplyCreationSlice.jsx'
+import paymentPackageReducer  from "../Slices/AdvertiseHandlingSlices.jsx";
 
 // Combine reducers
 const rootReducer = combineReducers({
@@ -16,7 +17,8 @@ const rootReducer = combineReducers({
   filterBrands: filterBrandsReducer,
   brands: newIncomingReducer,
   admin: adminReducer,
-  applications:applicationReducer
+  applications:applicationReducer,
+  paymentPackages:paymentPackageReducer
 });
 
 // Persist config
