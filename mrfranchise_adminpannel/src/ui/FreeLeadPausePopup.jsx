@@ -65,15 +65,18 @@ const FreeLeadPausePopup = ({ open = false, onClose, data = null }) => {
       const msg = res?.data?.message || "Action completed successfully.";
 
       if (res.data.statuscode === 200) {
-        setSuccess(msg);
+        
         dispatch(toggleFreeLeadBrandPausePlayId(data.uuid));
         setLoading(false);
         setDisabled(true);
         setTimeout(() => {
+          setSuccess(msg);
+        },500);
+        setTimeout(() => {
           onClose();
           setSuccess("");
           setDisabled(false);
-        }, 1500);
+        }, 1000);
       }
     } catch (error) {
       console.log(error);
