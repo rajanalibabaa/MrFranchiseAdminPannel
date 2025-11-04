@@ -239,13 +239,18 @@ const handleOpenDrawer = () => {
   if (selectedCategory.child?.length) {
     currentChildTags = Array.isArray(selectedCategory.child)
       ? [...selectedCategory.child]
-      : selectedCategory.child.split(" | ").filter(Boolean);
+      : selectedCategory.child.split(/\s*\|\s*|\s*-\s*/).map(item => item.trim()).filter(Boolean);
   }
+
+  console.log("🚪 DEBUG - Opening drawer with tags:", {
+    selectedCategoryChild: selectedCategory.child,
+    currentChildTags,
+    currentChildTagsLength: currentChildTags.length
+  });
 
   setTempSelectedChild(currentChildTags);
   setDrawerOpen(true);
 };
-
 
 
 const handleChildToggle = (child) => {
@@ -257,17 +262,26 @@ const handleChildToggle = (child) => {
 };
 
 const handleDone = () => {
+  console.log("💾 DEBUG - Saving product tags:", {
+    tempSelectedChild,
+    tempSelectedChildLength: tempSelectedChild.length,
+  });
+  
   const newCategory = {
     ...selectedCategory,
     child: tempSelectedChild,
   };
   setSelectedCategory(newCategory);
   
-  // Send as string to backend to maintain consistency
-  onObjectChange("brandCategories", {
+  // Use consistent separator - choose ONE and stick with it
+  const payloadToBackend = {
     ...newCategory,
-    child: tempSelectedChild.join(" | "), // Use consistent separator
-  });
+    child: tempSelectedChild.join(" | "), // Use " | " consistently
+  };
+  
+  console.log("📤 DEBUG - Sending to backend:", payloadToBackend);
+  
+  onObjectChange("brandCategories", payloadToBackend);
   
   setDrawerOpen(false);
 };
@@ -652,7 +666,7 @@ const handleDone = () => {
   const handleCancelEdit = () => {
     resetFicoForm();
   };
- // Update the selectedCategory initialization in your component
+ // Update the selectedCategory initialization
 const [selectedCategory, setSelectedCategory] = useState({
   groupId: data.brandCategories?.groupId || "",
   main: data.brandCategories?.main || "",
@@ -660,25 +674,44 @@ const [selectedCategory, setSelectedCategory] = useState({
   child: data.brandCategories?.child
     ? (Array.isArray(data.brandCategories.child)
         ? data.brandCategories.child
-        : data.brandCategories.child.split(" | ").filter(Boolean))
+        : data.brandCategories.child
+            .split(/\s*\|\s*|\s*-\s*/) // Split by both " | " and " - "
+            .map(item => item.trim())
+            .filter(Boolean))
     : [],
 });
 
-// Add this useEffect to sync with props
+// Replace your existing useEffect for data.brandCategories with this
 useEffect(() => {
+  console.log("🔍 DEBUG - Raw data.brandCategories from backend:", data.brandCategories);
+  
   if (data.brandCategories) {
+    console.log("📦 DEBUG - Processing brandCategories child:", data.brandCategories.child);
+    
+    let processedChild = [];
+    if (data.brandCategories.child) {
+      if (Array.isArray(data.brandCategories.child)) {
+        processedChild = data.brandCategories.child;
+      } else {
+        // Handle both " | " and " - " separators
+        processedChild = data.brandCategories.child
+          .split(/\s*\|\s*|\s*-\s*/) // Split by both separators
+          .map(item => item.trim())
+          .filter(Boolean); // Remove empty strings
+      }
+    }
+    
+    console.log("✅ DEBUG - Processed child tags:", processedChild);
+    
     setSelectedCategory({
       groupId: data.brandCategories.groupId || "",
       main: data.brandCategories.main || "",
       sub: data.brandCategories.sub || "",
-      child: data.brandCategories.child
-        ? (Array.isArray(data.brandCategories.child)
-            ? data.brandCategories.child
-            : data.brandCategories.child.split(" | ").filter(Boolean))
-        : [],
+      child: processedChild,
     });
   }
 }, [data.brandCategories]);
+
 const handleOpenServiceTagDrawer = () => {
   const tagsObj = data.franchiseTags || {};
   
@@ -752,31 +785,32 @@ const handleServiceTagDone = () => {
   setServiceTagDrawerOpen(false);
 };
 
-  const handleMainCategoryChange = (e) => {
-    const mainCategory = e.target.value;
-    const newCategory = {
-      groupId: "",
-      main: mainCategory,
-      sub: "",
-      child: [],
-    };
-    setSelectedCategory(newCategory);
-    onObjectChange("brandCategories", newCategory);
+ const handleMainCategoryChange = (e) => {
+  const mainCategory = e.target.value;
+  const newCategory = {
+    groupId: "",
+    main: mainCategory,
+    sub: "",    // <-- Reset sub-category
+    child: [],  // <-- Reset child tags
   };
-  const handleSubCategoryChange = (e) => {
-    const subCategory = e.target.value;
-    const group = categories
-      .find((cat) => cat.name === selectedCategory.main)
-      ?.children?.find((sub) => sub.name === subCategory);
-    const newCategory = {
-      groupId: group?.groupId || "",
-      main: selectedCategory.main,
-      sub: subCategory,
-      child: [],
-    };
-    setSelectedCategory(newCategory);
-    onObjectChange("brandCategories", newCategory);
+  setSelectedCategory(newCategory);
+  onObjectChange("brandCategories", newCategory);
+};
+
+const handleSubCategoryChange = (e) => {
+  const subCategory = e.target.value;
+  const mainCatData = categories.find((cat) => cat.name === selectedCategory.main);
+  const group = mainCatData?.children?.find((sub) => sub.name === subCategory);
+  
+  const newCategory = {
+    groupId: group?.groupId || "",
+    main: selectedCategory.main,
+    sub: subCategory,
+    child: [], // <-- Reset child tags
   };
+  setSelectedCategory(newCategory);
+  onObjectChange("brandCategories", newCategory);
+};
   const handleChildCategoryChange = (e) => {
     const {
       target: { value },
@@ -981,48 +1015,116 @@ const handleServiceTagDone = () => {
 
 
       
- {!!selectedCategory.child?.length &&(
-      <Box sx={{ mt: 2, width: '100%' }}>
-        <Box
-          onClick={() => setShowSelectedBar((v) => !v)}
-          sx={{
-            px: 2,
-            py: 1,
-            mb:3,
-            bgcolor: 'grey.100',
-            borderRadius: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-        >
-          <Typography variant="subtitle1" fontWeight={700}>
-            View Selected Product Tags 
-          </Typography>
-          {showSelectedBar ? <ExpandLess /> : <ExpandMore />}
-        </Box>
+{!!selectedCategory.child?.length && (
+  <Box sx={{ mt: 2, width: '100%' }}>
+    {/* Collapsible Header */}
+    <Box
+      onClick={() => setShowSelectedBar((v) => !v)}
+      sx={{
+        px: 2,
+        py: 1,
+        mb: 3,
+        bgcolor: 'grey.100',
+        borderRadius: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+    >
+      <Typography variant="subtitle1" fontWeight={700}>
+        View Selected Product Tags
+      </Typography>
+      {showSelectedBar ? <ExpandLess /> : <ExpandMore />}
+    </Box>
 
-        <Collapse in={showSelectedBar}>
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            gap={1}
-            sx={{ px: 2, py: 2,  borderRadius: 1 }}
-          >
-            {selectedCategory.child.map((child) => (
-              <Chip
-                key={child}
-                label={child}
-                size="small"
-                // onDelete={isEditing ? () => handleChildToggle(child) : undefined}
-              />
-            ))}
-          </Stack>
-        </Collapse>
-      </Box>
-    )}
+    {/* Collapsible Content */}
+ <Collapse in={showSelectedBar}>
+  <Stack direction="column" gap={2} sx={{ px: 2, py: 2, borderRadius: 1 }}>
+    {(() => {
+      const mainCategoryData = categories.find(cat => cat.name === selectedCategory.main);
+      if (!mainCategoryData) return null;
+
+      // Calculate orphan tags ONCE here
+      const tagsInCurrentCategory = mainCategoryData.children.flatMap(sub => sub.children);
+      const orphanTags = selectedCategory.child.filter(tag => 
+        !tagsInCurrentCategory.includes(tag)
+      );
+
+      console.log("🏷️ DEBUG - Tag categorization:", {
+        selectedCategoryMain: selectedCategory.main,
+        selectedChildTags: selectedCategory.child,
+        tagsInCurrentCategoryCount: tagsInCurrentCategory.length,
+        orphanTags,
+        orphanTagsCount: orphanTags.length,
+        orphanTagsSample: orphanTags.slice(0, 3)
+      });
+      return (
+        <>
+          {/* Render the correctly categorized tags for CURRENT main category */}
+          {mainCategoryData.children.map(subCategory => {
+            const selectedChildrenInGroup = subCategory.children.filter(child =>
+              selectedCategory.child.includes(child)
+            );
+
+            if (selectedChildrenInGroup.length > 0) {
+              return (
+                <Box key={subCategory.name}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={700}
+                    sx={{ color: '#FF8C00', mb: 1 }}
+                  >
+                    {subCategory.name}
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" gap={1}>
+                    {selectedChildrenInGroup.map(childItem => (
+                      <Chip
+                        key={childItem}
+                        label={childItem}
+                        size="small"
+                        sx={{ bgcolor: 'grey.200' }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              );
+            }
+            return null;
+          })}
+
+          {/* Render orphan tags */}
+          {orphanTags.length > 0 && (
+            <Box>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                sx={{ color: 'text.secondary', mb: 1 }}
+              >
+                Other Selected Tags
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {orphanTags.map(orphan => (
+                  <Chip
+                    key={orphan}
+                    label={orphan}
+                    size="small"
+                    sx={{ bgcolor: 'grey.200' }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+        </>
+      );
+    })()}
+  </Stack>
+</Collapse>
+  </Box>
+)}
+
+
     {/* View Selected Service Tags Section */}
 {!!selectedServiceTags.length &&(
   <Box sx={{ mt: 2, width: '100%' }}>
