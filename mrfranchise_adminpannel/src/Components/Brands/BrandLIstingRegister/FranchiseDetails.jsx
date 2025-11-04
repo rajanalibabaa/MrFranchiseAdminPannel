@@ -70,7 +70,7 @@ const [currentTags, setCurrentTags] = React.useState({
   FeaturesAmenities: data.franchiseTags?.FeaturesAmenities || [],
   TechnologyIntegration: data.franchiseTags?.TechnologyIntegration || [],
   SustainabilityEthics: data.franchiseTags?.SustainabilityEthics || [],
-  BusinessOperations: data.franchiseTags?.BusinessOperations || [],
+  // BusinessOperations: data.franchiseTags?.BusinessOperations || [],
 });
 
 
@@ -419,7 +419,7 @@ const FeaturesAmenities=["Live Music","Sports Screening","Free Wi-Fi","Parking A
 const TechnologyIntegration=["Online Ordering","Mobile App","QR Code Menu","Digital Payments","Self-Order Kiosks","Contactless Delivery"]
 const SustainabilityEthics  =["Organic Ingredients","Locally Sourced","Sustainable Sourcing","Eco-Friendly Packaging","Waste Reduction","Energy Efficient","Social Responsibility"]
 // const productServiceType = ["North Indian","South Indian","Punjab","Bengali","Gujarati","Italian","Chinese","Thai","Japanese","Korean","French","Mexican","Burgers","Sandwiches","Pizza","Tacos","Biryani","Wraps","Curry","Tandoori","Kebabs","Tea","Juices","Coffee","Smoothies",  ]
-const BusinessOperation= ["Franchise Opportunity","Company-Owned","Chain","Single Unit","Multi-Unit","Area Development","Master Franchise"]
+// const BusinessOperation= ["Franchise Opportunity","Company-Owned","Chain","Single Unit","Multi-Unit","Area Development","Master Franchise"]
 
 const serviceTagGroups = {
     "Primary Classification": PrimaryClassifications,
@@ -431,7 +431,7 @@ const serviceTagGroups = {
     "Features & Amenities": FeaturesAmenities,
     "Technology Integration": TechnologyIntegration,
     "Sustainability & Ethics": SustainabilityEthics,
-    "Business Operations": BusinessOperation,
+    // "Business Operations": BusinessOperation,
   };
 
 const [selectedServiceTags, setSelectedServiceTags] = useState(
@@ -547,9 +547,9 @@ const handleServiceTagDone = () => {
       case "Sustainability & Ethics":
         propertyName = "SustainabilityEthics";
         break;
-      case "Business Operations":
-        propertyName = "BusinessOperations";
-        break;
+      // case "Business Operations":
+      //   propertyName = "BusinessOperations";
+      //   break;
       default:
         propertyName = groupLabel.replace(/[^a-zA-Z]/g, "");
     }
@@ -887,6 +887,7 @@ const handleServiceTagDone = () => {
       )}
 
       {/* Drawer for Product Tags */}
+{/* Drawer for Product Tags */}
 <Drawer
   anchor="top"
   open={drawerOpen}
@@ -896,7 +897,9 @@ const handleServiceTagDone = () => {
   <AppBar position="sticky" color="default" elevation={1}>
     <Toolbar sx={{ justifyContent: "space-between" }}>
       <Typography variant="h6" sx={{ color: "#ff9800" }}>
-        All Product Tags - Browse All Categories
+        {selectedCategory.main
+          ? `Select Product Tags - ${selectedCategory.main}`
+          : "Select Product Tags"}
       </Typography>
       <IconButton onClick={() => setDrawerOpen(false)}>
         <Close />
@@ -905,66 +908,83 @@ const handleServiceTagDone = () => {
   </AppBar>
 
   <Box sx={{ p: 2, overflowY: "auto", height: "calc(80vh - 64px)" }}>
-    {categories.map((mainCategory) => (
-      <Box key={mainCategory.name} sx={{ mb: 4 }}>
-        {/* Main Category Header */}
-        <Typography
-          variant="h6"
-          sx={{ 
-            fontWeight: 700, 
-            mb: 2, 
-            color: "#ff9800",
-            borderBottom: "2px solid #ff9800",
-            pb: 1
-          }}
-        >
-          {mainCategory.name}
-        </Typography>
+    {(() => {
+      // ✅ Find only the selected main category object
+      const mainCategoryObj = categories.find(
+        (cat) => cat.name === selectedCategory.main
+      );
 
-        {/* Sub Categories */}
-        {mainCategory.children?.map((subCategory) => (
-          <Box key={subCategory.name} sx={{ mb: 3, ml: 2 }}>
-            {/* Sub Category Header */}
-            <Typography
-              variant="subtitle1"
-              sx={{ 
-                fontWeight: 600, 
-                mb: 1, 
-                color: "text.primary",
-                borderBottom: "1px solid #e0e0e0",
-                pb: 0.5
-              }}
-            >
-              {subCategory.name}
-            </Typography>
+      if (!mainCategoryObj) {
+        return (
+          <Typography
+            sx={{
+              p: 4,
+              textAlign: "center",
+              color: "text.secondary",
+            }}
+          >
+            Please select an Industry first.
+          </Typography>
+        );
+      }
 
-            {/* Child Categories */}
-            <Grid container spacing={1} sx={{ ml: 1 }}>
-              {subCategory.children?.map((child) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={child}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={tempSelectedChild.includes(child)}
-                        onChange={() => handleChildToggle(child)}
-                        color="primary"
-                      />
-                    }
-                    label={child}
-                    sx={{
-                      width: '100%',
-                      '& .MuiFormControlLabel-label': {
-                        fontSize: '0.9rem'
+      // ✅ Show subcategories belonging to the main category
+      return (
+        <Box key={mainCategoryObj.name}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              color: "#ff9800",
+              borderBottom: "2px solid #ff9800",
+              pb: 1,
+            }}
+          >
+            {mainCategoryObj.name}
+          </Typography>
+
+          {mainCategoryObj.children?.map((subCategory) => (
+            <Box key={subCategory.name} sx={{ mb: 3, ml: 2 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: "text.primary",
+                  borderBottom: "1px solid #e0e0e0",
+                  pb: 0.5,
+                }}
+              >
+                {subCategory.name}
+              </Typography>
+
+              {/* ✅ Render all child tags for each subcategory */}
+              <Grid container spacing={1} sx={{ ml: 1 }}>
+                {subCategory.children?.map((child) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={child}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={tempSelectedChild.includes(child)}
+                          onChange={() => handleChildToggle(child)}
+                          color="primary"
+                        />
                       }
-                    }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        ))}
-      </Box>
-    ))}
+                      label={child}
+                      sx={{
+                        width: "100%",
+                        "& .MuiFormControlLabel-label": { fontSize: "0.9rem" },
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ))}
+        </Box>
+      );
+    })()}
   </Box>
 
   <Box
@@ -1000,6 +1020,7 @@ const handleServiceTagDone = () => {
     </Box>
   </Box>
 </Drawer>
+
 
 {/* Drawer for Service Tags - Make sure this exists */}
 <Drawer
