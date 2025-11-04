@@ -2,7 +2,7 @@ import axios from "axios"
 
 export const GetApiCall = async(url, token,params = {}) => {
 
-  // console.log("token :",token)
+  console.log("token :",token)
 
     const res = await axios.get(url,{
       headers: {

@@ -1,13 +1,12 @@
-import React, { useEffect, useState, useCallback } from "react";
-import TableOutlet from "../../ui/TableOutlet";
+import React, { useCallback, useEffect, useState } from "react";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
-import PausePlayPopup from "../../ui/PausePlayPopup";
-import { Box, Button, CircularProgress } from "@mui/material";
 import { useSelector } from "react-redux";
-import ErrorPop from "../../ui/ErrorPop";
+import { Box, Button, CircularProgress } from "@mui/material";
+import TableOutlet from "../../ui/TableOutlet";
+import PaymentPopup from "../../ui/PaymentPopup";
 
-const PauseBrands = () => {
+const GetAllPaidBrands = () => {
   const [brands, setBrands] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -21,12 +20,9 @@ const PauseBrands = () => {
   const token = adminData?.adminAccessToken || null;
 
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
-  const [openBrandPausepopup, setOpenBrandPausepopup] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [openError, setOpenError] = useState(false);
-  const [msg, setmsg] = useState(null);
-  
+  const [data, setData] = useState(null);
+  const [openPaymentPopup, setOpenPaymentPopup] = useState(false);
 
   const fetchData = useCallback(
     async (page = 1, token) => {
@@ -35,16 +31,13 @@ const PauseBrands = () => {
         else setLoadingMore(true);
 
         const res = await GetApiCall(
-          `${Api.admin.get.brands.allpauseBrand}?page=${page}&limit=${pagination.limit}`,
+          `${Api.admin.get.brands.getallpaidbrands}?page=${page}&limit=${pagination.limit}`,
           token
         );
 
         const responseData = res?.data?.data;
-        console.log("responseData :", res?.data);
-        if (res?.data?.statuscode === 409) {
-          setmsg(res?.data.message)
-          setOpenError(true)
-        }
+        console.log("responseData:", responseData);
+
         if (responseData) {
           setBrands((prev) =>
             page === 1
@@ -55,14 +48,15 @@ const PauseBrands = () => {
           const pg = responseData.pagination || {};
           setPagination({
             total: pg.total || 0,
-            totalPages: pg.totalPages || Math.ceil(pg.total / (pg.limit || 10)),
+            totalPages:
+              pg.totalPages || Math.ceil((pg.total || 0) / (pg.limit || 10)),
             currentPage: pg.currentPage || page,
             limit: pg.limit || 10,
-            hasNext: pg.hasNext || false,
+            hasNext: pg.hasNext ?? false,
           });
         }
       } catch (error) {
-        console.error("Error fetching paused brands:", error);
+        console.error("Error fetching paid brands:", error);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -72,25 +66,18 @@ const PauseBrands = () => {
   );
 
   useEffect(() => {
-    fetchData(1, token);
+    if (token) fetchData(1, token);
   }, [token, fetchData]);
-
-  const handlePauseToggle = (brand) => {
-    setOpenBrandPausepopup(true);
-    setData(brand);
-  };
-
-  const handlePlay = (id) => {
-    setBrands((prev) => prev.filter((brand) => brand.uuid !== id));
-    setPagination((prev) => ({
-      ...prev,
-      total: Math.max(0, prev.total - 1),
-    }));
-  };
 
   const loadMore = () => {
     if (loadingMore || !pagination.hasNext) return;
     fetchData(pagination.currentPage + 1, token);
+  };
+
+  const handlepayment = async (brand) => {
+    console.log(brand);
+    setOpenPaymentPopup(true);
+    setData(brand);
   };
 
   return (
@@ -103,12 +90,12 @@ const PauseBrands = () => {
         <Box sx={{ mb: 4 }}>
           <TableOutlet
             filteredBrands={brands}
-            pauseShow={true}
+            paidShow={true}
             pagination={pagination}
             hasMore={pagination.hasNext}
-            handlePauseToggle={handlePauseToggle}
             loadMore={loadMore}
             loading={loadingMore}
+            handlepayment={handlepayment}
           />
 
           {pagination.hasNext && (
@@ -130,24 +117,22 @@ const PauseBrands = () => {
         </Box>
       ) : (
         <p style={{ textAlign: "center", color: "gray" }}>
-          No paused brands found.
+          No paid brands found.
         </p>
       )}
 
-      {openBrandPausepopup && (
-        <PausePlayPopup
-          open={openBrandPausepopup}
-          onClose={() => setOpenBrandPausepopup(false)}
+      {openPaymentPopup && (
+        <PaymentPopup
+          open={openPaymentPopup}
+          onClose={() => setOpenPaymentPopup(false)}
           data={data}
           brands={brands}
-          handleplay={handlePlay}
+          setBrands={setBrands}
+
         />
-      )}
-      {openError && (
-        <ErrorPop open={openError} onClose={() => setOpenError(false)} />
       )}
     </Box>
   );
 };
 
-export default PauseBrands;
+export default GetAllPaidBrands;
