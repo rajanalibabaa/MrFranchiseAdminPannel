@@ -333,7 +333,7 @@ const BrandRegisterForm = () => {
 
   const handleHomeClick = () => {
     dispatch(showLoading());
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const handleSubmit = async () => {

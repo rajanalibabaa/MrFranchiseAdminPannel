@@ -176,6 +176,19 @@ const filterBrandSlice = createSlice({
         return brand;
       });
     },
+    toggleFreeLeadBrandPausePlayId: (state, action) => {
+      const brandId = action.payload;
+
+      state.brands = state.brands.map((brand) => {
+        if (brand.uuid === brandId) {
+          return {
+            ...brand,
+            isFreeLeadPaused: !brand.isFreeLeadPaused, 
+          };
+        }
+        return brand;
+      });
+    },
 
   },
   extraReducers: (builder) => {
@@ -217,6 +230,7 @@ export const {
   deleteBrand,
   toggleBrandPausePlay,
   toggleBrandPayment,
+  toggleFreeLeadBrandPausePlayId,
 
 } = filterBrandSlice.actions;
 

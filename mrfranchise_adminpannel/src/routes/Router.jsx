@@ -18,6 +18,7 @@ import ErrorPage from '../Components/Error/ErrorPage';
 import { useDispatch, useSelector } from 'react-redux';
 import { Logout } from '../Redux/Slices/admin/authSlice';
 import FreeLeadPage from '../Pages/LeadsHandling/FreeLeadPage';
+import PaymentPackagesPage from '../Pages/dashboardOutlet/PaymentPackagesHandling';
 
 
 const Router = () => {
@@ -50,6 +51,7 @@ const Router = () => {
             // Instant Apply
             <Route path="instantapply" element={<InstantApplyLayout />} />
             <Route path='freeleadlist' element={<FreeLeadPage/>}/>
+            <Route path= 'packagemanagement' element={<PaymentPackagesPage/>} />
 
             // Manage Investor Routes
             <Route path="allinvestors" element={<AllInvestor />} />

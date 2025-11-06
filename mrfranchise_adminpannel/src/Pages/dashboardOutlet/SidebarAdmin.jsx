@@ -117,6 +117,7 @@ const SidebarAdmin = () => {
           { label: "All Brands", path: "/dashboard/getallbrands" },
           { label: "Instant Apply", path: "/dashboard/instantapply" },
           {label:"Leads Management",path:"/dashboard/freeleadlist"},
+          {label:"Package Management",path:"/dashboard/packagemanagement"},
           
         ],
       },

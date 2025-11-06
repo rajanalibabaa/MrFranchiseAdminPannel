@@ -958,38 +958,37 @@ const handleSubCategoryChange = (e) => {
       )}
     </FormControl>
   </Grid>
-
-  {/* Product Tag */}
-  <Grid item xs={12} md={3} sx={{ flex: 1 }}>
-    <FormControl fullWidth size="medium">
-      <InputLabel shrink htmlFor="sub-cat-field">Product Tag</InputLabel>
-      <TextField
-        id="sub-cat-field"
-        variant="outlined"
-        value={
-          selectedCategory.child?.length
-            ? `${selectedCategory.child.length} tag(s) selected`
-            : "Select Product Tags"
-        }
-        placeholder="Select Product Tags"
-        onClick={handleOpenDrawer}
-        InputProps={{ readOnly: true }}
-        disabled={!isEditing}
-        sx={{
-          minHeight: 56,
-          "& .MuiInputBase-input": {
-            cursor: isEditing ? "pointer" : "default",
-            userSelect: "none",
-          },
-        }}
-      />
-    </FormControl>
-  </Grid>
+       {/* Product Tag */}
+<Grid item xs={12} md={3}>
+  <FormControl fullWidth size="medium">
+    {/* <InputLabel shrink htmlFor="sub-cat-field">Product Tag</InputLabel> */}
+    <TextField
+      id="sub-cat-field"
+      variant="outlined"
+      value={
+        selectedCategory.child?.length
+          ? `${selectedCategory.child.length} tag(s) selected`
+          : 'Select Product Tags'
+      }
+      placeholder="Select Product Tags"
+      onClick={handleOpenDrawer}
+      InputProps={{ readOnly: true }}
+      disabled={!isEditing} // Remove the !selectedCategory.sub condition
+      sx={{
+        minHeight: 56,
+        '& .MuiInputBase-input': {
+          cursor: isEditing ? 'pointer' : 'default',
+          userSelect: 'none',
+        },
+      }}
+    />
+  </FormControl>
+</Grid>
 
   {/* Service Tag */}
   <Grid item xs={12} md={3} sx={{ flex: 1 }}>
     <FormControl fullWidth size="medium">
-      <InputLabel shrink htmlFor="service-tag-field">Service Tag</InputLabel>
+      {/* <InputLabel shrink htmlFor="service-tag-field">Service Tag</InputLabel> */}
       <TextField
         id="service-tag-field"
         variant="outlined"

@@ -14,7 +14,7 @@ import { toggleBrandPayment } from "../Redux/Slices/FilterBrandSlice";
 import { Api } from "../api/apiurl";
 import { PostApiCall } from "../api/default/PostApi";
 
-const PaymentPopup = ({ open, onClose, data }) => {
+const PaymentPopup = ({ open, onClose, data, setBrands, brands }) => {
   const adminData = useSelector((state) => state.admin.adminData);
   const token = adminData?.adminAccessToken || null;
   const dispatch = useDispatch();
@@ -23,42 +23,58 @@ const PaymentPopup = ({ open, onClose, data }) => {
   const [showError, setShowError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [disable, setdisable] = useState(false);
- 
+  const [disable, setDisable] = useState(false);
 
   const handleConfirmPayment = async () => {
+    if (!data?.uuid) {
+      setError("Invalid brand data.");
+      setShowError(true);
+      return;
+    }
+
     try {
       setLoading(true);
+      setDisable(true);
+
       const url = `${Api.admin.post.brand.payment}/${data.uuid}`;
       const res = await PostApiCall(url, token);
-    //   console.log("Payment Response:", res.data);
 
-      const msg = res.data?.message || "Payment response received";
+      const msg = res?.data?.message || "Payment response received";
+      const statuscode = res?.data?.statuscode;
 
-      if (res.data.statuscode === 200) {
+      if (statuscode === 200) {
         dispatch(toggleBrandPayment(data.uuid));
+
+        // Update brand list if passed
+        if (Array.isArray(brands) && brands.length > 0) {
+          const updated = brands.filter((d) => d.uuid !== data.uuid);
+          setBrands(updated);
+        }
+
         setSuccessMessage(msg);
-        setLoading(false);
-        setdisable(true)
       } else {
         setError(msg || "Payment failed");
         setShowError(true);
+        setDisable(false);
       }
     } catch (err) {
       console.error("Payment Error:", err);
-
       const errMsg =
-        err.response?.data?.error ||
-        err.message ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Failed to process payment. Please try again.";
       setError(errMsg);
       setShowError(true);
+      setDisable(false);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCloseError = () => {
+  const handleCloseSnackbar = () => {
     setShowError(false);
     setSuccessMessage("");
+    setDisable(false);
     onClose();
   };
 
@@ -71,21 +87,19 @@ const PaymentPopup = ({ open, onClose, data }) => {
         aria-describedby="payment-dialog-description"
       >
         <DialogTitle id="payment-dialog-title">
-          {data.payment ? "Cancel Payment" : "Confirm Payment"}
+          {data?.payment ? "Cancel Payment" : "Confirm Payment"}
         </DialogTitle>
 
         <DialogContent>
           <DialogContentText id="payment-dialog-description">
-            <span>
-              Are you sure you want to{" "}
-              <strong>{data.payment ? "cancel" : "confirm"}</strong> the payment
-              for <strong>{data?.brandName || data.brandname}</strong>?
-            </span>
+            Are you sure you want to{" "}
+            <strong>{data?.payment ? "cancel" : "confirm"}</strong> the payment
+            for <strong>{data?.brandName || data?.brandname}</strong>?
           </DialogContentText>
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={onClose} color="inherit">
+          <Button onClick={onClose} color="inherit" disabled={loading}>
             No
           </Button>
           <Button
@@ -93,20 +107,22 @@ const PaymentPopup = ({ open, onClose, data }) => {
             color="success"
             variant="contained"
             autoFocus
-            disabled={disable === true}          >
-            {loading ? "loading..." :"Yes"}
+            disabled={disable || loading}
+          >
+            {loading ? "Loading..." : "Yes"}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Error Snackbar */}
       <Snackbar
         open={showError}
-        autoHideDuration={1000}
-        onClose={handleCloseError}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={handleCloseError}
+          onClose={handleCloseSnackbar}
           severity="error"
           sx={{ width: "100%" }}
         >
@@ -114,14 +130,15 @@ const PaymentPopup = ({ open, onClose, data }) => {
         </Alert>
       </Snackbar>
 
+      {/* Success Snackbar */}
       <Snackbar
         open={!!successMessage}
-        autoHideDuration={1000}
-        onClose={handleCloseError}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={handleCloseError}
+          onClose={handleCloseSnackbar}
           severity="success"
           sx={{ width: "100%" }}
         >

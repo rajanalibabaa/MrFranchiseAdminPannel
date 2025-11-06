@@ -6,6 +6,7 @@ import socket from "../../utils/socket";
 import { fetchNewIncomingBrands } from "../../Redux/Slices/newIncomingSlice";
 import { useDispatch, useSelector } from "react-redux";
 import PauseBrands from "./PauseBrands";
+import GetAllPaidBrands from "./GetAllPaidBrands";
 
 // ✅ Styled Tabs
 const StyledTabs = styled(Tabs)({
@@ -69,6 +70,8 @@ const total = useSelector((state) => state.brands.totalBrands);
         return <NewIncomingBrand />;
       case 2:
         return <PauseBrands />;
+      case 3:
+        return <GetAllPaidBrands />;
       default:
         return <GetAllBrand />;
     }
@@ -93,6 +96,7 @@ const total = useSelector((state) => state.brands.totalBrands);
             }
           />
           <StyledTab label="All Pause Brands" />
+          <StyledTab label="All Paid Brands" />
         </StyledTabs>
         
       </Box>
