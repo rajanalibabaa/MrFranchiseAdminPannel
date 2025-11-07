@@ -62,14 +62,14 @@ const PaymentPackageForm = ({ selectedPackage, onSuccess }) => {
       <Typography variant="h6" gutterBottom>
         Edit Payment Package
       </Typography>
-
+{/* 
       <TextField
         label="UUID"
         value={form.uuid}
         fullWidth
         margin="normal"
         disabled
-      />
+      /> */}
 
       {tiers.map((tier) => (
         <Box key={tier} sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
