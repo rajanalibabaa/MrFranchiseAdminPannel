@@ -35,6 +35,8 @@ export const Api = {
         freeleadS:`${BASE_URL_2}/instantapply/getFreeLeads`,
         dropdown : `${BASE_URL}/instantapply/getInstantApplyDropDownData`,
         filterandsearch : `${BASE_URL}/instantapply/getInstantApplySearchData`,
+        emailconfig : `${BASE_URL}/batch-email-config`,
+        updateEmailConfig : `${BASE_URL}/batch-email-config`,
       },
       brands:{
         allpauseBrand:`${BASE_URL}/getAllPauseBrand`,

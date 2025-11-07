@@ -461,23 +461,45 @@ const investmentRanges = [
     "7 Years",
     "10 Years",
   ];
+  // Helper: parse child string that can contain both " - " and " | "
+const parseChildString = (raw) => {
+  if (!raw) return [];
+  return Array.from(
+    new Set(
+      raw
+        .split(/\s*\|\s*|\s*-\s*/g) // split on both separators
+        .map(s => s.trim())
+        .filter(Boolean)
+    )
+  );
+};
 
- const [selectedCategory, setSelectedCategory] = useState({
-    groupId: data.brandCategories?.groupId || "",
-    main: data.brandCategories?.main || "",
-    sub: data.brandCategories?.sub || "",
-    child: data.brandCategories?.child
-      ? (Array.isArray(data.brandCategories.child)
-          ? data.brandCategories.child
-          : data.brandCategories.child.split(" | ").filter(Boolean))
-      : [],
-  });
+
+const [selectedCategory, setSelectedCategory] = useState({
+  groupId: data.brandCategories?.groupId || "",
+  main: data.brandCategories?.main || "",
+  sub: data.brandCategories?.sub || "",
+  child: Array.isArray(data.brandCategories?.child)
+    ? data.brandCategories.child
+    : parseChildString(data.brandCategories?.child),
+});
+
   // Drawer handlers
-  const handleOpenDrawer = () => {
-    // if (!selectedCategory.sub || !selectedCategory.main) return;
-    setTempSelectedChild(selectedCategory.child || []);
-    setDrawerOpen(true);
-  };
+ const handleOpenDrawer = () => {
+  // Only proceed if a main category is chosen
+  if (!selectedCategory.main) {
+    alert("Please select an Industry first.");
+    return;
+  }
+  // Prepare current child tags (ensure parsing for safety)
+  const currentChildTags = Array.isArray(selectedCategory.child)
+    ? [...selectedCategory.child]
+    : parseChildString(selectedCategory.child);
+
+  setTempSelectedChild(currentChildTags);
+  setDrawerOpen(true);
+};
+
 
   const handleChildToggle = (child) => {
     setTempSelectedChild((prevSelected) =>
@@ -487,20 +509,24 @@ const investmentRanges = [
     );
   };
 
-  const handleDone = () => {
-    const newCategory = {
-      ...selectedCategory,
-      child: tempSelectedChild,
-    };
-    setSelectedCategory(newCategory);
-    onChange({ 
-      brandCategories: {
-        ...newCategory,
-        child: tempSelectedChild.join(" - "),
-      }
-    });
-    setDrawerOpen(false);
+ const handleDone = () => {
+  const newCategory = {
+    ...selectedCategory,
+    child: tempSelectedChild,
   };
+  setSelectedCategory(newCategory);
+
+  // Normalize to " | " separator when sending to parent/backend
+  onChange({
+    brandCategories: {
+      ...newCategory,
+      child: tempSelectedChild.join(" | "),
+    },
+  });
+
+  setDrawerOpen(false);
+};
+
   const handleOpenServiceTagDrawer = () => {
     const tagsObj = data.franchiseTags || {};
     const allSelected = Object.values(tagsObj).flat().filter(Boolean);
@@ -886,7 +912,6 @@ const handleServiceTagDone = () => {
         </Box>
       )}
 
-      {/* Drawer for Product Tags */}
 {/* Drawer for Product Tags */}
 <Drawer
   anchor="top"
@@ -909,7 +934,6 @@ const handleServiceTagDone = () => {
 
   <Box sx={{ p: 2, overflowY: "auto", height: "calc(80vh - 64px)" }}>
     {(() => {
-      // ✅ Find only the selected main category object
       const mainCategoryObj = categories.find(
         (cat) => cat.name === selectedCategory.main
       );
@@ -917,20 +941,15 @@ const handleServiceTagDone = () => {
       if (!mainCategoryObj) {
         return (
           <Typography
-            sx={{
-              p: 4,
-              textAlign: "center",
-              color: "text.secondary",
-            }}
+            sx={{ p: 4, textAlign: "center", color: "text.secondary" }}
           >
             Please select an Industry first.
           </Typography>
         );
       }
 
-      // ✅ Show subcategories belonging to the main category
       return (
-        <Box key={mainCategoryObj.name}>
+        <Box>
           <Typography
             variant="h6"
             sx={{
@@ -944,6 +963,7 @@ const handleServiceTagDone = () => {
             {mainCategoryObj.name}
           </Typography>
 
+          {/* Show ALL subcategories and their children under the main category */}
           {mainCategoryObj.children?.map((subCategory) => (
             <Box key={subCategory.name} sx={{ mb: 3, ml: 2 }}>
               <Typography
@@ -958,8 +978,6 @@ const handleServiceTagDone = () => {
               >
                 {subCategory.name}
               </Typography>
-
-              {/* ✅ Render all child tags for each subcategory */}
               <Grid container spacing={1} sx={{ ml: 1 }}>
                 {subCategory.children?.map((child) => (
                   <Grid item xs={12} sm={6} md={4} lg={3} key={child}>
@@ -974,7 +992,9 @@ const handleServiceTagDone = () => {
                       label={child}
                       sx={{
                         width: "100%",
-                        "& .MuiFormControlLabel-label": { fontSize: "0.9rem" },
+                        "& .MuiFormControlLabel-label": {
+                          fontSize: "0.9rem",
+                        },
                       }}
                     />
                   </Grid>
