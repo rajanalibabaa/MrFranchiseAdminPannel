@@ -295,6 +295,33 @@ const Count = () => {
             </CardContent>
           </Card>
         </Grid>
+        {/* Paid Brands */}
+    <Grid item xs={3} sx={{ flex: "0 0 auto" }}>
+      <Card
+        onClick={() => handleNavigate("paid")}
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
+          height: "100%",
+        }}
+      >
+        <CardContent sx={{ textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight="bold"
+           sx={{ fontSize: { xs: ".6rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            Paid Brands 
+          </Typography>
+          <Typography
+            variant="h5"
+            color="warning.main"
+            sx={{ fontSize: { xs: "1.5rem", md: "2rem" }, fontWeight: 600 }}
+          >
+            {brandsData.paidBrandsCount}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
       </Grid>
 
       {/* Bottom Row - Controls */}
