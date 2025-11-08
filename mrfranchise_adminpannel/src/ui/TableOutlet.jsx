@@ -24,6 +24,7 @@ const TableOutlet = ({
   handleDelete,
   searchTerm,
   editShow,
+editNewincomingShow,
   handleEdit,
   handleApprove,
   handleInfoOpen,
@@ -79,6 +80,7 @@ const TableOutlet = ({
               <TableCell>Category (Sub)</TableCell>
               <TableCell>Investment Range</TableCell>
               {!pauseShow && !paidShow && <TableCell>Details</TableCell>}
+              {editNewincomingShow && <TableCell>Edit</TableCell>}
 
               {editShow && !paidShow && <TableCell>Edit</TableCell>}
               {editShow && !paidShow && <TableCell>Pause</TableCell>}
@@ -153,11 +155,21 @@ const TableOutlet = ({
                     </TableCell>
                   )}
 
-                  {editShow && !paidShow && (
+                  {editShow && !paidShow &&  (
                     <TableCell>
                       <IconButton
                         sx={{ color: "green" }}
-                        onClick={() => handleEdit(brand?.uuid)}
+                        onClick={() => handleEdit(brand?.uuid,"allbrand")}
+                      >
+                        <Edit />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {editNewincomingShow &&  (
+                    <TableCell>
+                      <IconButton
+                        sx={{ color: "green" }}
+                        onClick={() => handleEdit(brand?.uuid,"newincomingbrand")}
                       >
                         <Edit />
                       </IconButton>
@@ -248,8 +260,8 @@ const TableOutlet = ({
                   )} */}
                   {!editShow && !paidShow && (
                     <TableCell>
-                      {brand?.seen === false && (
-                        <IconButton onClick={() => handleApprove(brand?.uuid)}>
+                      {brand?.isApproved === false && (
+                        <IconButton onClick={() => handleApprove(brand)}>
                           <CheckCircleIcon />
                         </IconButton>
                       )}

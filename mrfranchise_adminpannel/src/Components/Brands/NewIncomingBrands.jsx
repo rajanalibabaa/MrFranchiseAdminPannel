@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchNewIncomingBrands,
-  fetchBrandById,
   approveBrand,
   deleteBrand,
   clearBrandDetails,
@@ -15,53 +14,52 @@ import BrandInfoPopup from "../../ui/BrandInfoPopup";
 import DeletePopup from "../../ui/DeletePopup";
 import { Api } from "../../api/apiurl";
 import { PostApiCall } from "../../api/default/PostApi";
+import { DeleteApiCall } from "../../api/default/DeleteApi";
+import { GetApiCall } from "../../api/default/GetApi";
 
 import { TextField, Box, Button } from "@mui/material";
-import { DeleteApiCall } from "../../api/default/DeleteApi";
-
-const debounce = (func, delay) => {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => func.apply(this, args), delay);
-  };
-};
+import DefaultPopup from "../../ui/DefaultPopup";
 
 const NewIncomingBrands = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // const [searchTerm, setSearchTerm] = useState("");
+  // 🔹 Local state
   const [openBrandInfo, setOpenBrandInfo] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedBrandId, setSelectedBrandId] = useState(null);
+  const [brandDetails, setBrandDetails] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [openDefaultBrandPopup, setopenDefaultBrandPopup] = useState(false);
+  const [data, setData] = useState(false);
+  
 
-  const { brands, loading, pagination, brandDetails } = useSelector(
-    (state) => state.brands
-  );
 
+  const { brands, loading, pagination } = useSelector((state) => state.brands);
+
+ 
   useEffect(() => {
     dispatch(fetchNewIncomingBrands({ page: 1 }));
   }, [dispatch]);
 
+
   const handleApprove = useCallback(
-    async (brandId) => {
-      const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
-      // console.log("Approve response:", res.data);
-      dispatch(approveBrand(brandId));
+    async (brand) => {
+      console.log("===brand=== :",brand)
+      setData(brand)
+      setopenDefaultBrandPopup(true);
+
+      // const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
+      // if (res?.data?.statuscode === 200) {
+      //   dispatch(approveBrand(brandId));
+      // }
+
+      // dispatch(approveBrand(brandId));
     },
     [dispatch]
   );
 
-  const handleInfoOpen = useCallback(
-    async (brandId) => {
-      await dispatch(fetchBrandById(brandId));
-      setOpenBrandInfo(true);
-    },
-    [dispatch]
-  );
 
   const handleEdit = useCallback(
     (brandId) => {
@@ -70,44 +68,71 @@ const NewIncomingBrands = () => {
     [navigate]
   );
 
+
+  const handleInfoOpen = useCallback(async (brandId) => {
+    const res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
+    setBrandDetails(res?.data?.data);
+    setOpenBrandInfo(true);
+  }, []);
+
+
   const handleDelete = (brandId) => {
     setSelectedBrandId(brandId);
     setOpenDelete(true);
   };
 
-  const confirmDelete = useCallback(async() => {
-    const deleteIncomingBrand = await DeleteApiCall(`${Api.admin.delete.newIncomingBrand}/${selectedBrandId}`);
 
-    if (deleteIncomingBrand?.data?.statuscode === 200) {
+  const confirmDelete = useCallback(async () => {
+    const res = await DeleteApiCall(
+      `${Api.admin.delete.newIncomingBrand}/${selectedBrandId}`
+    );
+    if (res?.data?.statuscode === 200) {
       dispatch(deleteBrand(selectedBrandId));
-    setSelectedBrandId(null);
-    setOpenDelete(false);
+      setSelectedBrandId(null);
+      setOpenDelete(false);
     }
-    
   }, [dispatch, selectedBrandId]);
 
-  const loadMore = useCallback(
-    debounce(() => {
-      if (pagination.hasNext && !loading) {
-        dispatch(fetchNewIncomingBrands({
-          page: pagination.currentPage + 1,
-          startDate,
-          endDate,
-        }));
-      }
-    }, 300),
-    [dispatch, pagination, startDate, endDate, loading]
-  );
+
+  const loadMore = useCallback(() => {
+    if (!pagination.hasNext || loading) return;
+    dispatch(fetchNewIncomingBrands({ page: pagination.currentPage + 1, startDate, endDate }));
+  }, [dispatch, pagination, startDate, endDate, loading]);
+
 
   const applyDateFilter = () => {
     dispatch(resetBrands());
     dispatch(fetchNewIncomingBrands({ page: 1, startDate, endDate }));
   };
 
+  const handleConformApprove = useCallback(
+    async (brandId) => {
+      // console.log("===brand=== :",brand)
+      // setData(brand)
+      // setopenDefaultBrandPopup(true);
+
+      const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
+      if (res?.data?.statuscode === 200) {
+        dispatch(approveBrand(brandId));
+      }
+      return res
+    },
+    [dispatch]
+  );
+  
+
   return (
     <div>
-      {/* 🔍 Filter Controls */}
-      <Box sx={{ display: "flex", gap: 2, mb: 2 ,justifyContent: "flex-end" }}>
+     
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 2,
+          justifyContent: "flex-end",
+          flexWrap: "wrap",
+        }}
+      >
         <TextField
           label="Start Date"
           type="date"
@@ -127,22 +152,23 @@ const NewIncomingBrands = () => {
         </Button>
       </Box>
 
-      {/* 📦 Table Data */}
+     
+     
       <TableOutlet
         filteredBrands={brands}
-        // searchTerm={searchTerm}
         handleApprove={handleApprove}
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         editShow={false}
+        editNewincomingShow={true}
         loadMore={loadMore}
         hasMore={pagination.hasNext}
         loading={loading}
         pagination={pagination}
       />
 
-      {/* 🔍 Brand Info */}
+      
       {openBrandInfo && (
         <BrandInfoPopup
           open={openBrandInfo}
@@ -154,7 +180,7 @@ const NewIncomingBrands = () => {
         />
       )}
 
-      {/* 🗑️ Delete Popup */}
+     
       {openDelete && (
         <DeletePopup
           open={openDelete}
@@ -163,9 +189,20 @@ const NewIncomingBrands = () => {
           newIncomingDeleteId={selectedBrandId}
         />
       )}
+
+      {openDefaultBrandPopup && (
+        <DefaultPopup
+          open={openDefaultBrandPopup}
+          data={data}
+          handleConformApprove={handleConformApprove}
+          onClose={() => setopenDefaultBrandPopup(false)}
+          header={"Approved Brand"}
+          // onConfirm={confirmDelete}
+          // newIncomingDeleteId={selectedBrandId}
+        />
+      )}
     </div>
   );
 };
 
 export default NewIncomingBrands;
-  
