@@ -378,9 +378,10 @@ const BrandRegisterForm = () => {
             linkedin: formData.brandDetails.linkedin,
             gstNumber: formData.brandDetails.gstNumber,
             pancardNumber: formData.brandDetails.pancardNumber,
-            awardText: formData.brandDetails.awardText || [], // Include award texts
+            awardText: formData.brandDetails.awardText || [],
+            isApproved:true // Include award texts
           })
-        );
+        );  
 
         // Append franchise details
         formDataSend.append(

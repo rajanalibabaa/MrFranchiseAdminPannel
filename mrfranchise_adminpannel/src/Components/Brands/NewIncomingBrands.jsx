@@ -136,6 +136,7 @@ const NewIncomingBrands = () => {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         editShow={false}
+        editNewincomingShow={true}
         loadMore={loadMore}
         hasMore={pagination.hasNext}
         loading={loading}
