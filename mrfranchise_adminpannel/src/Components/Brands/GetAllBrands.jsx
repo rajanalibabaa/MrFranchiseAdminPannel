@@ -17,8 +17,7 @@ import {
 import PausePlayPopup from "../../ui/PausePlayPopup.jsx";
 import PaymentPopup from "../../ui/PaymentPopup.jsx";
 import FreeLeadPausePopup from "../../ui/FreeLeadPausePopup.jsx";
-
-
+import axios from "axios";
 
 const GetAllBrands = () => {
   const dispatch = useDispatch();
@@ -102,12 +101,21 @@ const GetAllBrands = () => {
   };
 
   // Edit handler
-  const handleEdit = useCallback(
-    (brandId) => {
-      navigate(`/dashboard/edit-brand/${brandId}`);
-    },
-    [navigate]
-  );
+
+const handleEdit = useCallback(
+  async (brandId, brandType) => {
+    try {
+      console.log("🟢 handleEdit Clicked:", { brandId, brandType });
+
+      // 2️⃣ Navigate to edit page after getting data
+      navigate(`/dashboard/edit-brand/${brandId}`)
+    } catch (error) {
+      console.error("❌ Error in handleEdit:", error);
+    }
+  },
+  [navigate]
+);
+
 
   // Infinite scroll load more
   const loadMore = () => {
