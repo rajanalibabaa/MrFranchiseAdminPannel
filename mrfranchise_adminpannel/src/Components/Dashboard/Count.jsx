@@ -17,7 +17,7 @@ import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
 import { useDispatch } from "react-redux";
 import { goToNewIncoming } from "../../Redux/Slices/newIncomingSlice";
-import socket from "../../utils/socket";
+import socket from "../../Utils/socket";
 import FbCount from "./FoodandBevaragesCount";
 import LeadToggleControl from "./AutomationLeadPause";
 

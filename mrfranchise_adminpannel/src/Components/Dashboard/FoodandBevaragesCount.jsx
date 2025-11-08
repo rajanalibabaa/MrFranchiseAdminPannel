@@ -12,7 +12,7 @@ import SidebarAdmin from "../../Pages/dashboardOutlet/SidebarAdmin";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
 import { useDispatch } from "react-redux";
-import socket from "../../utils/socket";
+import socket from "../../Utils/socket";
 
 const FbCount = () => {
   const [count, setCount] = useState(0);

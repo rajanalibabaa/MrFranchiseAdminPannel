@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Logout } from '../Redux/Slices/admin/authSlice';
 import FreeLeadPage from '../Pages/LeadsHandling/FreeLeadPage';
 import PaymentPackagesPage from '../Pages/dashboardOutlet/PaymentPackagesHandling';
+import AllNotificationsPage from '../Components/Dashboard/AllNotigicationPage';
 
 
 const Router = () => {
@@ -45,6 +46,7 @@ const Router = () => {
             <Route path="createbrand" element={<BrandRegisterForm />} />
             <Route path="getallbrands" element={<Bredcrumbs />} />
             <Route path="edit-brand/:uuid" element={<BrandListingEdit />} />
+            <Route path ='notificationpage' element={<AllNotificationsPage/>}/>
 
             // leads
             <Route path="leads" element={<Leads />} />

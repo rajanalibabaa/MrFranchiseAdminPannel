@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Badge, Box, Tabs, Tab, styled } from "@mui/material";
 import GetAllBrand from "./GetAllBrands";
 import NewIncomingBrand from "./NewIncomingBrands";
-import socket from "../../utils/socket";
+import socket from "../../Utils/socket";
 import { fetchNewIncomingBrands } from "../../Redux/Slices/newIncomingSlice";
 import { useDispatch, useSelector } from "react-redux";
 import PauseBrands from "./PauseBrands";

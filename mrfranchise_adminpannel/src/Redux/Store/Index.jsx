@@ -9,6 +9,7 @@ import newIncomingReducer from "../Slices/newIncomingSlice.jsx";
 import adminReducer from "../Slices/admin/authSlice.jsx";
 import applicationReducer from '../Slices/InstantApplyCreationSlice.jsx'
 import paymentPackageReducer  from "../Slices/AdvertiseHandlingSlices.jsx";
+import NotificationsReducer from "../Slices/NotificationsSlice/notificationsSliceget.jsx";
 
 // Combine reducers
 const rootReducer = combineReducers({
@@ -18,7 +19,8 @@ const rootReducer = combineReducers({
   brands: newIncomingReducer,
   admin: adminReducer,
   applications:applicationReducer,
-  paymentPackages:paymentPackageReducer
+  paymentPackages:paymentPackageReducer,
+  notifications: NotificationsReducer,
 });
 
 // Persist config
