@@ -7,20 +7,23 @@ export const fetchNewIncomingBrands = createAsyncThunk(
   "brands/fetchNewIncomingBrands",
   async ({ page = 1, startDate, endDate } = {}, { rejectWithValue }) => {
     try {
-      const queryParams = new URLSearchParams({
-        page,
-        limit: 10,
-      });
+      const queryParams = new URLSearchParams({ page, limit: 10 });
 
       if (startDate) queryParams.append("startDate", startDate);
       if (endDate) queryParams.append("endDate", endDate);
 
-      const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrands}?${queryParams.toString()}`);
+      const res = await GetApiCall(
+        `${Api.admin.brand.getNewIncomingBrands}?${queryParams.toString()}`
+      );
+
+      const data = res?.data?.data || {};
+      // console.log("res :", data);
 
       return {
         page,
-        data: res?.data?.data,
-        total: res?.data?.data?.totalBrands,
+        brands: data.brands || [],
+        total: data.pagination?.total || 0,
+        hasNext: data.pagination?.hasNext || false,
       };
     } catch (error) {
       return rejectWithValue(error.message);
@@ -33,7 +36,9 @@ export const fetchBrandById = createAsyncThunk(
   "brands/fetchBrandById",
   async (brandId, { rejectWithValue }) => {
     try {
-      const res = await GetApiCall(`${Api.admin.brand.getNewIncomingBrandById}/${brandId}`);
+      const res = await GetApiCall(
+        `${Api.admin.brand.getNewIncomingBrandById}/${brandId}`
+      );
       return res?.data?.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -53,15 +58,15 @@ const newIncomingSlice = createSlice({
       currentPage: 1,
       hasNext: false,
     },
-    goToNewIncoming:null
+    goToNewIncoming: null,
   },
   reducers: {
     approveBrand: (state, action) => {
-      state.brands = state.brands.filter(b => b.uuid !== action.payload);
+      state.brands = state.brands.filter((b) => b.uuid !== action.payload);
       state.totalBrands -= 1;
     },
     deleteBrand: (state, action) => {
-      state.brands = state.brands.filter(b => b.uuid !== action.payload);
+      state.brands = state.brands.filter((b) => b.uuid !== action.payload);
       state.totalBrands -= 1;
     },
     clearBrandDetails: (state) => {
@@ -75,10 +80,10 @@ const newIncomingSlice = createSlice({
         hasNext: false,
       };
     },
-    goToNewIncoming:(state,action) => {
-      state.goToNewIncoming = action.payload
-      console.log(state.goToNewIncoming,action.payload)
-    }
+    goToNewIncoming: (state, action) => {
+      state.goToNewIncoming = action.payload;
+      console.log(state.goToNewIncoming, action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -86,18 +91,14 @@ const newIncomingSlice = createSlice({
         state.loading = true;
       })
       .addCase(fetchNewIncomingBrands.fulfilled, (state, action) => {
-        const { page, data, total } = action.payload;
-        if (page === 1) {
-          state.brands = data?.brands || [];
-        } else {
-          state.brands = [...state.brands, ...(data?.brands || [])];
-        }
+        const { page, brands, total, hasNext } = action.payload;
 
-        state.totalBrands = total || 0;
-
+        state.brands =
+          page === 1 ? brands : [...state.brands, ...(brands || [])];
+        state.totalBrands = total;
         state.pagination = {
           currentPage: page,
-          hasNext: data?.hasNext || false,
+          hasNext,
         };
         state.loading = false;
       })

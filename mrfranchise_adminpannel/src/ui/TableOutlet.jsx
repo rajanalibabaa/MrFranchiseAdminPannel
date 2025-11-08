@@ -260,8 +260,8 @@ editNewincomingShow,
                   )} */}
                   {!editShow && !paidShow && (
                     <TableCell>
-                      {brand?.seen === false && (
-                        <IconButton onClick={() => handleApprove(brand?.uuid)}>
+                      {brand?.isApproved === false && (
+                        <IconButton onClick={() => handleApprove(brand)}>
                           <CheckCircleIcon />
                         </IconButton>
                       )}

@@ -6,6 +6,7 @@ import PausePlayPopup from "../../ui/PausePlayPopup";
 import { Box, Button, CircularProgress } from "@mui/material";
 import { useSelector } from "react-redux";
 import ErrorPop from "../../ui/ErrorPop";
+import { useNavigate } from "react-router-dom";
 
 const PauseBrands = () => {
   const [brands, setBrands] = useState([]);
@@ -19,7 +20,7 @@ const PauseBrands = () => {
 
   const adminData = useSelector((state) => state.admin.adminData);
   const token = adminData?.adminAccessToken || null;
-
+const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [openBrandPausepopup, setOpenBrandPausepopup] = useState(false);
@@ -93,6 +94,13 @@ const PauseBrands = () => {
     fetchData(pagination.currentPage + 1, token);
   };
 
+  const handleEdit = useCallback(
+      (brandId) => {
+        navigate(`/dashboard/edit-brand/${brandId}`);
+      },
+      [navigate]
+    );
+
   return (
     <Box>
       {loading ? (
@@ -109,6 +117,8 @@ const PauseBrands = () => {
             handlePauseToggle={handlePauseToggle}
             loadMore={loadMore}
             loading={loadingMore}
+            editNewincomingShow={true}
+            handleEdit={handleEdit}
           />
 
           {pagination.hasNext && (
