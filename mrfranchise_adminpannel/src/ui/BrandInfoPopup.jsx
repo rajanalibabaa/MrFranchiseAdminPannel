@@ -49,7 +49,6 @@ import {
   Sell,
   ArrowOutward,
 } from "@mui/icons-material";
-
 // Create a custom theme with orange and light green colors
 const customTheme = createTheme({
   palette: {
@@ -65,7 +64,6 @@ const customTheme = createTheme({
     },
   },
 });
-
 // TabPanel component for organized content
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -75,15 +73,12 @@ function TabPanel(props) {
     </div>
   );
 }
-
 const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const [tabValue, setTabValue] = useState(0);
   const [expandedAccordion, setExpandedAccordion] = useState(false);
-
   if (!brandDetails) return null;
-
   // Normalize variations in API field names and nested shapes to be defensive
   const bd = brandDetails.brandDetails || brandDetails;
   const franchiseDetails =
@@ -95,18 +90,19 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
     bd.expansionlocationdata ||
     bd.expansionLocations ||
     null;
+  const paymentPackage = bd.paymentPackage || null;
+  const listingPackages = bd.listingPackages || null;
 
+    console.log("brandDetails:", brandDetails);
   useEffect(() => {
     if (open && brandDetails) {
       // Debug logs if needed
       // console.log('Full brandDetails object:', brandDetails);
     }
   }, [open, brandDetails]);
-
   const handleTabChange = (event, newValue) => setTabValue(newValue);
   const handleAccordionChange = (panel) => (e, isExpanded) =>
     setExpandedAccordion(isExpanded ? panel : false);
-
   const renderArrayData = (data, title, icon) => {
     if (!Array.isArray(data) || data.length === 0) return null;
     return (
@@ -134,12 +130,10 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
       </Box>
     );
   };
-
   const renderCurrentOutletLocations = () => {
     if (!expansionlocationdata?.currentOutletLocations) return null;
     const { domestic, international } =
       expansionlocationdata.currentOutletLocations;
-
     return (
       <Box sx={{ mt: 3 }}>
         <Typography
@@ -150,7 +144,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
           <Store sx={{ mr: 1, fontSize: 20 }} />
           Current Outlet Locations
         </Typography>
-
         {domestic?.locations?.length > 0 && (
           <Accordion
             elevation={2}
@@ -194,7 +187,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
             </AccordionDetails>
           </Accordion>
         )}
-
         {international?.locations?.length > 0 && (
           <Accordion
             elevation={2}
@@ -242,11 +234,9 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
       </Box>
     );
   };
-
   const renderExpansionLocations = () => {
     if (!expansionlocationdata?.expansionLocations) return null;
     const { domestic, international } = expansionlocationdata.expansionLocations;
-
     return (
       <Box sx={{ mt: 3 }}>
         <Typography
@@ -257,7 +247,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
           <Store sx={{ mr: 1, fontSize: 20 }} />
           Expansion Locations
         </Typography>
-
         {domestic?.locations?.length > 0 && (
           <Accordion
             elevation={2}
@@ -301,7 +290,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
             </AccordionDetails>
           </Accordion>
         )}
-
         {international?.locations?.length > 0 && (
           <Accordion
             elevation={2}
@@ -349,7 +337,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
       </Box>
     );
   };
-
   return (
     <ThemeProvider theme={customTheme}>
       <Drawer
@@ -390,7 +377,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
             </IconButton>
           </Toolbar>
         </AppBar>
-
         {/* Scrollable Content */}
         <Box sx={{ flex: 1, overflowY: "auto" }}>
           {/* Brand Header */}
@@ -475,7 +461,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
               </Grid>
             </Grid>
           </Box>
-
           {/* Tabs */}
           <Paper square elevation={0} sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, md: 2 } }}>
             <Tabs
@@ -495,9 +480,9 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
               <Tab icon={<Store />} label="Franchise Details" />
               <Tab icon={<Public />} label="Expansion Plans" />
               <Tab icon={<Image />} label="Media & Docs" />
+              <Tab icon={<Description />} label="Package Details" />
             </Tabs>
           </Paper>
-
           {/* Content */}
           <Box sx={{ px: { xs: 1, md: 3 } }}>
             <TabPanel value={tabValue} index={0}>
@@ -518,7 +503,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                       >
                         <Business sx={{ mr: 1 }} /> Company Information
                       </Typography>
-
                       <Box sx={{ pl: 1 }}>
                         <InfoRow label="Company Name" value={bd?.companyName} />
                         <InfoRow label="Contact Person" value={bd?.fullName} />
@@ -537,9 +521,7 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                           linkType="tel"
                         />
                         <InfoRow label="WhatsApp" value={bd?.whatsappNumber} />
-
                         <Divider sx={{ my: 2 }} />
-
                         <InfoRow label="CEO" value={bd?.ceoName} />
                         <InfoRow
                           label="CEO Email"
@@ -555,17 +537,13 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                           isLink
                           linkType="tel"
                         />
-
                         <Divider sx={{ my: 2 }} />
-
                         <InfoRow label="Office Email" value={bd?.officeEmail} />
                         <InfoRow
                           label="Office Mobile"
                           value={bd?.officeMobile}
                         />
-
                         <Divider sx={{ my: 2 }} />
-
                         <InfoRow label="GST Number" value={bd?.gstNumber} />
                         <InfoRow
                           label="PAN Card Number"
@@ -575,7 +553,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     </CardContent>
                   </Card>
                 </Grid>
-
                 {/* Location Info */}
                 <Grid item xs={12} md={6}>
                   <Card variant="outlined" sx={{ borderRadius: 2 }}>
@@ -592,7 +569,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                       >
                         <LocationOn sx={{ mr: 1 }} /> Location Information
                       </Typography>
-
                       <Box sx={{ pl: 1 }}>
                         <InfoRow
                           label="Address"
@@ -603,9 +579,7 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                           value={`${bd?.city}, ${bd?.district}, ${bd?.state}, ${bd?.country} - ${bd?.pincode}`}
                           multiline
                         />
-
                         <Divider sx={{ my: 2 }} />
-
                         <InfoRow
                           label="Website"
                           value={bd?.website}
@@ -625,7 +599,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                 </Grid>
               </Grid>
             </TabPanel>
-
             <TabPanel value={tabValue} index={1}>
               <Grid container spacing={3}>
                 {/* Franchise Overview */}
@@ -647,7 +620,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                       >
                         <Store sx={{ mr: 1 }} /> Franchise Overview
                       </Typography>
-
                       <InfoRow
                         label="Established"
                         value={franchiseDetails?.establishedYear}
@@ -671,9 +643,7 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         label="Company Owned Outlets"
                         value={franchiseDetails?.companyOwnedOutlets}
                       />
-
                       <Divider sx={{ my: 2 }} />
-
                       <InfoRow
                         label="AID Financing"
                         value={franchiseDetails?.aidFinancing}
@@ -689,9 +659,7 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         value={franchiseDetails?.consultationOrAssistance}
                         icon={<SupportAgent />}
                       />
-
                       <Divider sx={{ my: 2 }} />
-
                       <Typography
                         variant="body2"
                         sx={{
@@ -706,7 +674,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     </CardContent>
                   </Card>
                 </Grid>
-
                 {/* Service Tags Card */}
                 {franchiseDetails?.franchiseTags && (
                   <Grid item xs={12}>
@@ -774,7 +741,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     </Card>
                   </Grid>
                 )}
-
                 {/* Investment Options */}
                 <Grid item xs={12} md={6}>
                   <Card
@@ -794,7 +760,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                       >
                         <Payments sx={{ mr: 1 }} /> Investment Options
                       </Typography>
-
                       {franchiseDetails?.fico?.length > 0 ? (
                         franchiseDetails.fico.map((fico, index) => (
                           <Box
@@ -872,7 +837,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     </CardContent>
                   </Card>
                 </Grid>
-
                 {/* USPs and Training */}
                 <Grid item xs={12} md={6}>
                   {renderArrayData(
@@ -881,7 +845,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     <Sell />
                   )}
                 </Grid>
-
                 <Grid item xs={12} md={6}>
                   {renderArrayData(
                     franchiseDetails?.trainingSupport,
@@ -891,7 +854,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                 </Grid>
               </Grid>
             </TabPanel>
-
             <TabPanel value={tabValue} index={2}>
               {expansionlocationdata ? (
                 <Card variant="outlined" sx={{ borderRadius: 2 }}>
@@ -908,7 +870,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                     >
                       <TrendingUp sx={{ mr: 1 }} /> Expansion Plans
                     </Typography>
-
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={6}>
                         {renderExpansionLocations()}
@@ -929,7 +890,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                 </Typography>
               )}
             </TabPanel>
-
             <TabPanel value={tabValue} index={3}>
               <Card variant="outlined" sx={{ borderRadius: 2 }}>
                 <CardContent>
@@ -945,7 +905,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                   >
                     <Image sx={{ mr: 1 }} /> Media & Documents
                   </Typography>
-
                   <Grid container spacing={3}>
                     {/* Brand Logo */}
                     {uploads?.logo && (
@@ -975,7 +934,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         </Box>
                       </Grid>
                     )}
-
                     {/* Exterior Outlet Images */}
                     {uploads?.exteriorOutlet?.length > 0 && (
                       <Grid item xs={12}>
@@ -1011,7 +969,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         </Box>
                       </Grid>
                     )}
-
                     {/* Interior Outlet Images */}
                     {uploads?.interiorOutlet?.length > 0 && (
                       <Grid item xs={12}>
@@ -1047,7 +1004,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         </Box>
                       </Grid>
                     )}
-
                     {/* Franchise Videos */}
                     {uploads?.franchiseVideos && (
                       <Grid item xs={12} md={6}>
@@ -1075,7 +1031,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         </Button>
                       </Grid>
                     )}
-
                     {/* Documents */}
                     <Grid item xs={12} md={6}>
                       <Typography
@@ -1089,7 +1044,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                       >
                         <Description sx={{ mr: 1 }} /> Documents
                       </Typography>
-
                       <Box
                         sx={{
                           display: "flex",
@@ -1104,7 +1058,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                             icon={<PictureAsPdf />}
                           />
                         )}
-
                         {uploads?.pancard && (
                           <DocLink
                             label="PAN Card"
@@ -1112,7 +1065,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                             icon={<PictureAsPdf />}
                           />
                         )}
-
                         {uploads?.businessPlan && (
                           <DocLink
                             label="Business Plan"
@@ -1122,7 +1074,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                         )}
                       </Box>
                     </Grid>
-
                     {/* Awards */}
                     {uploads?.awards?.length > 0 && (
                       <Grid item xs={12}>
@@ -1166,9 +1117,113 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
                 </CardContent>
               </Card>
             </TabPanel>
+            <TabPanel value={tabValue} index={4}>
+              <Grid container spacing={3}>
+                {/* Payment Package Card */}
+                <Grid item xs={12} md={6}>
+                  <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        gutterBottom
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "primary.main",
+                          mb: 2,
+                        }}
+                      >
+                        <Payments sx={{ mr: 1 }} /> Payment Package
+                      </Typography>
+                      {paymentPackage ? (
+                        <Box sx={{ pl: 1 }}>
+                          <InfoRow
+                            label="Package Type"
+                            value={paymentPackage.packageType}
+                            icon={<Business />}
+                          />
+                          <InfoRow
+                            label="Total Amount"
+                            value={`₹${paymentPackage.totalAmount || 0}`}
+                          />
+                          <InfoRow
+                            label="Total Months"
+                            value={paymentPackage.totalMonths || 0}
+                          />
+                          <InfoRow
+                            label="Per Month Lead"
+                            value={paymentPackage.perMonthLead || 0}
+                          />
+                          <InfoRow
+                            label="Total Leads"
+                            value={paymentPackage.totalLeads || 0}
+                          />
+                          <InfoRow
+                            label="Is Active"
+                            value={paymentPackage.isActive ? "Yes" : "No"}
+                          />
+                          <InfoRow
+                            label="Package Updated Time"
+                            value={paymentPackage.packageUpdatedTime ? new Date(paymentPackage.packageUpdatedTime).toLocaleDateString() : "N/A"}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textAlign: "center", py: 3 }}
+                        >
+                          No payment package details available
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+                {/* Listing Packages Card */}
+                <Grid item xs={12} md={6}>
+                  <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        gutterBottom
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "secondary.main",
+                          mb: 2,
+                        }}
+                      >
+                        <Store sx={{ mr: 1 }} /> Listing Packages
+                      </Typography>
+                      {listingPackages ? (
+                        <Box sx={{ pl: 1 }}>
+                          <InfoRow
+                            label="Period Months"
+                            value={`${listingPackages.periodMonths || 0} months`}
+                            icon={<CalendarToday />}
+                          />
+                          <InfoRow
+                            label="Amount"
+                            value={`₹${listingPackages.amount || 0}`}
+                            icon={<Payments />}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textAlign: "center", py: 3 }}
+                        >
+                          No listing package details available
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </TabPanel>
           </Box>
         </Box>
-
         {/* Bottom bar (optional) */}
         <Box
           sx={{
@@ -1194,7 +1249,6 @@ const BrandInfoDrawer = ({ open, onClose, brandDetails }) => {
     </ThemeProvider>
   );
 };
-
 // Helper component for consistent info row styling
 const InfoRow = ({
   label,
@@ -1205,13 +1259,11 @@ const InfoRow = ({
   multiline = false,
 }) => {
   if (!value) return null;
-
   let content = value;
   if (isLink) {
     let href = value;
     if (linkType === "mailto") href = `mailto:${value}`;
     if (linkType === "tel") href = `tel:${value}`;
-
     content = (
       <Link
         href={href}
@@ -1223,7 +1275,6 @@ const InfoRow = ({
       </Link>
     );
   }
-
   return (
     <Box
       sx={{
@@ -1264,7 +1315,6 @@ const InfoRow = ({
     </Box>
   );
 };
-
 // Helper component for document links
 const DocLink = ({ label, url, icon }) => (
   <Button
@@ -1284,5 +1334,4 @@ const DocLink = ({ label, url, icon }) => (
     {label}
   </Button>
 );
-
 export default BrandInfoDrawer;
