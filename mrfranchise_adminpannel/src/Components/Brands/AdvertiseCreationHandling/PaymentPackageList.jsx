@@ -19,6 +19,8 @@ const PaymentPackageList = ({ onEdit }) => {
     (state) => state.paymentPackages
   );
 
+  console.log("packages", packages);
+
   useEffect(() => {
     dispatch(fetchPaymentPackages());
   }, [dispatch]);
@@ -52,8 +54,8 @@ const PaymentPackageList = ({ onEdit }) => {
 
             {/* ---- PACKAGE DETAILS (Free, Silver, Gold, Platinum, Exclusive) ---- */}
             <Grid container spacing={2}>
-              {["free", "silver", "gold", "platinum", "exclusive"].map((tier) => (
-                <Grid item xs={12} md={6} key={tier}>
+              {pkg.packages.map((tierObj) => (
+                <Grid item xs={12} md={6} key={tierObj.packageName}>
                   <Box
                     sx={{
                       border: "1px solid #ddd",
@@ -67,19 +69,19 @@ const PaymentPackageList = ({ onEdit }) => {
                       variant="subtitle1"
                       sx={{ fontWeight: 600, textTransform: "capitalize" }}
                     >
-                      {tier} Package
+                        {tierObj.packageName} Package
                     </Typography>
                     <Typography variant="body2">
-                      Total Amount: ₹{pkg[tier].totalAmount}
+                          Total Amount: ₹{tierObj.totalAmount}
                     </Typography>
                     <Typography variant="body2">
-                      Total Months: {pkg[tier].totalMonths}
+                      Total Months: {tierObj.totalMonths}
                     </Typography>
                     <Typography variant="body2">
-                      Per Month Lead: {pkg[tier].perMonthLead}
+                      Per Month Lead: {tierObj.perMonthLead}
                     </Typography>
                     <Typography variant="body2">
-                      Total Leads: {pkg[tier].totalLeads}
+                      Total Leads: {tierObj.totalLeads}
                     </Typography>
                   </Box>
                 </Grid>
