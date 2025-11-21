@@ -17,7 +17,7 @@ export const submitApplication = createAsyncThunk(
       const response = await axios.post(`${BASE_URL}/createlead`, data, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
+          // "Authorization": `Bearer ${accessToken}`,
         },
         withCredentials: true,
       });
@@ -59,11 +59,14 @@ export const submitBulkApplications = createAsyncThunk(
 
       for (let i = 0; i < applications.length; i++) {
         const currentApp = applications[i];
+        // const accessToken = localStorage.getItem('adminAccessToken')
+        // console.log('acces',accessToken);
+        
         try {
           const response = await axios.post(`${BASE_URL}/createlead`, currentApp, {
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${accessToken}`,
+              // "Authorization": `Bearer ${accessToken}`,
             },
             withCredentials: true,
           });

@@ -184,8 +184,8 @@ const ExcelUploadForm = () => {
   };
 
   const handleBulkSubmit = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) return alert("⚠️ No access token found.");
+    // const accessToken = localStorage.getItem("accessToken");
+    // if (!accessToken) return alert("⚠️ No access token found.");
 
     const preparedData = preparePayload();
     const results = [];
@@ -200,7 +200,7 @@ const ExcelUploadForm = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
+              // Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify(record),
           });
