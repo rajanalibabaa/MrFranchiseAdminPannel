@@ -19,6 +19,7 @@ import { GetApiCall } from "../../api/default/GetApi";
 
 import { TextField, Box, Button } from "@mui/material";
 import DefaultPopup from "../../ui/DefaultPopup";
+import { toggleBrandPausePlay } from "../../Redux/Slices/FilterBrandSlice";
 
 const NewIncomingBrands = () => {
   const dispatch = useDispatch();
@@ -114,6 +115,7 @@ const NewIncomingBrands = () => {
       const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
       if (res?.data?.statuscode === 200) {
         dispatch(approveBrand(brandId));
+        // dispatch(toggleBrandPausePlay(data.uuid));
       }
       return res
     },

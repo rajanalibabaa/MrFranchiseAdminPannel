@@ -37,6 +37,8 @@ editNewincomingShow,
   handlepayment,
   paidShow,
   handleOpenFreeLeadPausePopup,
+  handlePaidLeadPause,
+  handleNavigation,
 }) => {
   const observer = useRef();
 
@@ -83,9 +85,15 @@ editNewincomingShow,
               {editNewincomingShow && <TableCell>Edit</TableCell>}
 
               {editShow && !paidShow && <TableCell>Edit</TableCell>}
-              {editShow && !paidShow && <TableCell>Pause</TableCell>}
-              {editShow && !paidShow && <TableCell>LeadPause</TableCell>}
+              {editShow && !paidShow && <TableCell>BrandPause</TableCell>}
+              {editShow && !paidShow && <TableCell>FreeLeadPause</TableCell>}
+              
+              {/* paid Band Show */}
+              {paidShow && <TableCell>PaidLeadPause</TableCell>}
+              {paidShow && <TableCell>LeadSend(%)</TableCell>}
               {paidShow && <TableCell>Paid</TableCell>}
+
+
               {pauseShow && !editShow && !paidShow && (
                 <TableCell>Pause</TableCell>
               )}
@@ -191,6 +199,32 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+
+                  {/* paid Band Show */}
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handlePaidLeadPause(brand)}
+                        
+                        color={brand?.isPaidBrandLeadPaused ? "error" : "success"}
+                      >
+                       
+                          <CheckCircle />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleNavigation(brand)}
+                        // sx={{
+                        //   color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        // }}
+                      >
+                       { brand?.activePackage?.sentLeadsPercentage || "0%"}
+                      </IconButton>
+                    </TableCell>
+                  )}
                   {paidShow && (
                     <TableCell>
                       <IconButton
@@ -207,6 +241,8 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+
+
                   {editShow && !paidShow && (
                     <TableCell>
                       <IconButton
