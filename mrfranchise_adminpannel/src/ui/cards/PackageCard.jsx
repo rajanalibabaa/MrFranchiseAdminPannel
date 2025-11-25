@@ -1,7 +1,6 @@
 import { Card, CardContent, Typography, Box } from "@mui/material";
 
 const PackageCard = ({ data, color = "black", background = "#dddddd4e" }) => {
-    
   return (
     <Card
       sx={{
@@ -47,11 +46,13 @@ const PackageCard = ({ data, color = "black", background = "#dddddd4e" }) => {
             <strong>Total Leads:</strong> {data.totalLeads}
           </div>
           <div>
-            <strong>Sent Percentage:</strong> {data.sentLeadsPercentage}
+            <strong>Sent Percentage:</strong> {data.sentLeadsPercentage ? data.sentLeadsPercentage : "0%"}
           </div>
           <div>
-            <strong>Updated:</strong>
-            {new Date(data.packageUpdatedTime).toLocaleDateString()}
+            <strong>Updated:</strong>{" "}
+            {data?.packageUpdatedTime
+              ? new Date(data.packageUpdatedTime).toLocaleDateString()
+              : data?.packageStartTime}
           </div>
         </Box>
       </CardContent>

@@ -41,6 +41,7 @@ export const Api = {
       brands:{
         allpauseBrand:`${BASE_URL}/getAllPauseBrand`,
         getallpaidbrands:`${BASE_URL}/getAllPaidBrand`,
+        getleadsbybrandid:`${BASE_URL_2}/getleadsbybrandid`,
         
       }
     },
