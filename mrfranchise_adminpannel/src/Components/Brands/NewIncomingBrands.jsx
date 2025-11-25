@@ -61,7 +61,6 @@ const NewIncomingBrands = () => {
     [dispatch]
   );
 
-
   const handleEdit = useCallback(
     (brandId) => {
       navigate(`/dashboard/edit-brand/${brandId}`);
@@ -69,6 +68,22 @@ const NewIncomingBrands = () => {
     [navigate]
   );
 
+    const handlePackageEdit = useCallback(
+      async (brandId) => {
+        try {
+          console.log("🟢 handlePackageEdit Clicked:", { brandId });
+          // 2️⃣ Navigate to package edit page after getting data
+          navigate(`/dashboard/brand-packages/${brandId}`, { 
+          state: { Id: brandId } 
+        })
+          
+        } catch (error) {
+          console.error("❌ Error in handlePackageEdit:", error);
+        }
+      },
+      [navigate]
+    );
+  
 
   const handleInfoOpen = useCallback(async (brandId) => {
     const res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
@@ -162,6 +177,7 @@ const NewIncomingBrands = () => {
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        handlePackageEdit={handlePackageEdit}
         editShow={false}
         editNewincomingShow={true}
         loadMore={loadMore}

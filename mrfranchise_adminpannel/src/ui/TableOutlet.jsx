@@ -18,6 +18,7 @@ import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import { Edit } from "lucide-react";
 import { Payment } from "@mui/icons-material";
+import UpgradeIcon from "@mui/icons-material/Upgrade";
 
 const TableOutlet = ({
   filteredBrands,
@@ -26,6 +27,7 @@ const TableOutlet = ({
   editShow,
 editNewincomingShow,
   handleEdit,
+  handlePackageEdit,
   handleApprove,
   handleInfoOpen,
   loadMore,
@@ -83,8 +85,10 @@ editNewincomingShow,
               <TableCell>Investment Range</TableCell>
               {!pauseShow && !paidShow && <TableCell>Details</TableCell>}
               {editNewincomingShow && <TableCell>Edit</TableCell>}
+               {editNewincomingShow && <TableCell>Upgrade/Renew Package</TableCell>}
 
               {editShow && !paidShow && <TableCell>Edit</TableCell>}
+              {editShow && !paidShow && <TableCell>Upgrade/Renew Package</TableCell>}
               {editShow && !paidShow && <TableCell>BrandPause</TableCell>}
               {editShow && !paidShow && <TableCell>FreeLeadPause</TableCell>}
               
@@ -173,6 +177,16 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+                      {editShow && !paidShow &&  (
+                    <TableCell>
+                      <IconButton
+                        sx={{ color: "blue" }}
+                        onClick={() => handlePackageEdit(brand?.uuid)}
+                      >
+                        <UpgradeIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
                   {editNewincomingShow &&  (
                     <TableCell>
                       <IconButton
@@ -180,6 +194,16 @@ editNewincomingShow,
                         onClick={() => handleEdit(brand?.uuid,"newincomingbrand")}
                       >
                         <Edit />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                      {editNewincomingShow &&  (
+                    <TableCell>
+                      <IconButton
+                        sx={{ color: "blue" }}
+                        onClick={() => handlePackageEdit(brand?.uuid)}
+                      >
+                        <UpgradeIcon />
                       </IconButton>
                     </TableCell>
                   )}

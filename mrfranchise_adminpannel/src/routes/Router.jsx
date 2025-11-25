@@ -20,6 +20,7 @@ import { Logout } from "../Redux/Slices/admin/authSlice";
 import FreeLeadPage from "../Pages/LeadsHandling/FreeLeadPage";
 import PaymentPackagesPage from "../Pages/dashboardOutlet/PaymentPackagesHandling";
 import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
+import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
 
 const Router = () => {
   const dispatch = useDispatch();
@@ -44,6 +45,7 @@ const Router = () => {
             <Route path="createbrand" element={<BrandRegisterForm />} />
             <Route path="getallbrands" element={<Bredcrumbs />} />
             <Route path="edit-brand/:uuid" element={<BrandListingEdit />} />
+            <Route path="brand-packages/:uuid" element={<MembershipPakagesEdit />} />
             <Route path="notificationpage" element={<AllNotificationsPage />} />
             // leads
             <Route path="getallbrands/leads/:id" element={<Leads />} />
