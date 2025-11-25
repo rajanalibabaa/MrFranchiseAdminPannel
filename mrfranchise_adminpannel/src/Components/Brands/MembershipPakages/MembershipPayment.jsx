@@ -30,7 +30,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PaymentPage from './PaymentPage.jsx';
 // import Navbar from '../../../Navbar/NavBar';
-
 // Animation keyframes
 const floatAnimation = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -52,7 +51,6 @@ const slideDownAnimation = keyframes`
   0% { transform: translateY(-100px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
 `;
-
 const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackbar, isSubmitting, setSnackbar,submitSuccess, }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -65,77 +63,49 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
-
-
   // Fetch packages from API
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const response = await fetch('http://localhost:5000/api/v1/brandadvertise/payment', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
           throw new Error('Server returned non-JSON response');
         }
-
         const data = await response.json();
-   
+  
         // Check if data exists and has the expected structure
         if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const packageData = data.data[0];
-     
-
+    
+          // Process membership packages from the packages array dynamically
           const membershipPkgs = [];
-          const listingPkgs = [];
-          // Extract membership packages from the nested structure
-          if (packageData.free && typeof packageData.free === 'object') {
-            membershipPkgs.push({
-              ...packageData.free,
-              name: 'free',
-              _id: packageData.free._id
-            });
-          }
-          if (packageData.silver && typeof packageData.silver === 'object') {
-            membershipPkgs.push({
-              ...packageData.silver,
-              name: 'silver',
-              _id: packageData.silver._id
-            });
-          }
-          if (packageData.gold && typeof packageData.gold === 'object') {
-            membershipPkgs.push({
-              ...packageData.gold,
-              name: 'gold',
-              _id: packageData.gold._id
-            });
-          }
-          if (packageData.platinum && typeof packageData.platinum === 'object') {
-            membershipPkgs.push({
-              ...packageData.platinum,
-              name: 'platinum',
-              _id: packageData.platinum._id
-            });
-          }
-          if (packageData.exclusive && typeof packageData.exclusive === 'object') {
-            membershipPkgs.push({
-              ...packageData.exclusive,
-              name: 'exclusive',
-              _id: packageData.exclusive._id
-            });
+          if (packageData.packages && Array.isArray(packageData.packages)) {
+            membershipPkgs.push(...packageData.packages.map(pkg => {
+              // Capitalize and format display name (e.g., 'basicPro' -> 'Basic Pro')
+              const displayName = pkg.packageName
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/\b\w/g, l => l.toUpperCase());
+              return {
+                ...pkg,
+                name: displayName,
+                packageName: pkg.packageName, // Keep original for config lookup
+                _id: pkg._id
+              };
+            }));
           }
           // Extract listing packages from array
+          const listingPkgs = [];
           if (packageData.listingPackages && Array.isArray(packageData.listingPackages)) {
             listingPkgs.push(...packageData.listingPackages.map(pkg => ({
               ...pkg,
@@ -149,7 +119,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
         } else {
           throw new Error('Invalid data structure received from API');
         }
-
       } catch (err) {
         console.error('Error fetching packages:', err);
         setError(err.message);
@@ -161,9 +130,8 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
     };
     fetchPackages();
   }, []);
-
   const tierConfig = {
-    'Free': {
+    'free': {
       color: '#000000',
       badgeColor: '#9ca3af',
       popular: false,
@@ -172,7 +140,25 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       badgeGradient: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)',
       shineGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
     },
-    'Silver': {
+    'basic': {
+       color: '#000000',
+      badgeColor: '#C0C0C0',
+      popular: false,
+      icon: <DiamondIcon />,
+      gradient: 'linear-gradient(135deg, #f5f5f5, #e5e5e5)',
+      badgeGradient: 'linear-gradient(135deg, #e5e5e5, #d4d4d4)',
+      shineGradient: 'linear-gradient(90deg, transparent, rgba(192,192,192,0.1), transparent)',
+    },
+    'basicPro': {
+      color: '#FFD700',
+      badgeColor: '#FFD700',
+      popular: true,
+      icon: <PremiumIcon />,
+      gradient: 'linear-gradient(135deg, #fff8dc, #f0e68c)',
+      badgeGradient: 'linear-gradient(135deg, #fff8dc, #ffd700)',
+      shineGradient: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent)',
+    },
+    'silver': {
       color: '#000000',
       badgeColor: '#9ca3af',
       popular: false,
@@ -181,7 +167,7 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       badgeGradient: 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
       shineGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
     },
-    'Gold': {
+    'gold': {
       color: '#000000',
       badgeColor: '#d4b01e',
       popular: true,
@@ -190,7 +176,7 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       badgeGradient: 'linear-gradient(135deg, #fef3c7, #fde68a)',
       shineGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
     },
-    'Platinum': {
+    'platinum': {
       color: '#000000',
       badgeColor: '#a5b4fc',
       popular: false,
@@ -199,7 +185,7 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       badgeGradient: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
       shineGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
     },
-    'Exclusive': {
+    'exclusive': {   
       color: '#000000',
       badgeColor: '#f59e0b',
       popular: false,
@@ -209,7 +195,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       shineGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
     }
   };
-
   const listingConfig = {
     color: '#065f46',
     badgeColor: '#10b981',
@@ -219,7 +204,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
     badgeGradient: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
     shineGradient: 'linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent)',
   };
-
   const handlePlanSelect = (pkg, isListing = false) => {
     let config;
     if (isListing) {
@@ -236,7 +220,9 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       setSelectedListing(selectedListing?._id === pkg._id ? null : newSelected);
       setSelectedPlan(newSelected);
     } else {
-      config = tierConfig[pkg.name] || tierConfig['Free'];
+      // Use original packageName for config lookup
+      const configKey = pkg.packageName.toLowerCase();
+      config = tierConfig[configKey] || tierConfig['free'];
       const newSelected = {
         ...pkg,
         tier: pkg.name,
@@ -250,7 +236,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       setSelectedPlan(newSelected);
     }
   };
-
   const handleContinueToPayment = () => {
     if (selectedPlan) {
       console.log('Opening payment page with plan:', selectedPlan);
@@ -260,13 +245,11 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       alert('Please select a plan first');
     }
   };
-
   const clearSelection = () => {
     setSelectedMembership(null);
     setSelectedListing(null);
     setSelectedPlan(null);
   };
-
   const LoadingState = () => (
     <Box
       sx={{
@@ -300,7 +283,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       </Typography>
     </Box>
   );
-
   const ErrorState = ({ error }) => (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Alert
@@ -329,7 +311,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
       </Alert>
     </Container>
   );
-
   if (loading) {
     return <LoadingState />;
   }
@@ -353,11 +334,9 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
     );
   }
   return (
-
     <Box >
     <Container maxWidth="xl" sx={{ py: 2, position: 'relative' }}>
-
-        
+       
       {/* Back Button */}
       {onBack && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', }}>
@@ -411,7 +390,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
               >
                 <AutoAwesomeIcon sx={{ color: 'white', fontSize: 28 }} />
               </Box>
-
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 🎉 Excellent Choice!
               </Typography>
@@ -571,11 +549,12 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
         {/* Membership Packages */}
         <Grid container spacing={4} justifyContent="center" mb={10}>
           {packages.map((pkg, index) => {
-            const config = tierConfig[pkg.name] || tierConfig['Free'];
+            // Use original packageName for config lookup
+            const configKey = pkg.packageName.toLowerCase();
+            const config = tierConfig[configKey] || tierConfig['free'];
             const isSelected = selectedMembership?._id === pkg._id;
             const isPopular = config.popular;
             const isHovered = hoveredCard === pkg._id;
-
             return (
               <Grid item xs={12} md={6} lg={4} key={pkg._id}>
                 <Fade in timeout={800} style={{ transitionDelay: `${index * 100}ms` }}>
@@ -863,13 +842,11 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
                 Simple listing solutions for your business
               </Typography>
             </Box>
-
             <Grid container spacing={3} justifyContent="center">
               {listingPackages.map((pkg, index) => {
                 const isSelected = selectedListing?._id === pkg._id;
                 const config = listingConfig;
                 const isHovered = hoveredCard === pkg._id;
-
                 return (
                   <Grid item xs={12} md={8} lg={6} key={pkg._id}>
                     <Fade in timeout={800} style={{ transitionDelay: `${index * 100}ms` }}>
@@ -950,7 +927,6 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
                               {pkg.name}
                             </Typography>
                           </Box>
-
                           <Box
                             sx={{
                               background: config.badgeGradient,
@@ -1049,5 +1025,4 @@ const MembershipSelection = ({ handleSubmit, onBack, snackbar, handleCloseSnackb
     </Box>
   );
 };
-
 export default MembershipSelection;

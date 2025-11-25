@@ -33,7 +33,7 @@ const DefaultPopup = ({
   const [disabled, setDisabled] = useState(false);
   const token = adminData?.adminAccessToken || null;
 
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   if (!data) return null;
 
   const brandName =
@@ -67,7 +67,7 @@ const DefaultPopup = ({
       }
 
       setSuccess(msg);
-      dispatch(toggleBrandPausePlay(data.uuid));
+      // dispatch(toggleBrandPausePlay(data.uuid));
       onConfirmPausePlay(data);
 
       setTimeout(() => {

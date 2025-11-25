@@ -55,6 +55,7 @@ export const Api = {
         pausePlay:`${BASE_URL}/toggleBrandPausePlay`,
         payment:`${BASE_URL}/togglePayment`,
         toggleleadPausedorPlayById:`${BASE_URL}/toggleleadPausedorPlayById`,
+        togglePaidBrandLeadpausePlayById:`${BASE_URL}/togglePaidleadPausedandPlayById`,
       }
     }
   },

@@ -201,13 +201,13 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
         accessToken: !!accessToken,
       });
 
-      const id = investorUUID || brandUUID;
-      if (!id) {
-        console.log("No user ID found");
-        alert("User not logged in or missing ID. Please login again.");
-        navigate("/registerhandleuser");
-        return;
-      }
+      // const id = investorUUID || brandUUID;
+      // if (!id) {
+      //   console.log("No user ID found");
+      //   alert("User not logged in or missing ID. Please login again.");
+      //   navigate("/registerhandleuser");
+      //   return;
+      // }
 
       // Prepare payload for manual submission
       const payload = {
