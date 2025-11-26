@@ -16,7 +16,8 @@ const Leads = () => {
   const [brandPackage, setBrandPackage] = useState(null);
   const [leads, setLeads] = useState(null);
   const [pagination, setPagination] = useState(null);
-  const [selectedPackage, setSelectedPackage] = useState(null); // <-- selected state
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     if (!id || !token) return;
@@ -45,6 +46,7 @@ const Leads = () => {
           if (res2?.data?.statuscode === 200) {
             setLeads(res2?.data?.data.leads);
             setPagination(res2?.data?.data.pagination);
+            setHasMore(true);
           }
         }
       } catch (error) {
@@ -61,13 +63,8 @@ const Leads = () => {
     );
 
   const handlePackageClick = async (pkg) => {
-     setSelectedPackage(pkg);
-    // console.log("Selected package:", pkg);
-    // console.log("Selected package:", pkg);
-    // if (pkg?.packageUpdatedTime === selectedPackage?.packageUpdatedTime || pkg?.packageStartTime === selectedPackage?.packageStartTime) {
-    //   return
-    // }
-   
+    setSelectedPackage(pkg);
+
     let queryParams = {};
     if (pkg.packageType === "free") {
       queryParams = {
@@ -82,17 +79,60 @@ const Leads = () => {
       };
     }
 
-    // console.log("queryParams :", queryParams);
     const res2 = await GetApiCall(
       `${Api.admin.get.brands.getleadsbybrandid}/${id}`,
       token,
       queryParams
     );
 
-    console.log("res2 :",res2.data)
     if (res2?.data?.statuscode === 200) {
       setLeads(res2?.data?.data?.leads);
       setPagination(res2?.data?.data?.pagination);
+      setHasMore(true);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!pagination) return;
+
+    const nextPage = pagination.currentPage + 1;
+
+    if (nextPage >= pagination.totalPages) {
+      setHasMore(false);
+      return;
+    }
+
+    let queryParams = {
+      page: nextPage,
+      limit: pagination.pageSize,
+    };
+
+    if (selectedPackage) {
+      if (selectedPackage.packageType === "free") {
+        queryParams.status = selectedPackage?.isActive;
+        queryParams.leadType = "free";
+      } else {
+        queryParams.packageStartDate =
+          selectedPackage?.packageUpdatedTime ||
+          selectedPackage?.packageStartTime;
+        queryParams.status = selectedPackage?.isActive;
+        queryParams.leadType = "paid";
+      }
+    }
+
+    try {
+      const res = await GetApiCall(
+        `${Api.admin.get.brands.getleadsbybrandid}/${id}`,
+        token,
+        queryParams
+      );
+
+      if (res?.data?.statuscode === 200) {
+        setLeads((prev) => [...prev, ...res.data.data.leads]);
+        setPagination(res.data.data.pagination);
+      }
+    } catch (e) {
+      console.error("LoadMore Error:", e);
     }
   };
 
@@ -112,18 +152,15 @@ const Leads = () => {
           "&::-webkit-scrollbar-thumb": { background: "#ccc", borderRadius: 2 },
         }}
       >
-        {/* Active Package */}
         {brandPackage.activePackage && (
           <Box
             sx={{
-              // minWidth: 260,
               cursor: "pointer",
               border:
                 selectedPackage === brandPackage.activePackage
                   ? "2px solid #08612c"
                   : "2px solid transparent",
               borderRadius: 2,
-              // transition: "border 0.2s",
             }}
             onClick={() => handlePackageClick(brandPackage.activePackage)}
           >
@@ -135,20 +172,17 @@ const Leads = () => {
           </Box>
         )}
 
-        {/* Old Packages */}
         {brandPackage.oldPackageHistory?.length > 0 &&
           brandPackage.oldPackageHistory.map((pkg, i) => (
             <Box
               key={i}
               sx={{
-                // minWidth: 260,
                 cursor: "pointer",
                 border:
                   selectedPackage === pkg
                     ? "2px solid #08612c"
                     : "2px solid transparent",
                 borderRadius: 2,
-                transition: "border 0.2s",
               }}
               onClick={() => handlePackageClick(pkg)}
             >
@@ -157,13 +191,13 @@ const Leads = () => {
           ))}
       </Box>
 
-      {/* Leads Table */}
       <Box mt={4}>
         {Array.isArray(leads) && leads.length > 0 ? (
           <LeadsTableOutlet
             leads={leads}
-            setpagination={setPagination}
             pagination={pagination}
+            loadMore={loadMore}
+            hasMore={hasMore}
           />
         ) : (
           <Typography

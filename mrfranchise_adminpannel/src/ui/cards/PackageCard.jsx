@@ -8,10 +8,29 @@ const PackageCard = ({ data, color = "black", background = "#dddddd4e" }) => {
         borderRadius: 1.5,
         boxShadow: 1,
         border: "1px solid #ddd",
-        backgroundColor: { background },
-        color: { color },
+        backgroundColor: background,
+        color: color,
+        position: "relative", // ⬅ required for badge positioning
       }}
     >
+      {/* 🔰 Status Badge (Top Right) */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          background: data.isActive ? "#5cbe24" : "#bb0c0c",
+          color: "white",
+          padding: "2px 8px",
+          borderRadius: "12px",
+          fontSize: "10px",
+          fontWeight: 600,
+          textTransform: "uppercase",
+        }}
+      >
+        {data.isActive ? "Active" : "Inactive"}
+      </Box>
+
       <CardContent sx={{ p: 1.5 }}>
         <Typography
           variant="subtitle2"
@@ -22,17 +41,20 @@ const PackageCard = ({ data, color = "black", background = "#dddddd4e" }) => {
 
         <Box sx={{ fontSize: "11px", lineHeight: 1.4 }}>
           <div>
-            <strong>Status:</strong>{" "}
-            <span
-              style={{
-                color: data.isActive ? "#83ed77ff" : "#bb0c0cff",
-                fontWeight: 600,
-              }}
-            >
-              {data.isActive ? "Active" : "Inactive"}
-            </span>
+            <strong>Start Date:</strong>{" "}
+            {data?.packageUpdatedTime
+              ? new Date(data.packageUpdatedTime).toLocaleDateString()
+              : data?.packageStartTime}
           </div>
+          <div>
+            <strong>End Date:</strong>{" "}
+            {data?.packageUpdatedTime
+              ? new Date(data.packageUpdatedTime).toLocaleDateString()
+              : data?.packageEndTime}
+          </div>
+        </Box>
 
+        <Box sx={{ fontSize: "11px", lineHeight: 1.4, mt: 1 }}>
           <div>
             <strong>Amount:</strong> ₹{data.totalAmount}
           </div>
@@ -46,13 +68,8 @@ const PackageCard = ({ data, color = "black", background = "#dddddd4e" }) => {
             <strong>Total Leads:</strong> {data.totalLeads}
           </div>
           <div>
-            <strong>Sent Percentage:</strong> {data.sentLeadsPercentage ? data.sentLeadsPercentage : "0%"}
-          </div>
-          <div>
-            <strong>Updated:</strong>{" "}
-            {data?.packageUpdatedTime
-              ? new Date(data.packageUpdatedTime).toLocaleDateString()
-              : data?.packageStartTime}
+            <strong>Sent Percentage:</strong>{" "}
+            {data.sentLeadsPercentage ? data.sentLeadsPercentage : "0%"}
           </div>
         </Box>
       </CardContent>
