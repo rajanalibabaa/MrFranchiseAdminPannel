@@ -20,6 +20,7 @@ import { Logout } from "../Redux/Slices/admin/authSlice";
 import FreeLeadPage from "../Pages/LeadsHandling/FreeLeadPage";
 import PaymentPackagesPage from "../Pages/dashboardOutlet/PaymentPackagesHandling";
 import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
+import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
 
 const Router = () => {
   const dispatch = useDispatch();
@@ -40,18 +41,19 @@ const Router = () => {
         {adminData && adminData?.adminData?.uuid && (
           <Route path="/dashboard" element={<MainPageDashboard />}>
             <Route index element={<MainDashboard />} />
-            // Manage Brand Routes
+            {/* // Manage Brand Routes */}
             <Route path="createbrand" element={<BrandRegisterForm />} />
             <Route path="getallbrands" element={<Bredcrumbs />} />
             <Route path="edit-brand/:uuid" element={<BrandListingEdit />} />
+            <Route path="brand-packages/:uuid" element={<MembershipPakagesEdit />} />
             <Route path="notificationpage" element={<AllNotificationsPage />} />
-            // leads
+            {/* // leads */}
             <Route path="getallbrands/leads/:id" element={<Leads />} />
-            // Instant Apply
+            {/* // Instant Apply */}
             <Route path="instantapply" element={<InstantApplyLayout />} />
             <Route path="freeleadlist" element={<FreeLeadPage />} />
             <Route path="packagemanagement" element={<PaymentPackagesPage />} />
-            // Manage Investor Routes
+            {/* // Manage Investor Routes */}
             <Route path="allinvestors" element={<AllInvestor />} />
             <Route path="newinvestors" element={<InvestorRegister />} />
             <Route path="edit-investor/:id" element={<EditInvestor />} />
