@@ -57,6 +57,9 @@ export const Api = {
         payment:`${BASE_URL}/togglePayment`,
         toggleleadPausedorPlayById:`${BASE_URL}/toggleleadPausedorPlayById`,
         togglePaidBrandLeadpausePlayById:`${BASE_URL}/togglePaidleadPausedandPlayById`,
+      },
+      industryManagement : {
+        create:`${BASE_URL}/createIndustryManagement`,
       }
     }
   },
