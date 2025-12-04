@@ -118,6 +118,7 @@ const SidebarAdmin = () => {
           { label: "Instant Apply", path: "/dashboard/instantapply" },
           {label:"Leads Management",path:"/dashboard/freeleadlist"},
           {label:"Package Management",path:"/dashboard/packagemanagement"},
+          {label:"Industry Management",path:"/dashboard/industrymanagement"},
           
         ],
       },
