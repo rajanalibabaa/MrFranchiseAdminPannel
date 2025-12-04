@@ -4,7 +4,6 @@ import axios from "axios";
 
 const BASE_URL = "http://localhost:5000/api/v1/brandadvertise/payment";
 
-// --- Helper for consistent error messages ---
 const getErrorMessage = (err) => {
   if (!err) return "Unknown error";
   if (err.response && err.response.data) {
@@ -17,11 +16,8 @@ const getErrorMessage = (err) => {
   return err.message || String(err);
 };
 
-/* =====================================================
-   THUNKS
-===================================================== */
 
-// 📦 Fetch all packages
+
 export const fetchPaymentPackages = createAsyncThunk(
   "paymentPackages/fetchAll",
   async (_, { rejectWithValue }) => {
@@ -64,9 +60,7 @@ export const deletePaymentPackage = createAsyncThunk(
   }
 );
 
-/* =====================================================
-   SLICE
-===================================================== */
+
 
 const initialState = {
   packages: [],
