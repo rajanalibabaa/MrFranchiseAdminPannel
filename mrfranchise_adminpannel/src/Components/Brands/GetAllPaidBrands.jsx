@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { GetApiCall } from "../../api/default/GetApi";
 import { Api } from "../../api/apiurl";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Box, Button, CircularProgress } from "@mui/material";
 import TableOutlet from "../../ui/TableOutlet";
 import PaymentPopup from "../../ui/PaymentPopup";
+import { PostApiCall } from "../../api/default/PostApi";
+import DefaultPopup from "../../ui/DefaultPopup";
+import { useNavigate } from "react-router-dom";
 
 const GetAllPaidBrands = () => {
   const [brands, setBrands] = useState([]);
@@ -23,6 +26,9 @@ const GetAllPaidBrands = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [data, setData] = useState(null);
   const [openPaymentPopup, setOpenPaymentPopup] = useState(false);
+  const [openDefaultBrandPopup, setopenDefaultBrandPopup] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const fetchData = useCallback(
     async (page = 1, token) => {
@@ -80,6 +86,42 @@ const GetAllPaidBrands = () => {
     setData(brand);
   };
 
+  const handleConformApprove = async (brandId) => {
+    console.log("===brandId=== :", brandId);
+    // setData(brand)
+    // setopenDefaultBrandPopup(true);
+
+    const res = await PostApiCall(
+      `${Api.admin.post.brand.togglePaidBrandLeadpausePlayById}/${brandId}`
+    );
+    if (res?.data?.statuscode === 200) {
+      const apiBrand = res?.data?.data;
+      console.log("apiBrand :", apiBrand);
+      // console.log("brand :", brands);
+
+      setBrands((prev) =>
+        prev.map((b) =>
+          b.uuid === apiBrand.uuid
+            ? {
+                ...b,
+                isPaidBrandLeadPaused:
+                  apiBrand.brandDetails.isPaidBrandLeadPaused,
+              }
+            : b
+        )
+      );
+    }
+    return res;
+  };
+
+  const handlePaidLeadPause = (brand) => {
+    setopenDefaultBrandPopup(true);
+    setData(brand);
+  };
+  const handleNavigation = (brand) => {
+    navigate(`leads/${brand.uuid}`,{ state: { brand } });
+  };
+
   return (
     <Box>
       {loading ? (
@@ -96,6 +138,8 @@ const GetAllPaidBrands = () => {
             loadMore={loadMore}
             loading={loadingMore}
             handlepayment={handlepayment}
+            handlePaidLeadPause={handlePaidLeadPause}
+            handleNavigation={handleNavigation}
           />
 
           {pagination.hasNext && (
@@ -128,7 +172,18 @@ const GetAllPaidBrands = () => {
           data={data}
           brands={brands}
           setBrands={setBrands}
+        />
+      )}
 
+      {openDefaultBrandPopup && (
+        <DefaultPopup
+          open={openDefaultBrandPopup}
+          data={data}
+          handleConformApprove={handleConformApprove}
+          onClose={() => setopenDefaultBrandPopup(false)}
+          header={"Approved Brand Lead Pause"}
+          // onConfirm={confirmDelete}
+          // newIncomingDeleteId={selectedBrandId}
         />
       )}
     </Box>

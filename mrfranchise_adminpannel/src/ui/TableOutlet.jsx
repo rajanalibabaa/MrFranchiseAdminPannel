@@ -18,6 +18,7 @@ import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import { Edit } from "lucide-react";
 import { Payment } from "@mui/icons-material";
+import UpgradeIcon from "@mui/icons-material/Upgrade";
 
 const TableOutlet = ({
   filteredBrands,
@@ -26,6 +27,7 @@ const TableOutlet = ({
   editShow,
 editNewincomingShow,
   handleEdit,
+  handlePackageEdit,
   handleApprove,
   handleInfoOpen,
   loadMore,
@@ -37,6 +39,8 @@ editNewincomingShow,
   handlepayment,
   paidShow,
   handleOpenFreeLeadPausePopup,
+  handlePaidLeadPause,
+  handleNavigation,
 }) => {
   const observer = useRef();
 
@@ -81,11 +85,19 @@ editNewincomingShow,
               <TableCell>Investment Range</TableCell>
               {!pauseShow && !paidShow && <TableCell>Details</TableCell>}
               {editNewincomingShow && <TableCell>Edit</TableCell>}
+               {editNewincomingShow && <TableCell>Upgrade/Renew Package</TableCell>}
 
               {editShow && !paidShow && <TableCell>Edit</TableCell>}
-              {editShow && !paidShow && <TableCell>Pause</TableCell>}
-              {editShow && !paidShow && <TableCell>LeadPause</TableCell>}
+              {editShow && !paidShow && <TableCell>Upgrade/Renew Package</TableCell>}
+              {editShow && !paidShow && <TableCell>BrandPause</TableCell>}
+              {editShow && !paidShow && <TableCell>FreeLeadPause</TableCell>}
+              
+              {/* paid Band Show */}
+              {paidShow && <TableCell>PaidLeadPause</TableCell>}
+              {paidShow && <TableCell>LeadSend(%)</TableCell>}
               {paidShow && <TableCell>Paid</TableCell>}
+
+
               {pauseShow && !editShow && !paidShow && (
                 <TableCell>Pause</TableCell>
               )}
@@ -165,6 +177,16 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+                      {editShow && !paidShow &&  (
+                    <TableCell>
+                      <IconButton
+                        sx={{ color: "blue" }}
+                        onClick={() => handlePackageEdit(brand?.uuid)}
+                      >
+                        <UpgradeIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
                   {editNewincomingShow &&  (
                     <TableCell>
                       <IconButton
@@ -172,6 +194,16 @@ editNewincomingShow,
                         onClick={() => handleEdit(brand?.uuid,"newincomingbrand")}
                       >
                         <Edit />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                      {editNewincomingShow &&  (
+                    <TableCell>
+                      <IconButton
+                        sx={{ color: "blue" }}
+                        onClick={() => handlePackageEdit(brand?.uuid)}
+                      >
+                        <UpgradeIcon />
                       </IconButton>
                     </TableCell>
                   )}
@@ -191,6 +223,32 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+
+                  {/* paid Band Show */}
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handlePaidLeadPause(brand)}
+                        
+                        color={brand?.isPaidBrandLeadPaused ? "error" : "success"}
+                      >
+                       
+                          <CheckCircle />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleNavigation(brand)}
+                        // sx={{
+                        //   color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        // }}
+                      >
+                       { brand?.activePackage?.sentLeadsPercentage || "0%"}
+                      </IconButton>
+                    </TableCell>
+                  )}
                   {paidShow && (
                     <TableCell>
                       <IconButton
@@ -207,6 +265,8 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
+
+
                   {editShow && !paidShow && (
                     <TableCell>
                       <IconButton

@@ -19,6 +19,7 @@ import { GetApiCall } from "../../api/default/GetApi";
 
 import { TextField, Box, Button } from "@mui/material";
 import DefaultPopup from "../../ui/DefaultPopup";
+import { toggleBrandPausePlay } from "../../Redux/Slices/FilterBrandSlice";
 
 const NewIncomingBrands = () => {
   const dispatch = useDispatch();
@@ -60,7 +61,6 @@ const NewIncomingBrands = () => {
     [dispatch]
   );
 
-
   const handleEdit = useCallback(
     (brandId) => {
       navigate(`/dashboard/edit-brand/${brandId}`);
@@ -68,6 +68,22 @@ const NewIncomingBrands = () => {
     [navigate]
   );
 
+    const handlePackageEdit = useCallback(
+      async (brandId) => {
+        try {
+          console.log("🟢 handlePackageEdit Clicked:", { brandId });
+          // 2️⃣ Navigate to package edit page after getting data
+          navigate(`/dashboard/brand-packages/${brandId}`, { 
+          state: { Id: brandId } 
+        })
+          
+        } catch (error) {
+          console.error("❌ Error in handlePackageEdit:", error);
+        }
+      },
+      [navigate]
+    );
+  
 
   const handleInfoOpen = useCallback(async (brandId) => {
     const res = await GetApiCall(`${Api.admin.brand.getBrandByID}/${brandId}`);
@@ -114,6 +130,7 @@ const NewIncomingBrands = () => {
       const res = await PostApiCall(`${Api.admin.brand.brandApprove}/${brandId}`);
       if (res?.data?.statuscode === 200) {
         dispatch(approveBrand(brandId));
+        // dispatch(toggleBrandPausePlay(data.uuid));
       }
       return res
     },
@@ -160,6 +177,7 @@ const NewIncomingBrands = () => {
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        handlePackageEdit={handlePackageEdit}
         editShow={false}
         editNewincomingShow={true}
         loadMore={loadMore}

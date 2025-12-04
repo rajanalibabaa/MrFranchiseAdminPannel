@@ -1,5 +1,4 @@
-// Components/LeadManagement/LeadToggleControl.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -9,73 +8,34 @@ import {
   Grid,
   Alert,
   CircularProgress
-} from '@mui/material';
-import axios from 'axios';
+} from "@mui/material";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api/v1/admin/leadsFreeAndPaidStopAndStart";
 
 const LeadToggleControl = () => {
-  const [leadStatus, setLeadStatus] = useState({
-    isFreeLeadsBrandPaused: false,
-    isPaidLeadsBrandPaused: false
-  });
+  const [leadStatus, setLeadStatus] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch current status
   const fetchLeadStatus = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await axios.get(
-        'http://localhost:5000/api/v1/admin/leadsFreeAndPaidStopAndStart',
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-
-      console.log('get',response);
-      
-      
-      if (response.data.success) {
-        setLeadStatus({
-          isFreeLeadsBrandPaused: response.data.data?.isFreeLeadsBrandPaused || false,
-          isPaidLeadsBrandPaused: response.data.data?.isPaidLeadsBrandPaused || false
-        });
-      }
-    } catch (error) {
-      setError('Failed to fetch lead status');
+      const res = await axios.get(API_URL);
+      if (res.data.success) setLeadStatus(res.data.data?.brandBatch || {});
+    } catch {
+      setError("Failed to fetch status");
     } finally {
       setLoading(false);
     }
   };
 
-  // Update lead status
-  const handleToggle = async (leadType, newValue) => {
+  const handleToggle = async (field, newValue) => {
     try {
-      setError(null);
-      
-      const updateData = leadType === 'free' 
-        ? { isFreeLeadsBrandPaused: newValue }
-        : { isPaidLeadsBrandPaused: newValue };
-
-      const response = await axios.put(
-        'http://localhost:5000/api/v1/admin/leadsFreeAndPaidStopAndStart',
-        updateData,
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-console.log('update',response);
-
-      if (response.data.success) {
-        setLeadStatus(prev => ({
-          ...prev,
-          ...(leadType === 'free' && { isFreeLeadsBrandPaused: newValue }),
-          ...(leadType === 'paid' && { isPaidLeadsBrandPaused: newValue })
-        }));
-      }
-    } catch (error) {
-      setError(`Failed to update ${leadType} lead status`);
+      await axios.put(API_URL, { [field]: newValue });
+      setLeadStatus((prev) => ({ ...prev, [field]: newValue }));
+    } catch {
+      setError(`Failed to update ${field}`);
     }
   };
 
@@ -83,98 +43,78 @@ console.log('update',response);
     fetchLeadStatus();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
+      <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+        <CircularProgress size={22} />
       </Box>
     );
-  }
+
+  const fieldLabels = {
+    isFreeLeadsBrandPaused: "Free Leads",
+    // isDistrictMatchPaused: "Paid Leads",
+    isPaidCategoryInvestmentrangeLocationLeadsPaused: "Cat+Inv+Loc",
+    isPaidCategoryInvestmentrangePaused: "Cat+Inv",
+    isPaidCategoryLocationPaused: "Cat+Loc",
+    isPaidLocationInvestmentRangeLeadsPaused: "Loc+Inv",
+    isDistrictMatchPaused: "District Match",
+  };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 3 }}>
+    <Box sx={{ p: 1 }}>
+      <Typography
+        variant="subtitle1"
+        sx={{ mb: 1, fontSize: 13, fontWeight: 600 }}
+      >
         Lead Management Control
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 1, fontSize: 11, p: 0.5 }}>
           {error}
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        {/* Free Leads Toggle */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Free Leads
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Status: 
+      <Grid container spacing={1}>
+        {Object.entries(fieldLabels).map(([field, label]) => (
+          <Grid item xs={12} sm={6} md={4} key={field}>
+            <Paper
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 0,
+                border: "1px solid #eee",
+                "&:hover": { boxShadow: 1 },
+              }}
+            >
+              <Typography sx={{ fontSize: 12, fontWeight: 600, mb: 0.5 }}>
+                {label}
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  ml: 1, 
-                  color: leadStatus.isFreeLeadsBrandPaused ? 'error.main' : 'success.main',
-                  fontWeight: 'bold'
-                }}
-              >
-                {leadStatus.isFreeLeadsBrandPaused ? 'PAUSED' : 'ACTIVE'}
-              </Typography>
-            </Box>
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={!leadStatus.isFreeLeadsBrandPaused}
-                  onChange={(e) => handleToggle('free', !e.target.checked)}
-                  color="success"
-                />
-              }
-              label={leadStatus.isFreeLeadsBrandPaused ? 'Paused' : 'Active'}
-            />
-          </Paper>
-        </Grid>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 0.3 }}>
+                <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                  {leadStatus[field] ? "PAUSED" : "ACTIVE"}
+                </Typography>
+              </Box>
 
-        {/* Paid Leads Toggle */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Paid Leads
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Status: 
-              </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  ml: 1, 
-                  color: leadStatus.isPaidLeadsBrandPaused ? 'error.main' : 'success.main',
-                  fontWeight: 'bold'
-                }}
-              >
-                {leadStatus.isPaidLeadsBrandPaused ? 'PAUSED' : 'ACTIVE'}
-              </Typography>
-            </Box>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={!leadStatus.isPaidLeadsBrandPaused}
-                  onChange={(e) => handleToggle('paid', !e.target.checked)}
-                  color="success"
-                />
-              }
-              label={leadStatus.isPaidLeadsBrandPaused ? 'Paused' : 'Active'}
-            />
-          </Paper>
-        </Grid>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={!leadStatus[field]}
+                    onChange={(e) => handleToggle(field, !e.target.checked)}
+                    color="success"
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: 10 }}>
+                    {leadStatus[field] ? "Paused" : "Active"}
+                  </Typography>
+                }
+              />
+            </Paper>
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );

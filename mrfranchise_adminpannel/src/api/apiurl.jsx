@@ -41,6 +41,7 @@ export const Api = {
       brands:{
         allpauseBrand:`${BASE_URL}/getAllPauseBrand`,
         getallpaidbrands:`${BASE_URL}/getAllPaidBrand`,
+        getleadsbybrandid:`${BASE_URL_2}/getleadsbybrandid`,
         
       }
     },
@@ -55,6 +56,7 @@ export const Api = {
         pausePlay:`${BASE_URL}/toggleBrandPausePlay`,
         payment:`${BASE_URL}/togglePayment`,
         toggleleadPausedorPlayById:`${BASE_URL}/toggleleadPausedorPlayById`,
+        togglePaidBrandLeadpausePlayById:`${BASE_URL}/togglePaidleadPausedandPlayById`,
       }
     }
   },

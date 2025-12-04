@@ -45,6 +45,7 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { useDispatch } from "react-redux";
 import { showLoading } from "../../../Redux/Slices/loadingSlice";
 import FranchiseDetails from "./FranchiseDetails";
+import MembershipPayments from "../MembershipPakages/MembershipPayment.jsx";
 
 
 const FORM_DATA_KEY = "brandRegistrationFormData";
@@ -256,6 +257,9 @@ const BrandRegisterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  const [MembershipPayment, setMembershipPayment] = useState(false);
+  
+
   useEffect(() => {
     localStorage.setItem(FORM_DATA_KEY, JSON.stringify(formData));
     localStorage.setItem(FORM_STEP_KEY, activeStep.toString());
@@ -336,7 +340,7 @@ const BrandRegisterForm = () => {
     navigate("/dashboard");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (selectedMembership,selectedListing) => {
     const isValid = validateStep(activeStep);
 
     if (isValid) {
@@ -345,8 +349,7 @@ const BrandRegisterForm = () => {
         setSubmitSuccess(false);
 
         const formDataSend = new FormData();
-
-        console.log("sending form data",formDataSend);
+   
         
         // Append brand details
         formDataSend.append(
@@ -379,7 +382,9 @@ const BrandRegisterForm = () => {
             gstNumber: formData.brandDetails.gstNumber,
             pancardNumber: formData.brandDetails.pancardNumber,
             awardText: formData.brandDetails.awardText || [],
-            isApproved:true // Include award texts
+            isApproved:true,
+            paymentPackage: selectedMembership?.tier.toLowerCase(),
+            listingPackages:{ periodMonths: selectedListing?.periodMonths  , amount: selectedListing?.amount }
           })
         );  
 
@@ -438,7 +443,7 @@ const BrandRegisterForm = () => {
             });
           }
         });
-console.log("Form data prepared for submission:", formDataSend);
+
         const response = await axios.post(
           "http://localhost:5000/api/v1/brandlisting/createBrandListing",
           formDataSend,
@@ -462,6 +467,9 @@ console.log("Form data prepared for submission:", formDataSend);
           setFormData(initialFormData);
           setActiveStep(0);
           setOpenPreview(false);
+           setTimeout(() => {
+            navigate("/dashboard");
+          }, 1500);
          
         }else{
           throw new Error("Submission failed. Please try again.");
@@ -481,6 +489,11 @@ console.log("Form data prepared for submission:", formDataSend);
       }
     }
   };
+
+    const handlepakagesDetails = () => {
+    setMembershipPayment(true);
+  };
+
 
   const handleBrandDetailsChange = (update) => {
     setFormData((prev) => ({
@@ -1231,6 +1244,19 @@ console.log("Form data prepared for submission:", formDataSend);
   };
   return (
     <>
+         {/* If MembershipPayment is true, render AdvertiseWithUs and pass handleSubmit directly */}
+      {MembershipPayment ? (
+        <MembershipPayments 
+          handleSubmit={handleSubmit} 
+          snackbar={snackbar}
+          handleCloseSnackbar={handleCloseSnackbar}
+          isSubmitting={isSubmitting}
+          submitSuccess={submitSuccess}
+          setSnackbar={setSnackbar}
+          formData={formData}
+          onBack={() => setMembershipPayment(false)}  // Button to go back to form
+        />
+      ) : (
       <Box
         sx={{
           display: "flex",
@@ -1471,21 +1497,22 @@ console.log("Form data prepared for submission:", formDataSend);
                       "0 0 .25rem rgba(0, 0, 0, 0.5), -.125rem -.125rem 1rem rgb(82, 209, 105), .125rem .125rem 1rem rgba(175, 203, 122, 0.5)",
                   },
                 }}
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                startIcon={
-                  isSubmitting ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : submitSuccess ? (
-                    <CheckCircleIcon />
-                  ) : null
-                }
+                onClick={handlepakagesDetails}
+                    // disabled={isSubmitting}
+                // startIcon={
+                //   isSubmitting ? (
+                //     <CircularProgress size={20} color="inherit" />
+                //   ) : submitSuccess ? (
+                //     <CheckCircleIcon />
+                //   ) : null
+                // }
+                //  {isSubmitting
+                //   ? "Submitting..."
+                //   : submitSuccess
+                //   ? "Submitted!"
+                //   : "Submit"}
               >
-                {isSubmitting
-                  ? "Submitting..."
-                  : submitSuccess
-                  ? "Submitted!"
-                  : "Submit"}
+                Go to package details
               </Button>
             ) : (
               <Button
@@ -1573,7 +1600,7 @@ console.log("Form data prepared for submission:", formDataSend);
   {activeStep === steps.length - 1 && (
     <Button
       variant="contained"
-      onClick={handleSubmit}
+      onClick={handlepakagesDetails}
       disabled={isSubmitting}
       startIcon={
         isSubmitting ? (
@@ -1622,6 +1649,7 @@ console.log("Form data prepared for submission:", formDataSend);
           </Alert>
         </Snackbar>
       </Box>
+      )}
       {/* <Footer /> */}
     </>
   );

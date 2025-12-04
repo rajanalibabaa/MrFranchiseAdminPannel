@@ -116,6 +116,22 @@ const handleEdit = useCallback(
   [navigate]
 );
 
+  const handlePackageEdit = useCallback(
+    async (brandId) => {
+      try {
+        console.log("🟢 handlePackageEdit Clicked:", { brandId });
+        // 2️⃣ Navigate to package edit page after getting data
+        navigate(`/dashboard/brand-packages/${brandId}`, { 
+        state: { Id: brandId } 
+      })
+        
+      } catch (error) {
+        console.error("❌ Error in handlePackageEdit:", error);
+      }
+    },
+    [navigate]
+  );
+
 
   // Infinite scroll load more
   const loadMore = () => {
@@ -162,6 +178,7 @@ const handleEdit = useCallback(
         // handleApprove={handleApprove}
         handleInfoOpen={handleInfoOpen}
         handleEdit={handleEdit}
+        handlePackageEdit={handlePackageEdit}
         editShow={activeTab === 0}
         loadMore={loadMore}
         hasMore={pagination.hasNext}
