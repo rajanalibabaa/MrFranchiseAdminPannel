@@ -21,6 +21,7 @@ import FreeLeadPage from "../Pages/LeadsHandling/FreeLeadPage";
 import PaymentPackagesPage from "../Pages/dashboardOutlet/PaymentPackagesHandling";
 import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
 import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
+import IndustryManagementPage from "../Pages/dashboardOutlet/IndustryManagementPage";
 
 const Router = () => {
   const dispatch = useDispatch();
@@ -53,6 +54,7 @@ const Router = () => {
             <Route path="instantapply" element={<InstantApplyLayout />} />
             <Route path="freeleadlist" element={<FreeLeadPage />} />
             <Route path="packagemanagement" element={<PaymentPackagesPage />} />
+            <Route path="industrymanagement" element={<IndustryManagementPage />} />
             {/* // Manage Investor Routes */}
             <Route path="allinvestors" element={<AllInvestor />} />
             <Route path="newinvestors" element={<InvestorRegister />} />

@@ -12,6 +12,7 @@ import FlagIcon from "@mui/icons-material/Flag";
 import CircularProgress from "@mui/material/CircularProgress";
 import { fetchGlobalLocationByPostalCode } from "../../../Utils/PincodeFetch.jsx";
 import coutryCode from "../../../Utils/AllCountryCode.jsx";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const BrandDetailsEdit = ({ data = {}, errors = {}, onChange, isEditing }) => {
   const [pincodeError, setPincodeError] = useState(null);
