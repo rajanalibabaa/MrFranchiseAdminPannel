@@ -20,7 +20,7 @@ const Leads = () => {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    if (!id || !token) return;
+    if (!id || !token) return; 
 
     (async () => {
       try {
