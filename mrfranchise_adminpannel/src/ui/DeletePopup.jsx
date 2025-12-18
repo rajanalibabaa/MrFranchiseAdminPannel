@@ -14,6 +14,8 @@ import { deleteBrand } from "../Redux/Slices/FilterBrandSlice";
 import axios from "axios";
 
 const DeletePopup = ({ open, onClose, brands, newIncomingDeleteId, selectedBrandId, onConfirm }) => {
+  console.log(newIncomingDeleteId,'newIncomingDeleteId');
+
   const dispatch = useDispatch();
   const [error, setError] = useState("");
   const [showError, setShowError] = useState(false);
@@ -24,25 +26,26 @@ const DeletePopup = ({ open, onClose, brands, newIncomingDeleteId, selectedBrand
         onConfirm(newIncomingDeleteId);
       }
       
-      if (selectedBrandId) {
-        console.log("Delete ID:", selectedBrandId);
-        
+      if (newIncomingDeleteId || selectedBrandId) {
+        console.log("Delete ID:", newIncomingDeleteId || selectedBrandId);
+        const deleteId = newIncomingDeleteId || selectedBrandId;
         try {
          
           
           // Proceed with deletion
-          const deleteUrl = `http://localhost:5000/api/deleteBrandListingByUUID/${selectedBrandId}`;
+          const deleteUrl = `http://localhost:5000/api/v1/deleteBrandListingByUUID/${deleteId}`;
           const response = await axios.delete(deleteUrl);
           
           console.log("Delete response:", response.data);
+          alert(response.data.message || "Item deleted successfully");
           
           // Update the Redux store
-          dispatch(deleteBrand(selectedBrandId));
+          dispatch(deleteBrand(deleteId));
           onClose();
         } catch (apiError) {
           if (apiError.response?.status === 404) {
             console.warn("Brand not found in database, but removing from UI anyway");
-            dispatch(deleteBrand(selectedBrandId));
+            dispatch(deleteBrand(deleteId));
             onClose();
           } else {
             throw apiError;
