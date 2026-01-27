@@ -199,7 +199,7 @@ const InvestorTableOutlet = ({ investors, searchTerm, onInvestorDelete }) => {
                     {investor?.preferences?.length > 0 &&
                     investor.preferences[0]?.category?.length > 0
                       ? investor.preferences[0].category
-                          .map((cat) => cat.child)
+                          .map((cat) => cat.sub)
                           .filter(Boolean)
                           .join(", ")
                       : "N/A"}
