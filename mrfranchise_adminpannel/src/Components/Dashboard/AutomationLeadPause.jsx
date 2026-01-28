@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/v1/admin/leadsFreeAndPaidStopAndStart";
+const API_URL = "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/leadsFreeAndPaidStopAndStart";
 
 const LeadToggleControl = () => {
   const [leadStatus, setLeadStatus] = useState({});

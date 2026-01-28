@@ -174,7 +174,7 @@ useEffect(() => {
       // If investor data wasn't passed via state, fetch it from API
       if (!investorDataToUse && id) {
         const response = await axios.get(
-          `http://localhost:5000/api/v1/investor/getInvestorByUUID/${id}`,
+          `https://mrfranchisebackend.mrfranchise.in/api/v1/investor/getInvestorByUUID/${id}`,
           { 
             withCredentials: true,
             headers: {
@@ -579,7 +579,7 @@ const handleSave = async () => {
   try {
     
     const response = await axios.patch(
-      `http://localhost:5000/api/v1/investor/updateInvestor/${investorData.uuid}`,
+      `https://mrfranchisebackend.mrfranchise.in/api/v1/investor/updateInvestor/${investorData.uuid}`,
       formData,
       {
         headers: {
@@ -917,7 +917,7 @@ const handleSave = async () => {
       setSnackbarOpen(false);
       
       const response = await axios.patch(
-        `http://localhost:5000/api/v1/admin/removeInvestorProfileImage/${id || investorData._id}`,
+        `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/removeInvestorProfileImage/${id || investorData._id}`,
         { removeProfileImage: true }
       );
 

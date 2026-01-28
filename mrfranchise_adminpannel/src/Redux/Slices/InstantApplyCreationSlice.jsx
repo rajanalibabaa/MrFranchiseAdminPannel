@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; // dynamic base URL
+const BASE_URL = import.meta.env.VITE_API_URL || "https://mrfranchisebackend.mrfranchise.in/api"; // dynamic base URL
 
 // ================================
 // 🟢 Submit Single Application
