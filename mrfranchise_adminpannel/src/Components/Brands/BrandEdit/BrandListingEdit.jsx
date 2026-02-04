@@ -34,9 +34,9 @@ const flattenBrandData = (brandDoc) => {
     const franchiseDetails = brandDoc.franchiseDetails || {};
   const franchiseTagsFromAPI = franchiseDetails.franchiseTags || {};
   
-  console.log("=== FLATTEN DEBUG ===");
-  console.log("Original franchiseTags:", franchiseTagsFromAPI);
-  console.log("Type:", typeof franchiseTagsFromAPI);
+  // console.log("=== FLATTEN DEBUG ===");
+  // console.log("Original franchiseTags:", franchiseTagsFromAPI);
+  // console.log("Type:", typeof franchiseTagsFromAPI);
 
     const ficoData = Array.isArray(franchiseDetails.fico) ? franchiseDetails.fico : [];
 
@@ -117,14 +117,14 @@ const BrandListingEdit = () => {
                localStorage.getItem("brandUUID") || 
                localStorage.getItem("investorUUID");
 
-  console.log("🔍 UUID from different sources:", {
-    params: params?.uuid,
-    location: location?.state?.uuid,
-    searchParams: searchParams.get("uuid"),
-    localStorageBrand: localStorage.getItem("brandUUID"),
-    localStorageInvestor: localStorage.getItem("investorUUID"),
-    finalUUID: uuid
-  });
+  // console.log("🔍 UUID from different sources:", {
+  //   params: params?.uuid,
+  //   location: location?.state?.uuid,
+  //   searchParams: searchParams.get("uuid"),
+  //   localStorageBrand: localStorage.getItem("brandUUID"),
+  //   localStorageInvestor: localStorage.getItem("investorUUID"),
+  //   finalUUID: uuid
+  // });
 
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
@@ -212,11 +212,11 @@ const BrandListingEdit = () => {
         const response = await getApi(url);
         const brand = response?.data?.data;
 
-        console.log("Fetched brand data:", brand);
+        // console.log("Fetched brand data:", brand);
 
         if (response.data.success) {
           const flatData = flattenBrandData(brand);
-          console.log("Flattened brand data:", flatData);
+          // console.log("Flattened brand data:", flatData);
           setFormData(flatData);
           setOriginalData(brand);
         } else {
@@ -264,14 +264,14 @@ const BrandListingEdit = () => {
     }
   };
  const handleObjectChange = (field, keyOrValue, maybeValue) => {
-  console.log(`📝 Object change - Field: ${field}, KeyOrValue:`, keyOrValue, "MaybeValue:", maybeValue);
+  // console.log(`📝 Object change - Field: ${field}, KeyOrValue:`, keyOrValue, "MaybeValue:", maybeValue);
   
 
   
   setFormData((prev) => {
     // Case 1: Replace whole object (FranchiseDetailsEdit passes object for franchiseTags)
     if (field === "franchiseTags" && typeof keyOrValue === "object" && maybeValue === undefined) {
-      console.log("📦 Updating entire franchiseTags object:", keyOrValue);
+      // console.log("📦 Updating entire franchiseTags object:", keyOrValue);
       return {
         ...prev,
         [field]: keyOrValue,
@@ -425,10 +425,10 @@ const BrandListingEdit = () => {
   // };
 
   const handleSave = async () => {
-  console.log("💾 Save attempted with UUID:", uuid);
-  console.log("💾 FormData being saved:", formData);
-  console.log("💾 FICO data being saved:", formData.fico);
-  console.log("💾 Franchise tags being saved:", formData.franchiseTags);
+  // console.log("💾 Save attempted with UUID:", uuid);
+  // console.log("💾 FormData being saved:", formData);
+  // console.log("💾 FICO data being saved:", formData.fico);
+  // console.log("💾 Franchise tags being saved:", formData.franchiseTags);
       if (!uuid) {
       setSaveStatus({
         loading: false,
@@ -456,7 +456,7 @@ const BrandListingEdit = () => {
       BusinessOperations: formData.franchiseTags?.BusinessOperations || [],
     };
 
-    console.log("💾 Final franchiseTags for backend:", franchiseTagsForBackend);
+    // console.log("💾 Final franchiseTags for backend:", franchiseTagsForBackend);
       // Prepare the data structure that matches the backend expectation
       const updateData = {
         brandDetails: {
@@ -523,11 +523,11 @@ const BrandListingEdit = () => {
         "isInternationalExpansion",
         formData.isInternationalExpansion
       );
-          console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
+          // console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
 
 
       // First update the brand details
-      console.log("Sending data to API:", { uuid, formDataToSend });
+      // console.log("Sending data to API:", { uuid, formDataToSend });
       const detailsResponse = await axios.patch(
         `https://mrfranchisebackend.mrfranchise.in/api/v1/brandlisting/updateBrandListingByUUID/${uuid}`,
         formDataToSend,
@@ -538,7 +538,7 @@ const BrandListingEdit = () => {
           },
         }
       );
-      console.log("API Response:", detailsResponse.data);
+      // console.log("API Response:", detailsResponse.data);
 
       if (!detailsResponse.data.success) {
         throw new Error(
@@ -593,12 +593,12 @@ const BrandListingEdit = () => {
 
       // Append awards to delete
       if (awardsToDelete.length > 0) {
-        console.log("Awards to delete ========== :", awardsToDelete);
+        // console.log("Awards to delete ========== :", awardsToDelete);
         uploadFormData.append("awardsToDelete", JSON.stringify(awardsToDelete));
         hasFilesToUpload = true;
       }
 
-      console.log("Uploading files:", uploadFormData);
+      // console.log("Uploading files:", uploadFormData);
 
       // Only make the upload request if there are files to upload or delete
       if (hasFilesToUpload) {
@@ -616,6 +616,10 @@ const BrandListingEdit = () => {
           throw new Error(
             uploadResponse.data.message || "Failed to upload files."
           );
+        }
+        if (uploadResponse.data.success) {
+          // Handle successful file upload if needed
+          console.log("=======Files uploaded successfully.=======");
         }
       }
 

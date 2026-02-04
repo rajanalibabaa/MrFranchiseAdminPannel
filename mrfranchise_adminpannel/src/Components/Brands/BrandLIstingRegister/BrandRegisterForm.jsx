@@ -383,7 +383,21 @@ const BrandRegisterForm = () => {
             pancardNumber: formData.brandDetails.pancardNumber,
             awardText: formData.brandDetails.awardText || [],
             isApproved:true,
-            paymentPackage: selectedMembership?.tier.toLowerCase(),
+            // paymentPackage: selectedMembership?.tier.toLowerCase(),
+            paymentPackage: selectedMembership
+  ? {
+      packageType:
+        selectedMembership.packageName ||
+        selectedMembership.tier?.toLowerCase() ||
+        "free",
+      totalAmount: selectedMembership.totalAmount,
+      totalMonths: selectedMembership.totalMonths,
+      perMonthLead: selectedMembership.perMonthLead,
+      totalLeads: selectedMembership.totalLeads,
+      isActive: true,
+      sentLeadsPercentage: "0%",
+    }
+  : undefined,
             listingPackages:{ periodMonths: selectedListing?.periodMonths  , amount: selectedListing?.amount }
           })
         );  

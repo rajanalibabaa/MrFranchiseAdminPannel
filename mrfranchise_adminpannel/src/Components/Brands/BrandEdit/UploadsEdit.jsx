@@ -31,7 +31,7 @@ import {
   CheckCircle,
   Delete,
   Edit,
-  Visibility, // Added for the "View" icon
+  Visibility,
 } from "@mui/icons-material";
 
 const VisuallyHiddenInput = styled("input")({
@@ -212,43 +212,79 @@ const UploadsEdit = ({
     normalizedData.interiorOutlet.length,
   ]);
 
-  const handleFileUpload =
-    (field, options = {}) =>
-    (e) => {
-      if (!isEditing) return;
-      const { maxFiles = Infinity, allowedTypes = [], maxSize = 5 } = options;
-      const newFiles = Array.from(e.target.files || []);
+  // Handler for single file uploads (video, logo, etc.)
+  const handleSingleFileUpload = (field, options = {}) => (e) => {
+    if (!isEditing) return;
+    const { allowedTypes = [], maxSize = 5 } = options;
+    const newFiles = Array.from(e.target.files || []);
 
-      const currentFiles = normalizedData[field] || [];
-      const totalFiles = currentFiles.length + newFiles.length;
+    if (newFiles.length === 0) return;
 
-      if (totalFiles > maxFiles) {
-        setImageErrors((prev) => ({
-          ...prev,
-          [field]: `Maximum ${maxFiles} file(s) allowed for this field`,
-        }));
-        return;
-      }
+    const file = newFiles[0];
+    
+    // Validate file type
+    if (allowedTypes.length > 0 && !allowedTypes.some(type => file.type.includes(type))) {
+      alert(`Invalid file type. Accepted types: ${allowedTypes.join(', ')}`);
+      return;
+    }
+    
+    // Validate file size
+    if (file.size > maxSize * 1024 * 1024) {
+      alert(`File exceeds maximum size of ${maxSize}MB`);
+      return;
+    }
+    
+    // Clear existing file
+    const currentFiles = normalizedData[field] || [];
+    if (currentFiles.length > 0) {
+      handleRemoveUploadedFile(field, 0);
+    }
+    
+    // Add new file
+    setNormalizedData((prev) => ({ 
+      ...prev, 
+      [field]: [file] 
+    }));
+    
+    onFileChange(field, [file]);
+  };
 
-      const validFiles = newFiles.filter((file) => {
-        if (!file || !file.type) return false;
-        if (allowedTypes.length === 0) return true;
-        return allowedTypes.some((type) => file.type.includes(type));
-      });
+  // Handler for multiple file uploads (images)
+  const handleMultiFileUpload = (field, options = {}) => (e) => {
+    if (!isEditing) return;
+    const { maxFiles = Infinity, allowedTypes = [], maxSize = 5 } = options;
+    const newFiles = Array.from(e.target.files || []);
 
-      const sizeValidFiles = validFiles.filter(
-        (file) => file.size <= maxSize * 1024 * 1024
-      );
+    const currentFiles = normalizedData[field] || [];
+    const totalFiles = currentFiles.length + newFiles.length;
 
-      if (sizeValidFiles.length < validFiles.length) {
-        alert(`Some files exceed the maximum size of ${maxSize}MB`);
-      }
+    if (totalFiles > maxFiles) {
+      setImageErrors((prev) => ({
+        ...prev,
+        [field]: `Maximum ${maxFiles} file(s) allowed for this field`,
+      }));
+      return;
+    }
 
-      const updatedFiles = [...currentFiles, ...sizeValidFiles];
-      setNormalizedData((prev) => ({ ...prev, [field]: updatedFiles }));
+    const validFiles = newFiles.filter((file) => {
+      if (!file || !file.type) return false;
+      if (allowedTypes.length === 0) return true;
+      return allowedTypes.some((type) => file.type.includes(type));
+    });
 
-      onFileChange(field, sizeValidFiles);
-    };
+    const sizeValidFiles = validFiles.filter(
+      (file) => file.size <= maxSize * 1024 * 1024,
+    );
+
+    if (sizeValidFiles.length < validFiles.length) {
+      alert(`Some files exceed the maximum size of ${maxSize}MB`);
+    }
+
+    // For multiple files (like images), append to existing
+    const updatedFiles = [...currentFiles, ...sizeValidFiles];
+    setNormalizedData((prev) => ({ ...prev, [field]: updatedFiles }));
+    onFileChange(field, sizeValidFiles);
+  };
 
   const handleRemoveUploadedFile = (field, index) => {
     if (!isEditing) return;
@@ -333,7 +369,7 @@ const UploadsEdit = ({
       updatedAwards.map((award) => ({
         awardDescription: award.awardDescription,
         awardImage: award.awardImage,
-      }))
+      })),
     );
 
     if (currentAward.awardImage instanceof File) {
@@ -370,7 +406,7 @@ const UploadsEdit = ({
       updatedAwards.map((award) => ({
         awardDescription: award.awardDescription,
         awardImage: award.awardImage,
-      }))
+      })),
     );
 
     if (index < firstNewIndex) {
@@ -434,6 +470,32 @@ const UploadsEdit = ({
     return type === "pdf" || (file.type && file.type.includes("pdf"));
   };
 
+  const getVideoSrc = (video) => {
+    if (!video) return "";
+
+    // If backend URL (string)
+    if (typeof video === "string") {
+      return video;
+    }
+
+    // If file object with URL
+    if (video.url) {
+      return video.url;
+    }
+
+    // If uploaded file
+    if (video instanceof File) {
+      return URL.createObjectURL(video);
+    }
+
+    // If object with file property
+    if (video.file) {
+      return URL.createObjectURL(video.file);
+    }
+
+    return "";
+  };
+
   return (
     <Box sx={{ pr: 1, mr: { sm: 0, md: 10 }, ml: { sm: 0, md: 10 } }}>
       {/* Brand Identity */}
@@ -481,8 +543,7 @@ const UploadsEdit = ({
                   <VisuallyHiddenInput
                     type="file"
                     accept="image/jpeg,image/png"
-                    onChange={handleFileUpload("brandLogo", {
-                      maxFiles: 1,
+                    onChange={handleSingleFileUpload("brandLogo", {
                       allowedTypes: ["image/jpeg", "image/png"],
                       maxSize: 2,
                     })}
@@ -533,7 +594,7 @@ const UploadsEdit = ({
                       <>
                         <Chip
                           label={getFileDisplayName(
-                            normalizedData.brandLogo[0]
+                            normalizedData.brandLogo[0],
                           )}
                           onDelete={
                             isEditing
@@ -568,8 +629,7 @@ const UploadsEdit = ({
                   <VisuallyHiddenInput
                     type="file"
                     accept="video/mp4,video/quicktime"
-                    onChange={handleFileUpload("franchisePromotionVideo", {
-                      maxFiles: 1,
+                    onChange={handleSingleFileUpload("franchisePromotionVideo", {
                       allowedTypes: ["video/mp4", "video/quicktime"],
                       maxSize: 25,
                     })}
@@ -593,50 +653,21 @@ const UploadsEdit = ({
                       mt: 1,
                     }}
                   >
-                    {isVideoFile(normalizedData.franchisePromotionVideo[0]) ? (
-                      <>
-                        <video
-                          src={createObjectURL(
-                            normalizedData.franchisePromotionVideo[0]
-                          )}
-                          controls
-                          style={{ width: 200, borderRadius: 4 }}
-                        />
-                        {isEditing && (
-                          <IconButton
-                            onClick={() =>
-                              handleRemoveUploadedFile(
-                                "franchisePromotionVideo",
-                                0
-                              )
-                            }
-                            color="error"
-                            size="small"
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Chip
-                          label={getFileDisplayName(
-                            normalizedData.franchisePromotionVideo[0]
-                          )}
-                          onDelete={
-                            isEditing
-                              ? () =>
-                                  handleRemoveUploadedFile(
-                                    "franchisePromotionVideo",
-                                    0
-                                  )
-                              : undefined
-                          }
-                          deleteIcon={<CheckCircle fontSize="small" />}
-                          variant="outlined"
-                          color="success"
-                        />
-                      </>
+                    <video
+                      src={getVideoSrc(normalizedData.franchisePromotionVideo[0])}
+                      controls
+                      style={{ width: 200, borderRadius: 4 }}
+                    />
+                    {isEditing && (
+                      <IconButton
+                        onClick={() =>
+                          handleRemoveUploadedFile("franchisePromotionVideo", 0)
+                        }
+                        color="error"
+                        size="small"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
                     )}
                   </Box>
                 )}
@@ -707,8 +738,7 @@ const UploadsEdit = ({
               <VisuallyHiddenInput
                 type="file"
                 accept=".pdf,image/jpeg,image/png"
-                onChange={handleFileUpload("pancard", {
-                  maxFiles: 1,
+                onChange={handleSingleFileUpload("pancard", {
                   allowedTypes: ["application/pdf", "image/jpeg", "image/png"],
                   maxSize: 1,
                 })}
@@ -804,8 +834,7 @@ const UploadsEdit = ({
               <VisuallyHiddenInput
                 type="file"
                 accept=".pdf,image/jpeg,image/png"
-                onChange={handleFileUpload("gstCertificate", {
-                  maxFiles: 1,
+                onChange={handleSingleFileUpload("gstCertificate", {
                   allowedTypes: ["application/pdf", "image/jpeg", "image/png"],
                   maxSize: 1,
                 })}
@@ -851,7 +880,7 @@ const UploadsEdit = ({
                   <>
                     <Chip
                       label={getFileDisplayName(
-                        normalizedData.gstCertificate[0]
+                        normalizedData.gstCertificate[0],
                       )}
                       onDelete={
                         isEditing
@@ -925,7 +954,7 @@ const UploadsEdit = ({
                   type="file"
                   accept="image/jpeg,image/png"
                   multiple
-                  onChange={handleFileUpload("exteriorOutlet", {
+                  onChange={handleMultiFileUpload("exteriorOutlet", {
                     maxFiles: 5,
                     allowedTypes: ["image/jpeg", "image/png"],
                     maxSize: 5,
@@ -1049,7 +1078,7 @@ const UploadsEdit = ({
                   type="file"
                   accept="image/jpeg,image/png"
                   multiple
-                  onChange={handleFileUpload("interiorOutlet", {
+                  onChange={handleMultiFileUpload("interiorOutlet", {
                     maxFiles: 5,
                     allowedTypes: ["image/jpeg", "image/png"],
                     maxSize: 5,
@@ -1354,14 +1383,13 @@ const UploadsEdit = ({
             <VisuallyHiddenInput
               type="file"
               accept=".pdf,.doc,.docx"
-              onChange={handleFileUpload("businessPlan", {
-                maxFiles: 1,
+              onChange={handleSingleFileUpload("businessPlan", {
                 allowedTypes: [
                   "application/pdf",
                   "application/msword",
                   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 ],
-                maxSize: 1,
+                maxSize: 10,
               })}
             />
           </UploadButton>
