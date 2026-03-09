@@ -23,10 +23,23 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { getApi } from "../../../api/default/GetApi";
-import { useParams } from "react-router-dom";
+import { useParams ,useLocation, useSearchParams} from "react-router-dom";
+import { token } from "../../../Utils/autherId";
+
 
 const flattenBrandData = (brandDoc) => {
   if (!brandDoc) return {};
+  
+  // Get the franchiseTags from the API response
+    const franchiseDetails = brandDoc.franchiseDetails || {};
+  const franchiseTagsFromAPI = franchiseDetails.franchiseTags || {};
+  
+  console.log("=== FLATTEN DEBUG ===");
+  console.log("Original franchiseTags:", franchiseTagsFromAPI);
+  console.log("Type:", typeof franchiseTagsFromAPI);
+
+    const ficoData = Array.isArray(franchiseDetails.fico) ? franchiseDetails.fico : [];
+
   return {
     // Brand Details
     fullName: brandDoc.brandDetails?.fullName || "",
@@ -55,24 +68,23 @@ const flattenBrandData = (brandDoc) => {
     pancardNumber: brandDoc.brandDetails?.pancardNumber || "",
 
     // Franchise Details
-    brandCategories: brandDoc.franchiseDetails?.brandCategories || {},
-    aidFinancing: brandDoc.franchiseDetails?.aidFinancing || "",
-    brandDescription: brandDoc.franchiseDetails?.brandDescription || "",
-    companyOwnedOutlets: brandDoc.franchiseDetails?.companyOwnedOutlets || "",
-    consultationOrAssistance:
-      brandDoc.franchiseDetails?.consultationOrAssistance || "",
-    establishedYear: brandDoc.franchiseDetails?.establishedYear || "",
-    franchiseDevelopment: brandDoc.franchiseDetails?.franchiseDevelopment || "",
-    franchiseOutlets: brandDoc.franchiseDetails?.franchiseOutlets || "",
-    franchiseSinceYear: brandDoc.franchiseDetails?.franchiseSinceYear || "",
-    totalOutlets: brandDoc.franchiseDetails?.totalOutlets || "",
-    fico: brandDoc.franchiseDetails?.fico || [],
-    trainingSupport: brandDoc.franchiseDetails?.trainingSupport || [],
-    uniqueSellingPoints: brandDoc.franchiseDetails?.uniqueSellingPoints || [],
+ brandCategories: franchiseDetails.brandCategories || {},
+    aidFinancing: franchiseDetails.aidFinancing || "",
+    brandDescription: franchiseDetails.brandDescription || "",
+    companyOwnedOutlets: franchiseDetails.companyOwnedOutlets || "",
+    consultationOrAssistance: franchiseDetails.consultationOrAssistance || "",
+    establishedYear: franchiseDetails.establishedYear || "",
+    franchiseDevelopment: franchiseDetails.franchiseDevelopment || "",
+    franchiseOutlets: franchiseDetails.franchiseOutlets || "",
+    franchiseSinceYear: franchiseDetails.franchiseSinceYear || "",
+    totalOutlets: franchiseDetails.totalOutlets || "",
+    fico: ficoData, // Always an array
+    trainingSupport: franchiseDetails.trainingSupport || [],
+    uniqueSellingPoints: franchiseDetails.uniqueSellingPoints || [],
+    franchiseTags: franchiseTagsFromAPI,    
 
     // Expansion Data
-    currentOutletLocations: brandDoc.expansionlocationdata
-      ?.currentOutletLocations || {
+    currentOutletLocations: brandDoc.expansionlocationdata?.currentOutletLocations || {
       domestic: { locations: [] },
       international: { country: [] },
     },
@@ -80,8 +92,8 @@ const flattenBrandData = (brandDoc) => {
       domestic: { locations: [] },
       international: { country: [] },
     },
-    isInternationalExpansion:
-      brandDoc.expansionlocationdata?.isInternationalExpansion || false,
+    isInternationalExpansion: brandDoc.expansionlocationdata?.isInternationalExpansion || false,
+    
     // Uploads
     brandLogo: brandDoc.uploads?.logo || [],
     exteriorOutlet: brandDoc.uploads?.exteriorOutlet || [],
@@ -93,7 +105,27 @@ const flattenBrandData = (brandDoc) => {
     awards: brandDoc.uploads?.awards || [],
   };
 };
+
 const BrandListingEdit = () => {
+  const params = useParams();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+    
+   const uuid = params?.uuid || 
+               location?.state?.uuid || 
+               searchParams.get("uuid") ||
+               localStorage.getItem("brandUUID") || 
+               localStorage.getItem("investorUUID");
+
+  console.log("🔍 UUID from different sources:", {
+    params: params?.uuid,
+    location: location?.state?.uuid,
+    searchParams: searchParams.get("uuid"),
+    localStorageBrand: localStorage.getItem("brandUUID"),
+    localStorageInvestor: localStorage.getItem("investorUUID"),
+    finalUUID: uuid
+  });
+
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -103,8 +135,8 @@ const BrandListingEdit = () => {
     success: false,
     error: "",
   });
-   const  id  = useParams();
-  console.log("Brand ID:", id.uuid);
+  //  const  id  = useParams();
+  // console.log("Brand ID:", id.uuid);
   const [isEditing, setIsEditing] = useState(false);
   const [showOtpDialog, setShowOtpDialog] = useState(false);
   const [expanded, setExpanded] = useState("panel1");
@@ -162,12 +194,12 @@ const BrandListingEdit = () => {
     },
   });
 
-   const UUID = id?.uuid;
-   console.log("Brand ID:", UUID);
+  //  const UUID = id?.uuid;
+  //  console.log("Brand ID:", UUID);
 
   useEffect(() => {
     const fetchBrandData = async () => {
-      const uuid = UUID;
+      // const uuid = UUID;
 
       if (!uuid) {
         setError("No UUID found.");
@@ -198,7 +230,7 @@ const BrandListingEdit = () => {
     };
 
     fetchBrandData();
-  }, [UUID]);
+  }, [uuid]);
 
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({
@@ -231,15 +263,40 @@ const BrandListingEdit = () => {
       }));
     }
   };
-  const handleObjectChange = (field, key, value) => {
-    setFormData((prev) => ({
+ const handleObjectChange = (field, keyOrValue, maybeValue) => {
+  console.log(`📝 Object change - Field: ${field}, KeyOrValue:`, keyOrValue, "MaybeValue:", maybeValue);
+  
+
+  
+  setFormData((prev) => {
+    // Case 1: Replace whole object (FranchiseDetailsEdit passes object for franchiseTags)
+    if (field === "franchiseTags" && typeof keyOrValue === "object" && maybeValue === undefined) {
+      console.log("📦 Updating entire franchiseTags object:", keyOrValue);
+      return {
+        ...prev,
+        [field]: keyOrValue,
+      };
+    }
+
+    // Case 2: Update nested key (for other objects like brandCategories)
+    if (typeof maybeValue !== 'undefined') {
+      return {
+        ...prev,
+        [field]: {
+          ...prev[field],
+          [keyOrValue]: maybeValue,
+        },
+      };
+    }
+
+    // Case 3: If only two arguments provided and second is not an object
+    return {
       ...prev,
-      [field]: {
-        ...prev[field],
-        [key]: value,
-      },
-    }));
-  };
+      [field]: keyOrValue,
+    };
+  });
+};
+
 
   const handleFileChange = (field, newFiles) => {
     setFiles((prev) => ({
@@ -368,14 +425,38 @@ const BrandListingEdit = () => {
   // };
 
   const handleSave = async () => {
-    const uuid = UUID
-     
+  console.log("💾 Save attempted with UUID:", uuid);
+  console.log("💾 FormData being saved:", formData);
+  console.log("💾 FICO data being saved:", formData.fico);
+  console.log("💾 Franchise tags being saved:", formData.franchiseTags);
+      if (!uuid) {
+      setSaveStatus({
+        loading: false,
+        success: false,
+        error: "No UUID found for saving.",
+      });
+      return;
+    }
     setSaveStatus({ loading: true, success: false, error: "" });
-
+     
     try {
       // Step 1: Update brand details and franchise details
       const formDataToSend = new FormData();
 
+   const franchiseTagsForBackend = { 
+      PrimaryClassifications: formData.franchiseTags?.PrimaryClassifications || [],
+      ProductServiceTypes: formData.franchiseTags?.ProductServiceTypes || [],
+      TargetAudience: formData.franchiseTags?.TargetAudience || [],
+      ServiceModel: formData.franchiseTags?.ServiceModel || [],
+      PricingValue: formData.franchiseTags?.PricingValue || [],
+      AmbienceExperience: formData.franchiseTags?.AmbienceExperience || [],
+      FeaturesAmenities: formData.franchiseTags?.FeaturesAmenities || [],
+      TechnologyIntegration: formData.franchiseTags?.TechnologyIntegration || [],
+      SustainabilityEthics: formData.franchiseTags?.SustainabilityEthics || [],
+      BusinessOperations: formData.franchiseTags?.BusinessOperations || [],
+    };
+
+    console.log("💾 Final franchiseTags for backend:", franchiseTagsForBackend);
       // Prepare the data structure that matches the backend expectation
       const updateData = {
         brandDetails: {
@@ -415,9 +496,9 @@ const BrandListingEdit = () => {
           franchiseOutlets: formData.franchiseOutlets,
           franchiseSinceYear: formData.franchiseSinceYear,
           totalOutlets: formData.totalOutlets,
-          fico: formData.fico,
-          trainingSupport: formData.trainingSupport,
+          fico: formData.fico || [],
           uniqueSellingPoints: formData.uniqueSellingPoints,
+          franchiseTags: franchiseTagsForBackend,
         },
       };
 
@@ -442,17 +523,22 @@ const BrandListingEdit = () => {
         "isInternationalExpansion",
         formData.isInternationalExpansion
       );
+          console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
+
 
       // First update the brand details
+      console.log("Sending data to API:", { uuid, formDataToSend });
       const detailsResponse = await axios.patch(
         `http://localhost:5000/api/v1/brandlisting/updateBrandListingByUUID/${uuid}`,
         formDataToSend,
         {
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         }
       );
+      console.log("API Response:", detailsResponse.data);
 
       if (!detailsResponse.data.success) {
         throw new Error(

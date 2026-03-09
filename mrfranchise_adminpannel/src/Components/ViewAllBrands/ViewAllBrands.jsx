@@ -1,103 +1,113 @@
-// import React, { useEffect, useState } from 'react';
-// import axios from 'axios';
-// import {
-//   Box,
-//   Grid,
-//   Typography,
-//   Card,
-//   CardContent,
-//   CardMedia,
-//   CircularProgress,
-//   Alert,
-// } from '@mui/material';
-// import SidebarAdmin from '../../Pages/dashboardOutlet/SidebarAdmin';
-
-// const ViewAllBrands = () => {
-//     const [brands, setBrands] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   const fetchBrands = async () => {
-//     try {
-//       const response = await axios.get('http://localhost:5000/api/v1/brandlisting/getAllBrandListing');
-
-//       console.log('API Response:', response.data);
-//       setBrands(response.data?.data || []); 
-//       setLoading(false);
-//     } catch (err) {
-//       setError('Failed to fetch brands');
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchBrands();
-//   }, []);
-
-//   if (loading) {
-//     return (
-//       <Box display="flex" justifyContent="center" mt={5}>
-//         <CircularProgress />
-//       </Box>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <Box display="flex" justifyContent="center" mt={5}>
-//         <Alert severity="error">{error}</Alert>
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <Box display="flex">
-//       {/* Sidebar */}
-//       <SidebarAdmin />
-
-     
-//     <Box p={4}>
-//       <Typography variant="h4" gutterBottom>
-//         All Brands
-//       </Typography>
-
-//       {/* <Grid container spacing={3}>
-//         {brands.map((brand) => (
-//           <Grid item xs={12} sm={6} md={4} lg={3} key={brand._id}>
-//             <Card sx={{ height: '100%' }}>
-//               {brand.logo && (
-//                 <CardMedia
-//                   component="img"
-//                   height="160"
-//                   image={brand.logo}
-//                   alt={brand.name}
-//                 />
-//               )}
-//               <CardContent>
-//                 <Typography variant="h6" gutterBottom>
-//                   {brand.name}
-//                 </Typography>
-//                 <Typography variant="body2" color="text.secondary">
-//                   {brand.description || 'No description available.'}
-//                 </Typography>
-//               </CardContent>
-//             </Card>
-//           </Grid>
-//         ))}
-//       </Grid> */}
-//     </Box>
-//     </Box>
-//   );
-// };
-// export default ViewAllBrands
-
-import React from 'react'
+import React, { useEffect, useState } from 'react';
+import {
+  Box,
+  Grid,
+  Typography,
+  Card,
+  CardContent,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import SidebarAdmin from '../../Pages/dashboardOutlet/SidebarAdmin';
+import { GetApiCall } from '../../api/default/GetApi';
+import { Api } from '../../api/apiurl';
 
 const ViewAllBrands = () => {
-  console.log("ViewAllBrands component rendered");
-  return (
-    <div>ViewAllBrands</div>
-  )
-}
+  const [brandsData, setBrandsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate(); // Hook for navigation
 
-export default ViewAllBrands
+  const fetchBrands = async () => {
+    try {
+      const response = await GetApiCall(Api.admin.get.user.usersCount);
+      console.log('API Response:', response.data);
+      setBrandsData(response.data?.data || {});
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch data');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBrands();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={5}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" mt={5}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box display="flex">
+      {/* Sidebar */}
+      <SidebarAdmin />
+
+      {/* Main Content */}
+      <Box p={4} flexGrow={1}>
+        <Typography variant="h4" gutterBottom>
+          All Brands
+        </Typography>
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={4}>
+            <Card
+              onClick={() => navigate('/admin/brands')}
+              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+            >
+              <CardContent>
+                <Typography variant="h6">Total Brands</Typography>
+                <Typography variant="h4" color="primary">
+                  {brandsData.brandsCount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card
+              onClick={() => navigate('/admin/new-brands')}
+              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+            >
+              <CardContent>
+                <Typography variant="h6">New Brands</Typography>
+                <Typography variant="h4" color="secondary">
+                  {brandsData.newBrandsCount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card
+              onClick={() => navigate('/admin/investors')}
+              sx={{ cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+            >
+              <CardContent>
+                <Typography variant="h6">Investors</Typography>
+                <Typography variant="h4" color="success.main">
+                  {brandsData.investorsCount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+    </Box>
+  );
+};
+
+export default ViewAllBrands;

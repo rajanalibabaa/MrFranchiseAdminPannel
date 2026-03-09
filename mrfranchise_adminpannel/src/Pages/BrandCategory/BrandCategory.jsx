@@ -237,7 +237,7 @@ export const categories = [
   //     },
   //     {
   //       name: "Education Consultants",
-  //       subChild: ["Education Consultants", "Overseas Education Consultants"],
+  //       subChild: ["E ucation Consultants", "Overseas Education Consultants"],
   //     },
   //     {
   //       name: "Education Services",
@@ -762,5 +762,6 @@ export const categories = [
   //   ],
   // },
 ];
+
 
 export default categories;

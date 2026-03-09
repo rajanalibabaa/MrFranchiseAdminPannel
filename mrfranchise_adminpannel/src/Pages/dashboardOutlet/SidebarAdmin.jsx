@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux"; // ✅ correct import
 import {
   Box,
   List,
@@ -10,16 +11,21 @@ import {
   Typography,
   Divider,
   Collapse,
-  Avatar,
-  Stack,
   IconButton,
   Drawer,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import {
   Dashboard,
-  Logout,
+  Logout as LogoutIcon, // ✅ rename icon to avoid conflict
   Menu as MenuIcon,
   ExpandLess,
   ExpandMore,
@@ -27,9 +33,15 @@ import {
   AccountBalance,
 } from "@mui/icons-material";
 
+import { Logout } from "../../Redux/Slices/admin/authSlice.jsx"; // ✅ redux action
+import { PostApiCall } from "../../api/default/PostApi.jsx";
+import { Api } from "../../api/apiurl.jsx";
+
 const SidebarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch(); // ✅ correct usage
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -38,18 +50,33 @@ const SidebarAdmin = () => {
     brand: false,
     investor: false,
   });
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // ✅ loading state
 
-  const adminContact = localStorage.getItem("adminContact") || "Admin";
+  const { adminData } = useSelector((state) => state.admin);
 
   /** ---------- Handlers ---------- */
   const toggleMenu = (menu) =>
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminContact");
-    navigate("/admin/login");
-    if (isMobile) setDrawerOpen(false);
+  const handleLogoutConfirm = async () => {
+    setLoading(true); // ✅ show loader
+    setTimeout(async () => {
+      const res = await PostApiCall(
+        `${Api.admin.post.logout}/${adminData?.adminData?.uuid}`,
+        adminData?.adminAccessToken,
+        {}
+      );
+
+      if (res.data.success === true) {
+        dispatch(Logout());
+        navigate("/");
+      }
+
+      if (isMobile) setDrawerOpen(false);
+      setLogoutDialogOpen(false);
+      setLoading(false); // ✅ stop loader
+    }, 1000); // 1 second delay
   };
 
   const handleNavigation = (path) => {
@@ -88,6 +115,11 @@ const SidebarAdmin = () => {
         submenu: [
           { label: "Create Brand", path: "/dashboard/createbrand" },
           { label: "All Brands", path: "/dashboard/getallbrands" },
+          { label: "Instant Apply", path: "/dashboard/instantapply" },
+          {label:"Leads Management",path:"/dashboard/freeleadlist"},
+          {label:"Package Management",path:"/dashboard/packagemanagement"},
+          {label:"Industry Management",path:"/dashboard/industrymanagement"},
+          
         ],
       },
       {
@@ -116,16 +148,6 @@ const SidebarAdmin = () => {
         p: 2,
       }}
     >
-      {/* User Profile */}
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Avatar alt={adminContact} sx={{ bgcolor: "#4f46e5" }}>
-          {adminContact.charAt(0).toUpperCase()}
-        </Avatar>
-        <Typography variant="h6" fontWeight="bold">
-          {adminContact}
-        </Typography>
-      </Stack>
-
       <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 2 }} />
 
       {/* Menu Items */}
@@ -156,7 +178,11 @@ const SidebarAdmin = () => {
 
             {/* Submenu */}
             {menu.submenu && (
-              <Collapse in={openMenus[menu.toggleKey]} timeout="auto" unmountOnExit>
+              <Collapse
+                in={openMenus[menu.toggleKey]}
+                timeout="auto"
+                unmountOnExit
+              >
                 <List component="div" disablePadding>
                   {menu.submenu.map((sub, subIdx) => (
                     <ListItem disablePadding key={subIdx}>
@@ -179,9 +205,12 @@ const SidebarAdmin = () => {
       {/* Logout */}
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout} sx={menuItemStyle}>
+          <ListItemButton
+            onClick={() => setLogoutDialogOpen(true)}
+            sx={menuItemStyle}
+          >
             <ListItemIcon sx={{ color: "#fff" }}>
-              <Logout />
+              <LogoutIcon /> {/* ✅ fixed icon */}
             </ListItemIcon>
             <ListItemText primary="Logout" />
           </ListItemButton>
@@ -217,7 +246,10 @@ const SidebarAdmin = () => {
             </Typography>
             <IconButton
               onClick={() => setDrawerOpen(true)}
-              sx={{ color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
+              sx={{
+                color: "#fff",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -256,6 +288,39 @@ const SidebarAdmin = () => {
           {SidebarContent}
         </Box>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => (loading ? null : setLogoutDialogOpen(false))}
+      >
+        <DialogTitle>{"Confirm Logout"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to logout from the admin panel?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLogoutDialogOpen(false)}
+            color="inherit"
+            disabled={loading} // disable when loading
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleLogoutConfirm}
+            color="error"
+            variant="contained"
+            disabled={loading}
+            startIcon={
+              loading ? <CircularProgress size={18} color="inherit" /> : null
+            }
+          >
+            {loading ? "Logging out..." : "Logout"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

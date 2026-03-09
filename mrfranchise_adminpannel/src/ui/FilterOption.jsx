@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Box,
   FormControl,
@@ -7,199 +7,286 @@ import {
   MenuItem,
   TextField,
   Alert,
-  CircularProgress,
-  Grid
+  Grid,
+  Button,
+  Paper,
+  Typography,
+  IconButton,
+  Drawer,
 } from "@mui/material";
-import { categories as brandCategories } from "../Components/Brands/BrandLIstingRegister/BrandCategories"; 
+import FilterListIcon from "@mui/icons-material/FilterList";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import CloseIcon from "@mui/icons-material/Close";
 
 const FilterOption = ({
-  selectedCategory,
+  allDetails = [],
+  selectedMainCategory = "",
+  setSelectedMainCategory,
+  selectedSubCategory = "",
+  setSelectedSubCategory,
+  selectedCategory = "",
   setSelectedCategory,
-  selectedInvestmentRange,
+  selectedInvestmentRange = "",
   setSelectedInvestmentRange,
-  selectedLocation,
+  selectedLocation = "",
   setSelectedLocation,
-  startDate,
+  startDate = "",
   setStartDate,
-  endDate,
+  endDate = "",
   setEndDate,
+  selectedState = "",
+  setSelectedState,
   loading = false,
-  error = ""
+  error = "",
 }) => {
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedState, setSelectedState] = useState("");
-  const [internalLoading, setInternalLoading] = useState(false);
-  const [internalError, setInternalError] = useState("");
+  // State for Drawer visibility
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-   const categoryOptions = brandCategories.flatMap(cat =>
-    cat.children.flatMap(child => child.children)
-  );
-   const investmentRanges = [
-    "Below - 50,000",
-    "Rs. 50,000 - 2 L",
-    "Rs. 2 L - 5 L",
-    "Rs. 5 L - 10 L",
-    "Rs. 10 L - 20 L",
-    "Rs. 20 L - 30 L",
-    "Rs. 30 L - 50 L",
-    "Rs. 50 L - 1 Cr",
-    "Rs. 1 Cr - 2 Crs",
-    "Rs. 2 Crs - 5 Crs",
-    "Rs. 5 Crs - above",
-  ];
-
-  // Fetch countries
-  const fetchCountries = async () => {
-    try {
-      setInternalLoading(true);
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries');
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setCountries(data.data || []);
-      } else {
-        setInternalError("Failed to fetch countries");
-      }
-    } catch (err) {
-      setInternalError("Error fetching countries: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
-
-  // Fetch states based on selected country
-  const fetchStates = async (country) => {
-    try {
-      setInternalLoading(true);
-      setInternalError("");
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ country })
+  // Main Categories
+  const mainCategoryOptions = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat.main) {
+            const clean = cat.main.trim();
+            if (!unique.includes(clean)) unique.push(clean);
+          }
+        });
       });
-      
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setStates(data.data.states || []);
-      } else {
-        setInternalError("Failed to fetch states");
-      }
-    } catch (err) {
-      setInternalError("Error fetching states: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
+    });
+    return unique;
+  }, [allDetails]);
 
-  // Fetch cities based on selected country and state
-  const fetchCities = async (country, state) => {
-    try {
-      setInternalLoading(true);
-      setInternalError("");
-const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
-            method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ country, state })
+  // Sub Categories
+  const subCategoryOptions = useMemo(() => {
+    const unique = [];
+    if (!selectedMainCategory) return unique;
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat?.sub && cat.main?.trim() === selectedMainCategory.trim()) {
+            const clean = cat.sub.trim();
+            if (!unique.includes(clean)) unique.push(clean);
+          }
+        });
       });
-      
-      const data = await response.json();
-      
-      if (data.error === false) {
-        setCities(data.data || []);
-      } else {
-        setInternalError("Failed to fetch cities");
-      }
-    } catch (err) {
-      setInternalError("Error fetching cities: " + err.message);
-    } finally {
-      setInternalLoading(false);
-    }
-  };
+    });
+    return unique;
+  }, [allDetails, selectedMainCategory]);
 
-  const handleCountryChange = (e) => {
-    const country = e.target.value;
-    setSelectedCountry(country);
+  // Child Categories
+  const categoryOptions = useMemo(() => {
+    const unique = [];
+    if (!selectedSubCategory) return unique;
+    allDetails.forEach((detail) => {
+      detail?.preferences?.forEach((pref) => {
+        pref?.category?.forEach((cat) => {
+          if (cat?.child && cat.sub?.trim() === selectedSubCategory.trim()) {
+            const clean = cat.child.trim();
+            if (!unique.includes(clean)) unique.push(clean);
+          }
+        });
+      });
+    });
+    return unique;
+  }, [allDetails, selectedSubCategory]);
+
+  // Investment Ranges
+  const investmentRanges = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      const investment = detail?.preferences?.[0]?.investmentAmount?.trim();
+      if (investment && !unique.includes(investment)) {
+        unique.push(investment);
+      }
+    });
+    return unique;
+  }, [allDetails]);
+
+  // States
+  const states = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      const st =
+        (detail.state || detail.preferences?.[0]?.preferredState || "").trim();
+      if (st && !unique.includes(st)) {
+        unique.push(st);
+      }
+    });
+    return unique;
+  }, [allDetails]);
+
+  // Cities
+  const cities = useMemo(() => {
+    const unique = [];
+    allDetails.forEach((detail) => {
+      const st =
+        (detail.state || detail.preferences?.[0]?.preferredState || "").trim();
+      const ct =
+        (
+          detail.city ||
+          detail.preferences?.[0]?.preferredCity ||
+          detail.preferences?.[0]?.preferredDistrict ||
+          ""
+        ).trim();
+      if (
+        ct &&
+        (!selectedState || st === selectedState) &&
+        !unique.includes(ct)
+      ) {
+        unique.push(ct);
+      }
+    });
+    return unique;
+  }, [allDetails, selectedState]);
+
+  // Clear all filters handler
+  const handleClearFilters = () => {
+    setSelectedMainCategory("");
+    setSelectedSubCategory("");
+    setSelectedCategory("");
+    setSelectedInvestmentRange("");
     setSelectedState("");
     setSelectedLocation("");
-    setStates([]);
-    setCities([]);
-    
-    if (country) {
-      fetchStates(country);
-    }
+    setStartDate("");
+    setEndDate("");
+    setDrawerOpen(false); 
   };
 
-  const handleStateChange = (e) => {
-    const state = e.target.value;
-    setSelectedState(state);
-    setSelectedLocation("");
-    setCities([]);
-    
-    if (state && selectedCountry) {
-      fetchCities(selectedCountry, state);
-    }
-  };
-
-  const handleLocationChange = (e) => {
-    setSelectedLocation(e.target.value);
-  };
-
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
-  const isLoading = loading || internalLoading;
-  const hasError = error || internalError;
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {hasError && <Alert severity="error" sx={{ mb: 1 }}>{hasError}</Alert>}
-      
-      <Grid container spacing={2} alignItems="center">
-        {/* Category Filter */}
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth size="small" sx={{width:250}}>
-            <InputLabel>Category</InputLabel>
+  // Filter content to be reused in both mobile and desktop views
+  const filterContent = (
+    <Box sx={{ p: { xs: 2, sm: 0 } }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      <Grid container spacing={0.5} direction={{ xs: "column", sm: "row" }} wrap="wrap">
+        {/* Main Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+            mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small">
+            <InputLabel>Main Category</InputLabel>
             <Select
-              value={selectedCategory}
-              label="Category"
-              onChange={(e) => setSelectedCategory(e.target.value)}
-               MenuProps={{
-      PaperProps: {
-        sx: {
-
-          width: 340       
-        }
-      }
-    }} >
-              <MenuItem value="">All Categories</MenuItem>
-              {categoryOptions.map((subCategory, index) => (
-                <MenuItem key={index} value={subCategory}>{subCategory}</MenuItem>
+              value={selectedMainCategory}
+              onChange={(e) => {
+                setSelectedMainCategory(e.target.value);
+                setSelectedSubCategory("");
+                setSelectedCategory("");
+                setDrawerOpen(false);
+              }}
+              label="Main Category"
+            >
+              <MenuItem value="">All Main Categories</MenuItem>
+              {mainCategoryOptions.map((cat, i) => (
+                <MenuItem key={i} value={cat}>
+                  {cat}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
 
-        {/* Investment Range Filter */}
-        <Grid item xs={12} sm={6} md={2} sx={{width:250}}>
+        {/* Sub Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!subCategoryOptions.length}>
+            <InputLabel>Sub Category</InputLabel>
+            <Select
+              value={selectedSubCategory}
+              onChange={(e) => {
+                setSelectedSubCategory(e.target.value);
+                setSelectedCategory("");
+                setDrawerOpen(false); 
+              }}
+              label="Sub Category"
+            >
+              <MenuItem value="">All Sub Categories</MenuItem>
+              {subCategoryOptions.map((sub, i) => (
+                <MenuItem key={i} value={sub}>
+                  {sub}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Child Category */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!categoryOptions.length}>
+            <InputLabel>Child Category</InputLabel>
+            <Select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
+              label="Child Category"
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categoryOptions.map((cat, i) => (
+                <MenuItem key={i} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Investment Range */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <FormControl fullWidth size="small">
             <InputLabel>Investment Range</InputLabel>
             <Select
               value={selectedInvestmentRange}
+              onChange={(e) => {
+                setSelectedInvestmentRange(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
               label="Investment Range"
-              onChange={(e) => setSelectedInvestmentRange(e.target.value)}
             >
               <MenuItem value="">All Ranges</MenuItem>
-              {investmentRanges.map((range, index) => (
-                <MenuItem key={index} value={range}>
+              {investmentRanges.map((range, i) => (
+                <MenuItem key={i} value={range}>
                   {range}
                 </MenuItem>
               ))}
@@ -207,60 +294,65 @@ const response = await fetch('https://countriesnow.space/api/v0.1/countries/stat
           </FormControl>
         </Grid>
 
-        {/* Country Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Country</InputLabel>
-            <Select
-              value={selectedCountry}
-              label="Country"
-              onChange={handleCountryChange}
-              disabled={isLoading}
-            >
-              <MenuItem value="">Select Country</MenuItem>
-              {countries.map((country, index) => (
-                <MenuItem key={index} value={country.country}>
-                  {country.country}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {/* State Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
+        {/* State */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <FormControl fullWidth size="small">
             <InputLabel>State</InputLabel>
             <Select
               value={selectedState}
+              onChange={(e) => {
+                setSelectedState(e.target.value);
+                setSelectedLocation("");
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
               label="State"
-              onChange={handleStateChange}
-              disabled={!selectedCountry || isLoading}
             >
               <MenuItem value="">Select State</MenuItem>
-              {states.map((state, index) => (
-                <MenuItem key={index} value={state.name}>
-                  {state.name}
+              {states.map((st, i) => (
+                <MenuItem key={i} value={st}>
+                  {st}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
 
-        {/* City Filter */}
-        <Grid item xs={12} sm={6} md={2}sx={{width:250}}>
-          <FormControl fullWidth size="small">
+        {/* City */}
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
+          <FormControl fullWidth size="small" disabled={!cities.length}>
             <InputLabel>City</InputLabel>
             <Select
               value={selectedLocation}
+              onChange={(e) => {
+                setSelectedLocation(e.target.value);
+                setDrawerOpen(false); // Auto-close Drawer
+              }}
               label="City"
-              onChange={handleLocationChange}
-              disabled={!selectedState || isLoading}
             >
               <MenuItem value="">Select City</MenuItem>
-              {cities.map((city, index) => (
-                <MenuItem key={index} value={city}>
-                  {city}
+              {cities.map((ct, i) => (
+                <MenuItem key={i} value={ct}>
+                  {ct}
                 </MenuItem>
               ))}
             </Select>
@@ -268,46 +360,173 @@ const response = await fetch('https://countriesnow.space/api/v0.1/countries/stat
         </Grid>
 
         {/* Start Date */}
-        <Grid item xs={12} sm={6} md={3}sx={{width:250}}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 2, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <TextField
+            fullWidth
             label="Start Date"
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            placeholder='YYYY-MM-DD'
-            inputProps={{
-              pattern: "\\d{4}-\\d{2}-\\d{2}"
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setDrawerOpen(false); 
             }}
             InputLabelProps={{ shrink: true }}
-            fullWidth
             size="small"
           />
         </Grid>
 
         {/* End Date */}
-        <Grid item xs={12} sm={6} md={3} sx={{width:250}}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          md={3}
+          sx={{
+             mb: { xs: 1, sm: 0 },
+            width: { xs: "100%", sm: "50%", md: "25%", lg: "12%" },
+            [theme => theme.breakpoints.down("sm")]: { mb: 1 },
+          }}
+        >
           <TextField
+            fullWidth
             label="End Date"
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-             placeholder="YYYY-MM-DD"
-  inputProps={{
-    pattern: "\\d{4}-\\d{2}-\\d{2}" 
-  }}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setDrawerOpen(false); // Auto-close Drawer
+            }}
             InputLabelProps={{ shrink: true }}
-            fullWidth
             size="small"
           />
         </Grid>
       </Grid>
-
-      {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-          <CircularProgress size={24} />
-        </Box>
-      )}
+      
+      {/* Clear Filters Button - Now part of filterContent */}
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          justifyContent: "flex-end",
+          [theme => theme.breakpoints.down("sm")]: {
+            justifyContent: "center",
+            mb: 1
+          }
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleClearFilters}
+          startIcon={<SearchOffIcon />}
+          sx={{ textTransform: "none" }}
+        >
+          Clear Filters
+        </Button>
+      </Box>
     </Box>
+  );
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: { xs: "flex", sm: "none" },
+          alignItems: "center",
+          justifyContent: "flex-start",
+          mb: 2,
+          p: 2,
+          background: "#f9fafb",
+          borderRadius: 3,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => setDrawerOpen(true)}
+          startIcon={<FilterListIcon />}
+          sx={{ textTransform: "none" }}
+        >
+          Filter
+        </Button>
+      </Box>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{
+          display: { xs: "block", sm: "none" },
+          "& .MuiDrawer-paper": {
+            width: "80%",
+            maxWidth: 300,
+            p: 2,
+            background: "#f9fafb",
+            borderRadius: "0 8px 8px 0",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Filters
+          </Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+         <Typography
+    variant="h6"
+    sx={{
+      fontWeight: 600,
+      mb: 2,
+      display: "flex",
+      alignItems: "center",
+      gap: 1,
+    }}
+  >
+    <FilterListIcon fontSize="medium" color="primary" />
+    Filter
+  </Typography>
+        {filterContent}
+      </Drawer>
+      <Paper
+        elevation={2}
+        sx={{
+          display: { xs: "none", sm: "block" },
+          p: 2,
+          borderRadius: 3,
+          mt: 2,
+          background: "#f9fafb",
+        }}
+      >
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FilterListIcon fontSize="medium" color="primary" />
+            Filter
+          </Box>
+        </Typography>
+        {filterContent}
+      </Paper>
+    </>
   );
 };
 

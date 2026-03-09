@@ -1,6 +1,7 @@
 import { Box, CssBaseline, useMediaQuery } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import SidebarAdmin from './SidebarAdmin';
+import Notifications from '../../Components/Dashboard/NotificationDrawer';
 
 function MainPageDashboard() {
   const isMobile = useMediaQuery('(max-width:900px)');  
@@ -25,6 +26,7 @@ function MainPageDashboard() {
       >
         <Outlet />
       </Box>
+      <Notifications />
     </Box>
   );
 }
