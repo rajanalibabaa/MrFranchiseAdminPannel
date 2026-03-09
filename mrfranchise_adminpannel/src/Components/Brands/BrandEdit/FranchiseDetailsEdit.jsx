@@ -71,7 +71,7 @@ const FranchiseDetailsEdit = ({
   ];
 
 
-  console.log("")
+  // console.log("")
 
   // State for API data
   const [industries, setIndustries] = useState([]);

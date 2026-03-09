@@ -34,9 +34,9 @@ const flattenBrandData = (brandDoc) => {
     const franchiseDetails = brandDoc.franchiseDetails || {};
   const franchiseTagsFromAPI = franchiseDetails.franchiseTags || {};
   
-  console.log("=== FLATTEN DEBUG ===");
-  console.log("Original franchiseTags:", franchiseTagsFromAPI);
-  console.log("Type:", typeof franchiseTagsFromAPI);
+  // console.log("=== FLATTEN DEBUG ===");
+  // console.log("Original franchiseTags:", franchiseTagsFromAPI);
+  // console.log("Type:", typeof franchiseTagsFromAPI);
 
     const ficoData = Array.isArray(franchiseDetails.fico) ? franchiseDetails.fico : [];
 
@@ -117,14 +117,14 @@ const BrandListingEdit = () => {
                localStorage.getItem("brandUUID") || 
                localStorage.getItem("investorUUID");
 
-  console.log("🔍 UUID from different sources:", {
-    params: params?.uuid,
-    location: location?.state?.uuid,
-    searchParams: searchParams.get("uuid"),
-    localStorageBrand: localStorage.getItem("brandUUID"),
-    localStorageInvestor: localStorage.getItem("investorUUID"),
-    finalUUID: uuid
-  });
+  // console.log("🔍 UUID from different sources:", {
+  //   params: params?.uuid,
+  //   location: location?.state?.uuid,
+  //   searchParams: searchParams.get("uuid"),
+  //   localStorageBrand: localStorage.getItem("brandUUID"),
+  //   localStorageInvestor: localStorage.getItem("investorUUID"),
+  //   finalUUID: uuid
+  // });
 
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
@@ -212,7 +212,7 @@ const BrandListingEdit = () => {
         const response = await getApi(url);
         const brand = response?.data?.data;
 
-        console.log("Fetched brand data:", brand);
+        // console.log("Fetched brand data:", brand);
 
         if (response.data.success) {
           const flatData = flattenBrandData(brand);
@@ -233,6 +233,8 @@ const BrandListingEdit = () => {
   }, [uuid]);
 
   const handleFormChange = (field, value) => {
+    // console.log("field :",field)
+    // console.log("value :",value)
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -425,10 +427,7 @@ const BrandListingEdit = () => {
   // };
 
   const handleSave = async () => {
-  console.log("💾 Save attempted with UUID:", uuid);
   console.log("💾 FormData being saved:", formData);
-  console.log("💾 FICO data being saved:", formData.fico);
-  console.log("💾 Franchise tags being saved:", formData.franchiseTags);
       if (!uuid) {
       setSaveStatus({
         loading: false,
@@ -456,7 +455,7 @@ const BrandListingEdit = () => {
       BusinessOperations: formData.franchiseTags?.BusinessOperations || [],
     };
 
-    console.log("💾 Final franchiseTags for backend:", franchiseTagsForBackend);
+    // console.log("💾 Final franchiseTags for backend:", franchiseTagsForBackend);
       // Prepare the data structure that matches the backend expectation
       const updateData = {
         brandDetails: {
@@ -499,6 +498,8 @@ const BrandListingEdit = () => {
           fico: formData.fico || [],
           uniqueSellingPoints: formData.uniqueSellingPoints,
           franchiseTags: franchiseTagsForBackend,
+          trainingSupport:formData?.trainingSupport || []
+
         },
       };
 
@@ -523,6 +524,7 @@ const BrandListingEdit = () => {
         "isInternationalExpansion",
         formData.isInternationalExpansion
       );
+
           console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
 
 
