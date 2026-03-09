@@ -1,5 +1,4 @@
-import React from "react";
-import {
+import React, { useState, useEffect, useCallback } from "react";import {
   Grid,
   TextField,
   Radio,
@@ -48,8 +47,8 @@ const InvestorRegisterPreferences = ({
   setSelectedMainCategory,
   selectedSubCategory,
   setSelectedSubCategory,
-  selectedChild,
-  setSelectedChild,
+  // selectedChild,
+  // setSelectedChild,
   selectedCategories,
   setSelectedCategories,
   categories,
@@ -61,97 +60,213 @@ const InvestorRegisterPreferences = ({
   intlCountries,
   intlStates,
   intlCities,
-  propertyCountries,
-  propertyStates,
-  propertyCities,
-  propertyCountry,
-  propertyState,
+  // propertyCountries,
+  // propertyStates,
+  // propertyCities,
+  // propertyCountry,
+  // propertyState,
 }) => {
   const preferredLocationType = watch("preferredLocationType");
   const preferredStateValue = watch("preferredState");
   const preferredDistrictValue = watch("preferredDistrict");
   const propertyTypeValue = watch("propertyType");
-
-  const handleAddPreference = () => {
-    const propertyType = watch("propertyType");
-    const isOwnProperty = propertyType === "Own Property";
-
-    const pref = {
-      category: selectedCategories,
-      investmentRange: watch("investmentRange"),
-      investmentAmount: watch("investmentAmount"),
-      preferredState: watch("preferredState"),
-      preferredDistrict: watch("preferredDistrict"),
-      // preferredCity: watch("preferredCity"),
-      propertyType,
-      locationType: watch("preferredLocationType"),
-      ...(isOwnProperty && {
-        propertySize: watch("propertySize"),
-        propertyCountry: watch("propertyCountry"),
-        propertyState: watch("propertyState"),
-        propertyCity: watch("propertyCity"),
-      }),
-    };
-
-    if (
-      !pref.category.length ||
-      !pref.investmentRange ||
-      !pref.investmentAmount ||
-      !pref.preferredState ||
-      !pref.preferredDistrict ||
-      // !pref.preferredCity ||
-      !pref.propertyType ||
-      !pref.propertyType ||
-      (isOwnProperty &&
-        (!pref.propertySize ||
-          !pref.propertyCountry ||
-          !pref.propertyState ||
-          !pref.propertyCity))
-    ) {
-      showSnackbar("Please fill all preference fields before adding.", "error");
-      return;
+  const [propertyCountries, setPropertyCountries] = useState([]);
+const [propertyStates, setPropertyStates] = useState([]);
+const [propertyCities, setPropertyCities] = useState([]);
+// Add these useEffect hooks inside your component
+useEffect(() => {
+  // Fetch countries on component mount
+  const fetchCountries = async () => {
+    try {
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries/positions");
+      const data = await response.json();
+      if (data.data) {
+        setPropertyCountries(data.data.map((c) => c.name));
+      }
+    } catch (error) {
+      console.error("Error fetching countries:", error);
+      // You might want to show an error notification here
     }
+  };
+  
+  fetchCountries();
+}, []);
 
-    setPreferences([...preferences, pref]);
-    setValue("investmentRange", "");
-    setValue("investmentAmount", "");
-    setValue("preferredState", "");
-    setValue("preferredDistrict", "");
-if (preferredLocationType === "international") {
-      setValue("preferredCity", ""); // Only clear city for international
-    }    
-    setValue("preferredLocationType", "");
-    setValue("propertyType", "");
-    setValue("propertySize", "");
-    setValue("propertyCountry", "");
+// Add this function inside your component
+const fetchPropertyStates = useCallback(async (country) => {
+  if (!country || watch("propertyType") !== "Own Property") {
+    setPropertyStates([]);
+    setPropertyCities([]);
+    return;
+  }
+  
+  try {
+    const response = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country: country.trim() }),
+    });
+    const data = await response.json();
+    if (data.data && data.data.states) {
+      setPropertyStates(data.data.states.map((s) => s.name));
+    } else {
+      setPropertyStates([]);
+    }
+    // Clear cities when states are fetched
+    setPropertyCities([]);
+  } catch (error) {
+    console.error("Error fetching states:", error);
+    setPropertyStates([]);
+  }
+}, [watch]);
+
+// Add this useEffect to fetch states when propertyCountry changes
+useEffect(() => {
+  const country = watch("propertyCountry");
+  if (country && watch("propertyType") === "Own Property") {
+    fetchPropertyStates(country);
+    // Clear state and city when country changes
     setValue("propertyState", "");
     setValue("propertyCity", "");
-    setSelectedCategories([]);
-    setValue("category", []);
-    setSelectedCategories([]);
-    setSelectedMainCategory("");
-    setSelectedSubCategory("");
-    setSelectedChild("");
-    clearErrors([
-      "preferredState",
-      "preferredDistrict",
-     ...(preferredLocationType === "international" ? ["preferredCity"] : []), // Only clear city errors for international      "propertyType",
-      "propertySize",
-      "investmentRange",
-      "investmentAmount",
-      "category",
-      "propertyCountry",
-      "propertyState",
-      "propertyCity",
-    ]);
-    showSnackbar("Preference added!", "success");
-    setTimeout(() => {
-      showSnackbar(
-        "Add Multiple preferences to get more offers from us!",
-        "info"
-      );
-    }, 2000);
+  }
+}, [watch("propertyCountry"), watch("propertyType"), setValue, fetchPropertyStates]);
+
+// Add this function to fetch cities
+const fetchPropertyCities = useCallback(async (country, state) => {
+  if (!country || !state || watch("propertyType") !== "Own Property") {
+    setPropertyCities([]);
+    return;
+  }
+  
+  try {
+    const response = await fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        country: country.trim(), 
+        state: state.trim() 
+      }),
+    });
+    const data = await response.json();
+    if (data.data) {
+      setPropertyCities(data.data);
+    } else {
+      setPropertyCities([]);
+    }
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    setPropertyCities([]);
+  }
+}, [watch]);
+
+// Add this useEffect to fetch cities when propertyState changes
+useEffect(() => {
+  const country = watch("propertyCountry");
+  const state = watch("propertyState");
+  if (country && state && watch("propertyType") === "Own Property") {
+    fetchPropertyCities(country, state);
+  }
+}, [watch("propertyState"), watch("propertyType"), watch("propertyCountry"), fetchPropertyCities]);
+
+const handleAddPreference = () => {
+  // ---------- 1️⃣ Grab values ----------
+  const propertyType = watch('propertyType') ?? '';
+  const isOwnProperty = propertyType === 'Own Property';
+
+  // ---------- 2️⃣ Build pref object ----------
+  const pref = {
+    category: selectedCategories,
+    investmentRange: watch('investmentRange') ?? '',
+    investmentAmount: watch('investmentAmount') ?? '',
+    preferredState: watch('preferredState') ?? '',
+    preferredDistrict: watch('preferredDistrict') ?? '',
+    propertyType,
+    locationType: watch('preferredLocationType') ?? '',
+    ...(isOwnProperty && {
+      propertySize: watch('propertySize') ?? '',
+      propertyCountry: watch('propertyCountry') ?? '',
+      propertyState: watch('propertyState') ?? '',
+      propertyCity: watch('propertyCity') ?? '',
+    }),
   };
+
+  // ---------- 3️⃣ Validation (inline) ----------
+  const missing = [];
+
+  if (!pref.category?.length) missing.push('category');
+  if (!pref.investmentRange) missing.push('investmentRange');
+  if (!pref.investmentAmount) missing.push('investmentAmount');
+  if (!pref.preferredState) missing.push('preferredState');
+  if (!pref.preferredDistrict) missing.push('preferredDistrict');
+
+  if (pref.preferredLocationType === 'international' && !pref.preferredCity)
+    missing.push('preferredCity');
+
+  if (!pref.propertyType) missing.push('propertyType');
+
+  if (isOwnProperty) {
+    if (!pref.propertySize) missing.push('propertySize');
+    if (!pref.propertyCountry) missing.push('propertyCountry');
+    if (!pref.propertyState) missing.push('propertyState');
+    if (!pref.propertyCity) missing.push('propertyCity');
+  }
+
+  if (missing.length) {
+    const missingList = missing.join(', ');
+    showSnackbar(
+      `Please fill all preference fields before adding. Missing: ${missingList}`,
+      'error'
+    );
+    return;
+  }
+  // ----------- 2️⃣ Persist the preference ------------------------------------
+  setPreferences([...preferences, pref]);
+
+  // ----------- 3️⃣ Reset the form (keep your original resetting logic) -------
+  setValue('investmentRange', '');
+  setValue('investmentAmount', '');
+  setValue('preferredState', '');
+  setValue('preferredDistrict', '');
+  if (preferredLocationType === 'international') {
+    setValue('preferredCity', '');
+  }
+  setValue('preferredLocationType', '');
+  setValue('propertyType', '');
+  setValue('propertySize', '');
+  setValue('propertyCountry', '');
+  setValue('propertyState', '');
+  setValue('propertyCity', '');
+
+  setSelectedCategories([]);
+  setValue('category', []); // <-- if you also keep a separate "category" field
+  setSelectedMainCategory('');
+  setSelectedSubCategory('');
+
+  clearErrors([
+    'preferredState',
+    'preferredDistrict',
+    // Remove city error only for international location
+    ...(preferredLocationType === 'international' ? ['preferredCity'] : []),
+    'propertyType',
+    'propertySize',
+    'investmentRange',
+    'investmentAmount',
+    'category',
+    'propertyCountry',
+    'propertyState',
+    'propertyCity',
+  ]);
+
+  showSnackbar('Preference added!', 'success');
+
+  // Optional “info” follow‑up after 2 seconds
+  setTimeout(() => {
+    showSnackbar(
+      'Add Multiple preferences to get more offers from us!',
+      'info'
+    );
+  }, 2000);
+};
 
   const handleRemovePreference = (idx) => {
     if (window.confirm("Are you sure you want to remove this preference?")) {
@@ -165,7 +280,7 @@ if (preferredLocationType === "international") {
       const selectedCat = pref.category[0];
       setSelectedMainCategory(selectedCat.main || "");
       setSelectedSubCategory(selectedCat.sub || "");
-      setSelectedChild(selectedCat.child || "");
+      // setSelectedChild(selectedCat.child || "");
       setSelectedCategories(pref.category);
       setValue("category", pref.category);
     }
@@ -239,7 +354,7 @@ if (preferredLocationType === "international") {
           spacing={2}
           sx={{
             display: "grid",
-            gridTemplateColumns: { md: "repeat(3, 1fr)", xs: "1fr" },
+            gridTemplateColumns: { md: "repeat(2, 1fr)", xs: "1fr" },
             gap: 2,
           }}
         >
@@ -251,7 +366,7 @@ if (preferredLocationType === "international") {
               onChange={(e) => {
                 setSelectedMainCategory(e.target.value);
                 setSelectedSubCategory("");
-                setSelectedChild("");
+            setSelectedCategories([]);
               }}
               label="Industry"
               sx={{ borderRadius: "8px" }}
@@ -275,8 +390,18 @@ if (preferredLocationType === "international") {
             <Select
               value={selectedSubCategory || ""}
               onChange={(e) => {
+                                const selectedSubCat = e.target.value;
                 setSelectedSubCategory(e.target.value);
-                setSelectedChild("");
+                // setSelectedChild("");
+                  if (selectedMainCategory && selectedSubCat) {
+        const newCategory = {
+          main: selectedMainCategory,
+          sub: selectedSubCat,
+        };
+        
+        // Clear any existing categories and add the new one
+        setSelectedCategories([newCategory]);
+      }
               }}
               label="Main category"
               sx={{ borderRadius: "8px" }}
@@ -294,7 +419,7 @@ if (preferredLocationType === "international") {
           </FormControl>
 
           {/* Child Item Dropdown */}
-          <FormControl
+          {/* <FormControl
             fullWidth
             sx={{ minWidth: 120 }}
             disabled={!selectedSubCategory}
@@ -310,7 +435,7 @@ if (preferredLocationType === "international") {
                   const newCategory = {
                     main: selectedMainCategory,
                     sub: selectedSubCategory,
-                    child: selected,
+                    // child: selected,
                   };
 
                   setSelectedCategories((prev) => {
@@ -339,7 +464,7 @@ if (preferredLocationType === "international") {
                     </MenuItem>
                   ))}
             </Select>
-          </FormControl>
+          </FormControl> */}
         </Grid>
       </Box>
 
@@ -761,107 +886,109 @@ if (preferredLocationType === "international") {
             }}
           >
             <Grid item xs={12} md={4}>
-              <Controller
-                name="propertyCountry"
-                control={control}
-                rules={{ required: "Country is required" }}
-                render={({ field }) => (
-                  <Autocomplete
-                    freeSolo
-                    options={propertyCountries}
-                    value={field.value || ""}
-                    onChange={(_, newValue) => {
-                      field.onChange(newValue || "");
-                      setValue("propertyState", "");
-                      setValue("propertyCity", "");
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Property Country"
-                        error={!!errors.propertyCountry}
-                        helperText={errors.propertyCountry?.message}
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
+             <Controller
+  name="propertyCountry"
+  control={control}
+  rules={{ required: "Country is required" }}
+  render={({ field }) => (
+    <Autocomplete
+      freeSolo
+      options={propertyCountries}
+      value={field.value || ""}
+      onChange={(_, newValue) => {
+        field.onChange(newValue || "");
+        // Clear dependent fields
+        setValue("propertyState", "");
+        setValue("propertyCity", "");
+        // Clear states and cities when country changes
+        setPropertyStates([]);
+        setPropertyCities([]);
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Property Country"
+          error={!!errors.propertyCountry}
+          helperText={errors.propertyCountry?.message}
+          fullWidth
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "8px",
+            },
+          }}
+        />
+      )}
+    />
+  )}
+/>
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Controller
-                name="propertyState"
-                control={control}
-                rules={{ required: "State is required" }}
-                render={({ field }) => (
-                  <Autocomplete
-                    freeSolo
-                    options={propertyStates}
-                    value={field.value || ""}
-                    onChange={(_, newValue) => {
-                      field.onChange(newValue || "");
-                      setValue("propertyCity", "");
-                    }}
-                    disabled={!watch("propertyCountry")}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Property State"
-                        error={!!errors.propertyState}
-                        helperText={errors.propertyState?.message}
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
+             <Controller
+  name="propertyState"
+  control={control}
+  rules={{ required: "State is required" }}
+  render={({ field }) => (
+    <Autocomplete
+      freeSolo
+      options={propertyStates}
+      value={field.value || ""}
+      onChange={(_, newValue) => {
+        field.onChange(newValue || "");
+        setValue("propertyCity", "");
+      }}
+      disabled={!watch("propertyCountry")}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Property State"
+          error={!!errors.propertyState}
+          helperText={errors.propertyState?.message}
+          fullWidth
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "8px",
+            },
+          }}
+        />
+      )}
+    />
+  )}
+/>
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Controller
-                name="propertyCity"
-                control={control}
-                rules={{ required: "City is required" }}
-                render={({ field }) => (
-                  <Autocomplete
-                    freeSolo
-                    options={propertyCities}
-                    value={field.value || ""}
-                    onChange={(_, newValue) =>
-                      field.onChange(newValue || "")
-                    }
-                    disabled={!watch("propertyState")}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Property City"
-                        error={!!errors.propertyCity}
-                        helperText={errors.propertyCity?.message}
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
+             <Controller
+  name="propertyCity"
+  control={control}
+  rules={{ required: "City is required" }}
+  render={({ field }) => (
+    <Autocomplete
+      freeSolo
+      options={propertyCities}
+      value={field.value || ""}
+      onChange={(_, newValue) => field.onChange(newValue || "")}
+      disabled={!watch("propertyState")}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Property City"
+          error={!!errors.propertyCity}
+          helperText={errors.propertyCity?.message}
+          fullWidth
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "8px",
+            },
+          }}
+        />
+      )}
+    />
+  )}
+/>
             </Grid>
           </Grid>
         )}
@@ -936,9 +1063,9 @@ if (preferredLocationType === "international") {
                   <TableCell sx={{ color: "primary.contrastText" }}>
                     Main Category
                   </TableCell>
-                  <TableCell sx={{ color: "primary.contrastText" }}>
+                  {/* <TableCell sx={{ color: "primary.contrastText" }}>
                     Sub Category
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell sx={{ color: "primary.contrastText" }}>
                     Investment Range
                   </TableCell>
@@ -948,9 +1075,9 @@ if (preferredLocationType === "international") {
                   <TableCell sx={{ color: "primary.contrastText" }}>
                     Preferred District
                   </TableCell>
-                  <TableCell sx={{ color: "primary.contrastText" }}>
+                  {/* <TableCell sx={{ color: "primary.contrastText" }}>
                     Preferred City
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell sx={{ color: "primary.contrastText" }}>
                     Property Country
                   </TableCell>
@@ -1002,7 +1129,7 @@ if (preferredLocationType === "international") {
                         <Typography key={i}>{cat.sub}</Typography>
                       ))}
                     </TableCell>
-                    <TableCell
+                    {/* <TableCell
                       sx={{
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -1013,7 +1140,7 @@ if (preferredLocationType === "international") {
                       {pref.category?.map((cat, i) => (
                         <Typography key={i}>{cat.child}</Typography>
                       ))}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell
                       sx={{
                         whiteSpace: "nowrap",
@@ -1044,7 +1171,7 @@ if (preferredLocationType === "international") {
                     >
                       <Typography>{pref.preferredDistrict}</Typography>
                     </TableCell>
-                    <TableCell
+                    {/* <TableCell
                       sx={{
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -1053,7 +1180,7 @@ if (preferredLocationType === "international") {
                       }}
                     >
                       <Typography>{pref.preferredCity}</Typography>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell
                       sx={{
                         whiteSpace: "nowrap",

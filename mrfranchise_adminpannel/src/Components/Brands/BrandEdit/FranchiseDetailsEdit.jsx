@@ -158,7 +158,7 @@ const FranchiseDetailsEdit = ({
   const fetchIndustryDetails = async (industryName) => {
     // if (!industryName) return;
     const  industry =  industryName || data.brandCategories.main
-    console.log("industry",industry)
+    // console.log("industry",industry)
  
     try {
       setLoadingIndustryDetails(true);
