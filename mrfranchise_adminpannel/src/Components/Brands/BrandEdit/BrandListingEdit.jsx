@@ -233,6 +233,8 @@ const BrandListingEdit = () => {
   }, [uuid]);
 
   const handleFormChange = (field, value) => {
+    // console.log("field :",field)
+    // console.log("value :",value)
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -425,10 +427,10 @@ const BrandListingEdit = () => {
   // };
 
   const handleSave = async () => {
-  // console.log("💾 Save attempted with UUID:", uuid);
-  // console.log("💾 FormData being saved:", formData);
-  // console.log("💾 FICO data being saved:", formData.fico);
-  // console.log("💾 Franchise tags being saved:", formData.franchiseTags);
+  console.log("💾 Save attempted with UUID:", uuid);
+  console.log("💾 FormData being saved:", formData);
+  console.log("💾 FICO data being saved:", formData.fico);
+  console.log("💾 Franchise tags being saved:", formData.franchiseTags);
       if (!uuid) {
       setSaveStatus({
         loading: false,
@@ -499,6 +501,8 @@ const BrandListingEdit = () => {
           fico: formData.fico || [],
           uniqueSellingPoints: formData.uniqueSellingPoints,
           franchiseTags: franchiseTagsForBackend,
+          trainingSupport:formData?.trainingSupport || []
+
         },
       };
 
@@ -523,7 +527,7 @@ const BrandListingEdit = () => {
         "isInternationalExpansion",
         formData.isInternationalExpansion
       );
-          // console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
+          console.log("Saving franchiseTags:", updateData.franchiseDetails.franchiseTags);
 
 
       // First update the brand details

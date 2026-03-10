@@ -879,10 +879,15 @@ const ExpansionLocationEdit = ({ data = {}, onChange, onAddRemoveChange, errors 
 
   const handleInternationalExpansionChange = useCallback(
     (value) => {
+
+      console.log("handleInternationalExpansionChange :",value)
       const newValue = value === data?.isInternationalExpansion ? null : value;
       if (typeof onChange === "function") {
         onChange("isInternationalExpansion", newValue);
       }
+
+      console.log("newValue :",newValue);
+      
     },
     [data, onChange]
   );
