@@ -41,6 +41,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
+  Snackbar
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Delete as DeleteIcon, Edit as EditIcon, InfoOutlined, ExpandMore, ExpandLess } from "@mui/icons-material";
@@ -69,9 +71,6 @@ const FranchiseDetailsEdit = ({
     { value: "Lakhs", label: "Lakhs" },
     { value: "No Fee", label: "No Fee" },
   ];
-
-
-  // console.log("")
 
   // State for API data
   const [industries, setIndustries] = useState([]);
@@ -118,6 +117,10 @@ const FranchiseDetailsEdit = ({
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [currentUSP, setCurrentUSP] = useState("");
   
+  // USP validation state
+  const [uspError, setUspError] = useState("");
+  const [showUspSuccess, setShowUspSuccess] = useState(false);
+  
   // States for product and service tags
   const [showSelectedBar, setShowSelectedBar] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -156,9 +159,7 @@ const FranchiseDetailsEdit = ({
 
   // Fetch industry details when an industry is selected
   const fetchIndustryDetails = async (industryName) => {
-    // if (!industryName) return;
-    const  industry =  industryName || data.brandCategories.main
-    // console.log("industry",industry)
+    const industry = industryName || data.brandCategories?.main;
  
     try {
       setLoadingIndustryDetails(true);
@@ -731,29 +732,75 @@ const FranchiseDetailsEdit = ({
     setServiceTagDrawerOpen(false);
   };
 
-  // Handlers for USP and description
+  // Handlers for USP and description - FIXED VERSION
   const handleDescriptionChange = (e) => {
     onChange("brandDescription", e.target.value);
   };
 
   const handleAddUSP = () => {
+    // Clear any previous errors
+    setUspError("");
+    
+    // Trim the input
     const trimmedUSP = currentUSP.trim();
-    if (!trimmedUSP) return;
-    const existingUSPs = (data.uniqueSellingPoints || []).map((usp) =>
-      usp.toLowerCase().trim()
-    );
-    if (existingUSPs.includes(trimmedUSP.toLowerCase())) {
+    
+    // Validation
+    if (!trimmedUSP) {
+      setUspError("Please enter a unique selling point");
       return;
     }
+    
+    // Check minimum length
+    if (trimmedUSP.length < 3) {
+      setUspError("USP must be at least 3 characters long");
+      return;
+    }
+    
+    // Check for duplicates (case insensitive)
+    const existingUSPs = (data.uniqueSellingPoints || []).map(
+      (usp) => usp.toLowerCase().trim()
+    );
+    
+    if (existingUSPs.includes(trimmedUSP.toLowerCase())) {
+      setUspError("This USP already exists");
+      return;
+    }
+    
+    // Add the new USP
     const updatedUSPs = [...(data.uniqueSellingPoints || []), trimmedUSP];
     onArrayChange("uniqueSellingPoints", updatedUSPs);
+    
+    // Clear input and show success message
     setCurrentUSP("");
+    setUspError("");
+    setShowUspSuccess(true);
+    
+    // Auto-hide success message after 3 seconds
+    setTimeout(() => {
+      setShowUspSuccess(false);
+    }, 3000);
   };
 
-  const handleRemoveUSP = (index) => {
-    const updatedUSPs = [...(data.uniqueSellingPoints || [])];
-    updatedUSPs.splice(index, 1);
+  const handleRemoveUSP = (indexToRemove) => {
+    // Create a new array without the item at the specified index
+    const currentUSPs = data.uniqueSellingPoints || [];
+    const updatedUSPs = currentUSPs.filter((_, index) => index !== indexToRemove);
+    
+    // Update the parent component
     onArrayChange("uniqueSellingPoints", updatedUSPs);
+    
+    // Optional: Show success message for deletion
+    setShowUspSuccess(true);
+    setTimeout(() => {
+      setShowUspSuccess(false);
+    }, 3000);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddUSP();
+    }
   };
 
   const handleTrainingSupportChange = (option, checked) => {
@@ -770,6 +817,22 @@ const FranchiseDetailsEdit = ({
 
   return (
     <Box sx={{ pr: 1, mr: { sm: 0, md: 10 }, ml: { sm: 0, md: 10 } }}>
+      {/* Success Snackbar */}
+      <Snackbar
+        open={showUspSuccess}
+        autoHideDuration={3000}
+        onClose={() => setShowUspSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setShowUspSuccess(false)} 
+          severity="success" 
+          sx={{ width: '100%' }}
+        >
+          USP updated successfully!
+        </Alert>
+      </Snackbar>
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={confirmDeleteOpen}
@@ -2368,6 +2431,7 @@ const FranchiseDetailsEdit = ({
         </Grid>
       </Grid>
 
+      {/* Brand Description Section - FIXED USP SECTION */}
       <Grid item xs={12}>
         <Typography variant="h6" color="#ff9800" sx={{ mb: 2, mt: 4, fontWeight: "bold" }}>
           Brand Description
@@ -2407,29 +2471,26 @@ const FranchiseDetailsEdit = ({
                 </Typography>
               )}
           </Typography>
-          {/* USP Input and Add Button */}
+          
+          {/* USP Input and Add Button - Only show when editing */}
           {isEditing && (
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                value={currentUSP}
-                onChange={(e) => setCurrentUSP(e.target.value)}
-                placeholder="Add a unique selling point"
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddUSP();
-                  }
-                }}
-                error={!!errors.uniqueSellingPoints}
-                helperText={
-                  errors.uniqueSellingPoints &&
-                  typeof errors.uniqueSellingPoints === "string"
-                    ? errors.uniqueSellingPoints
-                    : null
-                }
-              />
+            <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  value={currentUSP}
+                  onChange={(e) => {
+                    setCurrentUSP(e.target.value);
+                    setUspError(""); // Clear error when user types
+                  }}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Add a unique selling point"
+                  error={!!uspError}
+                  helperText={uspError}
+                  size="medium"
+                />
+              </Box>
               <Button
                 variant="contained"
                 onClick={handleAddUSP}
@@ -2438,24 +2499,26 @@ const FranchiseDetailsEdit = ({
                   backgroundColor: "#7ad03a",
                   color: "white",
                   "&:hover": { backgroundColor: "#388e3c" },
-                  py: 2,
+                  py: 1.5,
                   px: 6,
+                  minWidth: "120px",
                 }}
               >
                 Add
               </Button>
             </Box>
           )}
+          
           {/* Display added USPs */}
-          {data.uniqueSellingPoints?.length > 0 && (
+          {data.uniqueSellingPoints?.length > 0 ? (
             <Paper sx={{ p: 2, mb: 3, border: "1px solid #e0e0e0" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
-                Added USPs:
+                Added USPs ({data.uniqueSellingPoints.length}):
               </Typography>
               <List dense sx={{ maxHeight: 200, overflow: "auto" }}>
                 {data.uniqueSellingPoints.map((usp, index) => (
                   <ListItem
-                    key={index}
+                    key={`${index}-${usp}`}
                     secondaryAction={
                       isEditing && (
                         <IconButton
@@ -2463,8 +2526,14 @@ const FranchiseDetailsEdit = ({
                           aria-label="delete"
                           onClick={() => handleRemoveUSP(index)}
                           size="small"
+                          sx={{
+                            color: 'error.main',
+                            '&:hover': {
+                              backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                            }
+                          }}
                         >
-                          <DeleteIcon fontSize="small" color="error" />
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       )
                     }
@@ -2472,6 +2541,9 @@ const FranchiseDetailsEdit = ({
                       py: 0.5,
                       borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
                       "&:last-child": { borderBottom: "none" },
+                      '&:hover': {
+                        backgroundColor: isEditing ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      }
                     }}
                   >
                     <ListItemText
@@ -2482,8 +2554,16 @@ const FranchiseDetailsEdit = ({
                 ))}
               </List>
             </Paper>
+          ) : (
+            <Paper sx={{ p: 3, mb: 3, border: "1px dashed #e0e0e0", textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                No USPs added yet. {isEditing && "Use the field above to add your first unique selling point."}
+              </Typography>
+            </Paper>
           )}
         </Grid>
+        
+        {/* Brand Description Field */}
         <Box sx={{ mt: 2, mb: 4 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
             Brand Description:
