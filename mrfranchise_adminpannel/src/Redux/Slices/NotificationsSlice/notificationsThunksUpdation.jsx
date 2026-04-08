@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const BASE_URL = "https://mrfranchisebackend.mrfranchise.in/api/v1/brandlisting";
+const BASE_URL = "http://localhost:5000/api/v1/brandlisting";
 
 // Get all notifications
 export const fetchNotifications = createAsyncThunk(

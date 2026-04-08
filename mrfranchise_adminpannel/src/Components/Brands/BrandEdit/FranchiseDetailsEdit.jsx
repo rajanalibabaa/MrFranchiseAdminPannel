@@ -144,7 +144,7 @@ const FranchiseDetailsEdit = ({
   const fetchIndustries = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://mrfranchisebackend.mrfranchise.in/api/v1/admin/getIndustryByIndustryName');
+      const response = await fetch('http://localhost:5000/api/v1/admin/getIndustryByIndustryName');
       const result = await response.json();
    
       if (result.success && result.data.Industry) {
@@ -164,7 +164,7 @@ const FranchiseDetailsEdit = ({
     try {
       setLoadingIndustryDetails(true);
       const response = await fetch(
-        `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(industry)}`
+        `http://localhost:5000/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(industry)}`
       );
       const result = await response.json();
    

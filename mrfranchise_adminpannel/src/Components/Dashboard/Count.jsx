@@ -59,7 +59,7 @@ const Count = () => {
   const updateEmailConfig = async () => {
     setUpdating(true);
     try {
-      // const updateUrl = "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/batch-email-config";
+      // const updateUrl = "http://localhost:5000/api/v1/admin/batch-email-config";
       const response = await fetch(Api.admin.get.instantApply.updateEmailConfig, {
         method: 'POST',
         headers: {

@@ -20,7 +20,7 @@ const { uuid } = useParams();
  useEffect(() => {
     const fetchInvestor = async () => {
       try {
-        const res = await axios.get(`https://mrfranchisebackend.mrfranchise.in/api/v1/investor/getInvestorByUUID/${uuid}`);
+        const res = await axios.get(`http://localhost:5000/api/v1/investor/getInvestorByUUID/${uuid}`);
         console.log('API response:', res.data);
         setInvestor(res.data?.data);
       } catch (err) {

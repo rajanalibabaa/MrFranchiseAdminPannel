@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const BASE_URL = "https://mrfranchisebackend.mrfranchise.in/api/v1/brandadvertise/payment-packages";
+const BASE_URL = "http://localhost:5000/api/v1/brandadvertise/payment-packages";
 
 const style = {
   position: "absolute",
