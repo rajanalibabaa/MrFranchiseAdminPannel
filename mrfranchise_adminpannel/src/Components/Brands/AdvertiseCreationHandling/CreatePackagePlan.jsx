@@ -1,10 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
   Button,
-  Typography,
   Paper,
   Grid,
   IconButton
@@ -13,7 +12,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 
-const CreatePackagePlan = ({ onClose }) => {
+const CreatePackagePlan = ({ onClose, editData, editId ,onSuccess }) => {
 
   const initialState = {
     planName: "",
@@ -21,15 +20,27 @@ const CreatePackagePlan = ({ onClose }) => {
       {
         investmentRange: "",
         validityDays: "",
-        amount: "",
-        totalLeads: ""
+        amount: "0",
+        totalLeads: "0"
       }
     ]
   };
 
   const [form, setForm] = useState(initialState);
 
-  // plan name
+  // ✅ Fill edit data
+  useEffect(() => {
+    if (editData) {
+      setForm({
+        planName: editData.planName || "",
+        packages: editData.packages?.length
+          ? editData.packages
+          : initialState.packages
+      });
+    }
+  }, [editData]);
+
+  // plan name change
   const handlePlanChange = (e) => {
     setForm({ ...form, planName: e.target.value });
   };
@@ -41,62 +52,114 @@ const CreatePackagePlan = ({ onClose }) => {
     setForm({ ...form, packages: updated });
   };
 
-  // add package
+  // add package (works in edit also)
   const addPackage = () => {
-    setForm({
-      ...form,
+    setForm(prev => ({
+      ...prev,
       packages: [
-        ...form.packages,
+        ...prev.packages,
         {
           investmentRange: "",
           validityDays: "",
-          amount: "",
-          totalLeads: ""
+          amount: "0",
+          totalLeads: "0"
         }
       ]
-    });
+    }));
   };
 
-  // remove package
-  const removePackage = (index) => {
-    const updated = form.packages.filter((_, i) => i !== index);
-    setForm({ ...form, packages: updated });
+  // delete particular package
+  const removePackage = async (index) => {
+    try {
+
+      // delete from DB if edit mode
+      if (editId) {
+        await axios.put(
+          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          {
+            packageIndex: index,
+            deletePackage: true
+          }
+        );
+      }
+
+      const updated = form.packages.filter((_, i) => i !== index);
+      setForm({ ...form, packages: updated });
+
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting package");
+    }
   };
 
   // submit
   const handleSubmit = async () => {
     try {
 
-      const payload = {
-        planName: form.planName,
-        packages: form.packages.map(pkg => ({
-          investmentRange: pkg.investmentRange,
-          validityDays: Number(pkg.validityDays),
-          amount: Number(pkg.amount),
-          totalLeads: Number(pkg.totalLeads)
-        }))
-      };
+      // EDIT MODE
+      if (editId) {
 
-      await axios.post(
-        "http://localhost:5000/api/v1/admin/plans/create",
-        payload
-      );
+        // update plan name
+        await axios.put(
+          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          { planName: form.planName }
+        );
 
-      alert("Plan Created Successfully ✅");
+        // update / add packages
+        for (let i = 0; i < form.packages.length; i++) {
 
-      setForm(initialState);
+          await axios.put(
+            `http://localhost:5000/api/v1/admin/plans/${editId}`,
+            {
+              packageIndex: i,
+            packageData: {
+  investmentRange: form.packages[i].investmentRange,
+  validityDays: Number(form.packages[i].validityDays || 0),
+  amount: Number(form.packages[i].amount || 0),
+  totalLeads: Number(form.packages[i].totalLeads || 0)
+}
+            }
+          );
+        }
 
-      if (onClose) onClose();
+        alert("Plan Updated Successfully ✏️");
+
+      } else {
+
+        // CREATE MODE
+        await axios.post(
+          "http://localhost:5000/api/v1/admin/plans/create",
+          {
+            planName: form.planName,
+            packages: form.packages.map(pkg => ({
+              investmentRange: pkg.investmentRange,
+              validityDays: Number(pkg.validityDays),
+            amount: Number(pkg.amount || 0),
+totalLeads: Number(pkg.totalLeads || 0)
+            }))
+          }
+        );
+
+        alert("Plan Created Successfully ✅");
+      }
+
+setForm(initialState);
+
+if (onSuccess) {
+  onSuccess();   // refresh table
+}
+
+onClose();
 
     } catch (err) {
       console.error(err);
-      alert("Error creating plan");
+      alert("Error saving plan");
     }
   };
 
   return (
     <Box p={1}>
-  
+
       <TextField
         fullWidth
         label="Plan Name"
@@ -108,17 +171,14 @@ const CreatePackagePlan = ({ onClose }) => {
       {form.packages.map((pkg, pkgIndex) => (
         <Paper key={pkgIndex} sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2}>
+
             <Grid item xs={3}>
               <TextField
                 fullWidth
                 label="Investment Range"
                 value={pkg.investmentRange}
                 onChange={(e) =>
-                  handlePackageChange(
-                    pkgIndex,
-                    "investmentRange",
-                    e.target.value
-                  )
+                  handlePackageChange(pkgIndex,"investmentRange",e.target.value)
                 }
               />
             </Grid>
@@ -130,11 +190,7 @@ const CreatePackagePlan = ({ onClose }) => {
                 type="number"
                 value={pkg.validityDays}
                 onChange={(e) =>
-                  handlePackageChange(
-                    pkgIndex,
-                    "validityDays",
-                    e.target.value
-                  )
+                  handlePackageChange(pkgIndex,"validityDays",e.target.value)
                 }
               />
             </Grid>
@@ -146,11 +202,7 @@ const CreatePackagePlan = ({ onClose }) => {
                 type="number"
                 value={pkg.amount}
                 onChange={(e) =>
-                  handlePackageChange(
-                    pkgIndex,
-                    "amount",
-                    e.target.value
-                  )
+                  handlePackageChange(pkgIndex,"amount",e.target.value)
                 }
               />
             </Grid>
@@ -162,11 +214,7 @@ const CreatePackagePlan = ({ onClose }) => {
                 type="number"
                 value={pkg.totalLeads}
                 onChange={(e) =>
-                  handlePackageChange(
-                    pkgIndex,
-                    "totalLeads",
-                    e.target.value
-                  )
+                  handlePackageChange(pkgIndex,"totalLeads",e.target.value)
                 }
               />
             </Grid>
@@ -181,6 +229,7 @@ const CreatePackagePlan = ({ onClose }) => {
                 </IconButton>
               )}
             </Grid>
+
           </Grid>
         </Paper>
       ))}
@@ -198,9 +247,10 @@ const CreatePackagePlan = ({ onClose }) => {
           variant="contained"
           onClick={handleSubmit}
         >
-          Create Plan
+          {editId ? "Update Plan" : "Create Plan"}
         </Button>
       </Box>
+
     </Box>
   );
 };

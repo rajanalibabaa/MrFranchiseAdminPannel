@@ -10,11 +10,12 @@ import {
   TableHead,
   TableRow,
   Paper,
-  CircularProgress
+  CircularProgress,
+  Button
 } from "@mui/material";
 import axios from "axios";
 
-const PackagePlansTable = ({ range }) => {   // 👈 receive range
+const PackagePlansTable = ({ range,onEdit,refresh   }) => {   // 👈 receive range
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,9 +35,9 @@ const PackagePlansTable = ({ range }) => {   // 👈 receive range
     }
   };
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
+useEffect(() => {
+  fetchPlans();
+}, [refresh]);
 
   return (
     <Box p={2}>
@@ -49,6 +50,7 @@ const PackagePlansTable = ({ range }) => {   // 👈 receive range
               <TableCell><b>Validity</b></TableCell>
               <TableCell><b>Total Leads</b></TableCell>
               <TableCell><b>Amount</b></TableCell>
+              <TableCell><b>Actions</b></TableCell>
             </TableRow>
           </TableHead>
 
@@ -89,6 +91,18 @@ const PackagePlansTable = ({ range }) => {   // 👈 receive range
                     <TableCell>
                       ₹ {range * pkg.amount}
                     </TableCell>
+                    {/* <TableCell>
+  {index === 0 && (
+    <Button
+      variant="outlined"
+      size="small"
+      onClick={() => onEdit(plan)}
+    >
+      Edit
+    </Button>
+  )}
+</TableCell> */}
+                    
                   </TableRow>
                 ))
               )
@@ -96,6 +110,7 @@ const PackagePlansTable = ({ range }) => {   // 👈 receive range
           </TableBody>
         </Table>
       </TableContainer>
+      
     </Box>
   );
 };

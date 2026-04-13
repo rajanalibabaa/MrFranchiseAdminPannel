@@ -18,48 +18,30 @@ import PackagePlansTable from "../../Components/Brands/AdvertiseCreationHandling
 const PaymentPackagesPage = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const [range, setRange] = useState(1);
+  const [editData, setEditData] = useState(null);
+  const [editId, setEditId] = useState(null);
+
+  const [refresh, setRefresh] = useState(false);
+
+  const handleRefresh = () => {
+    setRefresh(prev => !prev);
+  };
 
   const handleOpen = () => setOpenCreate(true);
-  const handleClose = () => setOpenCreate(false);
 
-  const options = [
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-  ];
+  const handleClose = () => {
+    setOpenCreate(false);
+    setEditData(null);
+    setEditId(null);
+  };
+
+  const handleEdit = (plan) => {
+    setEditData(plan);
+    setEditId(plan._id);
+    setOpenCreate(true);
+  };
+
+  const options = Array.from({ length: 36 }, (_, i) => i + 1);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -78,15 +60,6 @@ const PaymentPackagesPage = () => {
             value={range}
             onChange={(e) => setRange(e.target.value)}
             size="small"
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  style: {
-                    maxHeight: 200, // 👈 control dropdown height
-                  },
-                },
-              },
-            }}
           >
             {options.map((option) => (
               <MenuItem key={option} value={option}>
@@ -105,11 +78,10 @@ const PaymentPackagesPage = () => {
         </Button>
       </Box>
 
-      {/* Create Popup */}
       <Dialog open={openCreate} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>
-          <Typography variant="h6" color="orange" gutterBottom>
-            Create Package Plan
+          <Typography variant="h6" color="orange">
+            {editId ? "Edit Package Plan" : "Create Package Plan"}
           </Typography>
 
           <IconButton
@@ -121,20 +93,20 @@ const PaymentPackagesPage = () => {
         </DialogTitle>
 
         <DialogContent>
-          <CreatePackagePlan onClose={handleClose} />
+          <CreatePackagePlan
+            onClose={handleClose}
+            editData={editData}
+            editId={editId}
+            onSuccess={handleRefresh}
+          />
         </DialogContent>
       </Dialog>
 
-      <PackagePlansTable range={range} />
-
-      <Box>
-
-      </Box>
-
-
-
-
-
+      <PackagePlansTable
+        range={range}
+        onEdit={handleEdit}
+        refresh={refresh}
+      />
     </Box>
   );
 };
