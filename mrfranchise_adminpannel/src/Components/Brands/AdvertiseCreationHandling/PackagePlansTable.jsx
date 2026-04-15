@@ -11,13 +11,24 @@ import {
   TableRow,
   Paper,
   CircularProgress,
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from "@mui/material";
 import axios from "axios";
 
-const PackagePlansTable = ({ range,onEdit,refresh   }) => {   // 👈 receive range
+const PackagePlansTable = ({ range, onEdit, refresh }) => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // ✅ delete dialog state
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState("");
+  const [inputName, setInputName] = useState("");
 
   const fetchPlans = async () => {
     try {
@@ -35,9 +46,47 @@ const PackagePlansTable = ({ range,onEdit,refresh   }) => {   // 👈 receive ra
     }
   };
 
-useEffect(() => {
-  fetchPlans();
-}, [refresh]);
+  useEffect(() => {
+    fetchPlans();
+  }, [refresh]);
+
+  // open delete popup
+  const handleOpenDelete = (plan) => {
+    setDeleteId(plan._id);
+    setDeleteName(plan.planName);
+    setInputName("");
+    setOpenDelete(true);
+  };
+
+  const handleCloseDelete = () => {
+    setOpenDelete(false);
+    setDeleteId(null);
+    setDeleteName("");
+    setInputName("");
+  };
+
+  // confirm delete
+  const handleDelete = async () => {
+    try {
+      if (inputName !== deleteName) {
+        alert("Plan name does not match!");
+        return;
+      }
+
+      await axios.delete(
+        `http://localhost:5000/api/v1/admin/plans/${deleteId}`
+      );
+
+      alert("Plan deleted successfully 🗑️");
+
+      handleCloseDelete();
+      fetchPlans();
+
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting plan");
+    }
+  };
 
   return (
     <Box p={2}>
@@ -57,7 +106,7 @@ useEffect(() => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
@@ -71,7 +120,7 @@ useEffect(() => {
                         sx={{
                           fontWeight: 600,
                           verticalAlign: "top",
-                          background: "#fafafa"
+                          background: "#fafafa",
                         }}
                       >
                         {plan.planName}
@@ -79,30 +128,38 @@ useEffect(() => {
                     )}
 
                     <TableCell>{pkg.investmentRange}</TableCell>
-
                     <TableCell>{pkg.validityDays} days</TableCell>
+                    <TableCell>{range * pkg.totalLeads}</TableCell>
+                    <TableCell>₹ {range * pkg.amount}</TableCell>
 
-                    {/* 👇 multiply leads */}
                     <TableCell>
-                      {range * pkg.totalLeads}
-                    </TableCell>
+                      {index === 0 && (
+                        <Box display="flex" gap={1}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => onEdit(plan)}
+                            sx={{
+                              backgroundColor: "#3cba42",
+                              "&:hover": {
+                                backgroundColor: "#34a53a",
+                              },
+                            }}
+                          >
+                            Edit
+                          </Button>
 
-                    {/* 👇 multiply amount */}
-                    <TableCell>
-                      ₹ {range * pkg.amount}
+                          <Button
+                            variant="contained"
+                            color="error"
+                            size="small"
+                            onClick={() => handleOpenDelete(plan)}
+                          >
+                            Delete
+                          </Button>
+                        </Box>
+                      )}
                     </TableCell>
-                    {/* <TableCell>
-  {index === 0 && (
-    <Button
-      variant="outlined"
-      size="small"
-      onClick={() => onEdit(plan)}
-    >
-      Edit
-    </Button>
-  )}
-</TableCell> */}
-                    
                   </TableRow>
                 ))
               )
@@ -110,7 +167,42 @@ useEffect(() => {
           </TableBody>
         </Table>
       </TableContainer>
-      
+
+      {/* ✅ Delete Confirmation Dialog */}
+      <Dialog open={openDelete} onClose={handleCloseDelete}>
+        <DialogTitle>
+          Delete Plan
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography mb={1}>
+            Type <b>{deleteName}</b> to confirm deletion
+          </Typography>
+
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Enter plan name"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+          />
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseDelete}>
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            color="error"
+            disabled={inputName !== deleteName}
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

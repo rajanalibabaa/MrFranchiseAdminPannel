@@ -73,7 +73,12 @@ const PaymentPackagesPage = () => {
           Package Plan
         </Typography>
 
-        <Button variant="contained" onClick={handleOpen}>
+        <Button variant="contained"      sx={{
+                              backgroundColor: "#e87619",
+                              "&:hover": {
+                                backgroundColor: "#cf6b08",
+                              },
+                            }} onClick={handleOpen}>
           Create Plan
         </Button>
       </Box>
