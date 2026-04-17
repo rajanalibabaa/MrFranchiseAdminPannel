@@ -16,7 +16,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Chip,
+  Stack
 } from "@mui/material";
 import axios from "axios";
 
@@ -24,33 +26,39 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ delete dialog state
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState("");
   const [inputName, setInputName] = useState("");
 
-  const fetchPlans = async () => {
-    try {
-      setLoading(true);
+const fetchPlans = async () => {
+  try {
+    setLoading(true);
 
-      const res = await axios.get(
-        "http://localhost:5000/api/v1/admin/plans/getAllPlans"
-      );
+    const res = await axios.get(
+      "http://localhost:5000/api/v1/admin/plans/getAllPlans"
+    );
 
-      setPlans(res.data.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // normalize new schema
+    const formatted = res.data.data.map(item => ({
+      _id: item._id,
+      planName: item.planName || item.packagesPlan?.[0]?.planName,
+      packages: item.packages || item.packagesPlan?.[0]?.packages || []
+    }));
+    console.log("Fetched Plans:", res.data.data, "Formatted Plans:", formatted);
 
+    setPlans(formatted);
+
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     fetchPlans();
   }, [refresh]);
 
-  // open delete popup
   const handleOpenDelete = (plan) => {
     setDeleteId(plan._id);
     setDeleteName(plan.planName);
@@ -65,7 +73,6 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
     setInputName("");
   };
 
-  // confirm delete
   const handleDelete = async () => {
     try {
       if (inputName !== deleteName) {
@@ -78,10 +85,8 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
       );
 
       alert("Plan deleted successfully 🗑️");
-
       handleCloseDelete();
       fetchPlans();
-
     } catch (error) {
       console.error(error);
       alert("Error deleting plan");
@@ -90,9 +95,9 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
 
   return (
     <Box p={2}>
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} elevation={2}>
         <Table>
-          <TableHead sx={{ background: "#f5f5f5" }}>
+          <TableHead sx={{ background: "#f5f7fa" }}>
             <TableRow>
               <TableCell><b>Plans</b></TableCell>
               <TableCell><b>Investment Range</b></TableCell>
@@ -113,7 +118,7 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
             ) : (
               plans.map((plan) =>
                 plan.packages.map((pkg, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} hover>
                     {index === 0 && (
                       <TableCell
                         rowSpan={plan.packages.length}
@@ -121,16 +126,55 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
                           fontWeight: 600,
                           verticalAlign: "top",
                           background: "#fafafa",
+                          width: 180
                         }}
                       >
                         {plan.planName}
                       </TableCell>
                     )}
 
-                    <TableCell>{pkg.investmentRange}</TableCell>
-                    <TableCell>{pkg.validityDays} days</TableCell>
-                    <TableCell>{range * pkg.totalLeads}</TableCell>
-                    <TableCell>₹ {range * pkg.amount}</TableCell>
+                    {/* Investment Range */}
+                    <TableCell>
+                      <Box>
+                        {/* Label */}
+                        <Typography
+                          fontWeight={600}
+                          color="primary"
+                          fontSize={14}
+                          mb={0.5}
+                        >
+                          {pkg.investmentRangeLabel}
+                        </Typography>
+
+                        {/* ranges */}
+                        <Stack
+                          direction="row"
+                          spacing={0.5}
+                          flexWrap="wrap"
+                        >
+                          {pkg.investmentRange?.map((range) => (
+                            <Chip
+                              key={range}
+                              label={range}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                        </Stack>
+                      </Box>
+                    </TableCell>
+
+                    <TableCell>
+                      {pkg.validityDays} days
+                    </TableCell>
+
+                    <TableCell>
+                      {range * pkg.totalLeads}
+                    </TableCell>
+
+                    <TableCell>
+                      ₹ {range * pkg.amount}
+                    </TableCell>
 
                     <TableCell>
                       {index === 0 && (
@@ -168,11 +212,9 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
         </Table>
       </TableContainer>
 
-      {/* ✅ Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <Dialog open={openDelete} onClose={handleCloseDelete}>
-        <DialogTitle>
-          Delete Plan
-        </DialogTitle>
+        <DialogTitle>Delete Plan</DialogTitle>
 
         <DialogContent>
           <Typography mb={1}>

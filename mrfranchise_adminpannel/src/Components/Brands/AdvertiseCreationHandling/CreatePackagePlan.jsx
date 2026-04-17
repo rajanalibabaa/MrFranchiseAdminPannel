@@ -1,16 +1,75 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Box, TextField, Button, Paper, Grid, IconButton } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 
+const investmentRanges = [
+  "Below - 50k",
+  "Rs. 50k - 2 Lakhs",
+  "Rs. 2 Lakhs - 5 Lakhs",
+  "Rs. 5 Lakhs - 10 Lakhs",
+  "Rs. 10 Lakhs - 20 Lakhs",
+  "Rs. 20 Lakhs - 30 Lakhs",
+  "Rs. 30 Lakhs - 50 Lakhs",
+  "Rs. 50 Lakhs - 1 Crore",
+  "Rs. 1 Crore - 2 Crores",
+  "Rs. 2 Crore - 5 Crores",
+  "Rs. 5 Crores - above",
+];
+
+// label generator
+const generateLabel = (selected) => {
+  if (!selected || selected.length === 0) return "";
+
+  const first = selected[0];
+  const last = selected[selected.length - 1];
+  const lastIsAbove = last.toLowerCase().includes("above");
+
+  if (selected.length === 1 && lastIsAbove) {
+    const value = last.split("-")[0].replace("Rs.", "").trim();
+    return `Above ${value}`;
+  }
+
+  const firstLower = first.split("-")[0].replace("Rs.", "").trim();
+
+  if (lastIsAbove) {
+    const prev = selected[selected.length - 2] || first;
+    const upper = prev.split("-")[1].trim();
+    return `${firstLower} to ${upper} above`;
+  }
+
+  const lastUpper = last.split("-")[1].trim();
+
+  if (first.includes("Below")) {
+    return `Upto ${lastUpper}`;
+  }
+
+  return `${firstLower} to ${lastUpper}`;
+};
+
 const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
+
   const initialState = {
     planName: "",
     packages: [
       {
-        investmentRange: "",
+        investmentRangeLabel: "",
+        investmentRange: [],
         validityDays: "",
         amount: "0",
         totalLeads: "0",
@@ -20,7 +79,6 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
 
   const [form, setForm] = useState(initialState);
 
-  // ✅ Fill edit data
   useEffect(() => {
     if (editData) {
       setForm({
@@ -32,26 +90,24 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
     }
   }, [editData]);
 
-  // plan name change
   const handlePlanChange = (e) => {
     setForm({ ...form, planName: e.target.value });
   };
 
-  // package change
   const handlePackageChange = (index, field, value) => {
     const updated = [...form.packages];
     updated[index][field] = value;
     setForm({ ...form, packages: updated });
   };
 
-  // add package (works in edit also)
   const addPackage = () => {
     setForm((prev) => ({
       ...prev,
       packages: [
         ...prev.packages,
         {
-          investmentRange: "",
+          investmentRangeLabel: "",
+          investmentRange: [],
           validityDays: "",
           amount: "0",
           totalLeads: "0",
@@ -60,74 +116,73 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
     }));
   };
 
-  // delete particular package
   const removePackage = async (index) => {
     try {
-      // delete from DB if edit mode
       if (editId) {
-        await axios.put(`http://localhost:5000/api/v1/admin/plans/${editId}`, {
-          packageIndex: index,
-          deletePackage: true,
-        });
+        await axios.put(
+          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          {
+            packageIndex: index,
+            deletePackage: true,
+          }
+        );
       }
 
       const updated = form.packages.filter((_, i) => i !== index);
       setForm({ ...form, packages: updated });
+
     } catch (err) {
       console.error(err);
-      alert("Error deleting package");
     }
   };
 
-  // submit
   const handleSubmit = async () => {
     try {
-      // EDIT MODE
+
+      // regenerate label before send
+      const formattedPackages = form.packages.map((pkg) => {
+
+        const ordered = investmentRanges.filter(r =>
+          pkg.investmentRange.includes(r)
+        );
+
+        return {
+          investmentRangeLabel: generateLabel(ordered),
+          investmentRange: ordered,
+          validityDays: Number(pkg.validityDays || 0),
+          amount: Number(pkg.amount || 0),
+          totalLeads: Number(pkg.totalLeads || 0),
+        };
+      });
+
       if (editId) {
-        // update plan name
-        await axios.put(`http://localhost:5000/api/v1/admin/plans/${editId}`, {
-          planName: form.planName,
-        });
+        await axios.put(
+          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          {
+            planName: form.planName,
+            packages: formattedPackages
+          }
+        );
 
-        // update / add packages
-        for (let i = 0; i < form.packages.length; i++) {
-          await axios.put(
-            `http://localhost:5000/api/v1/admin/plans/${editId}`,
-            {
-              packageIndex: i,
-              packageData: {
-                investmentRange: form.packages[i].investmentRange,
-                validityDays: Number(form.packages[i].validityDays || 0),
-                amount: Number(form.packages[i].amount || 0),
-                totalLeads: Number(form.packages[i].totalLeads || 0),
-              },
-            },
-          );
-        }
+        alert("Plan Updated Successfully");
 
-        alert("Plan Updated Successfully ✏️");
       } else {
-        // CREATE MODE
-        await axios.post("http://localhost:5000/api/v1/admin/plans/create", {
-          planName: form.planName,
-          packages: form.packages.map((pkg) => ({
-            investmentRange: pkg.investmentRange,
-            validityDays: Number(pkg.validityDays),
-            amount: Number(pkg.amount || 0),
-            totalLeads: Number(pkg.totalLeads || 0),
-          })),
-        });
 
-        alert("Plan Created Successfully ✅");
+        await axios.post(
+          "http://localhost:5000/api/v1/admin/plans/create",
+          {
+            planName: form.planName,
+            packages: formattedPackages
+          }
+        );
+
+        alert("Plan Created Successfully");
       }
 
       setForm(initialState);
-
-      if (onSuccess) {
-        onSuccess(); // refresh table
-      }
-
+      onSuccess();
       onClose();
+
     } catch (err) {
       console.error(err);
       alert("Error saving plan");
@@ -147,29 +202,80 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
       {form.packages.map((pkg, pkgIndex) => (
         <Paper key={pkgIndex} sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2}>
-            <Grid item xs={3}>
+
+            {/* Investment Range */}
+            <Grid item xs={4}>
+              <FormControl fullWidth>
+                <InputLabel shrink>
+                  Investment Range
+                </InputLabel>
+
+                <Select
+                  multiple
+                  value={pkg.investmentRange}
+                  displayEmpty
+                  onChange={(e) => {
+
+                    const value = e.target.value;
+
+                    const ordered =
+                      investmentRanges.filter(r =>
+                        value.includes(r)
+                      );
+
+                    const updated = [...form.packages];
+
+                    updated[pkgIndex].investmentRange =
+                      ordered;
+
+                    updated[pkgIndex].investmentRangeLabel =
+                      generateLabel(ordered);
+
+                    setForm({
+                      ...form,
+                      packages: updated
+                    });
+                  }}
+                  renderValue={() =>
+                    pkg.investmentRangeLabel || "Select Range"
+                  }
+                >
+                  {investmentRanges.map((range) => (
+                    <MenuItem key={range} value={range}>
+                      <Checkbox
+                        checked={
+                          pkg.investmentRange
+                            .indexOf(range) > -1
+                        }
+                      />
+                      <ListItemText primary={range} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
               <TextField
                 fullWidth
-                label="Investment Range"
-                value={pkg.investmentRange}
-                onChange={(e) =>
-                  handlePackageChange(
-                    pkgIndex,
-                    "investmentRange",
-                    e.target.value,
-                  )
-                }
+                label="Auto Label"
+                value={pkg.investmentRangeLabel || ""}
+                InputProps={{ readOnly: true }}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mt: 1 }}
               />
             </Grid>
 
             <Grid item xs={2}>
               <TextField
                 fullWidth
-                label="Validity Days"
+                label="Validity"
                 type="number"
                 value={pkg.validityDays}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex, "validityDays", e.target.value)
+                  handlePackageChange(
+                    pkgIndex,
+                    "validityDays",
+                    e.target.value
+                  )
                 }
               />
             </Grid>
@@ -181,7 +287,11 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
                 type="number"
                 value={pkg.amount}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex, "amount", e.target.value)
+                  handlePackageChange(
+                    pkgIndex,
+                    "amount",
+                    e.target.value
+                  )
                 }
               />
             </Grid>
@@ -189,11 +299,15 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
             <Grid item xs={2}>
               <TextField
                 fullWidth
-                label="Total Leads"
+                label="Leads"
                 type="number"
                 value={pkg.totalLeads}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex, "totalLeads", e.target.value)
+                  handlePackageChange(
+                    pkgIndex,
+                    "totalLeads",
+                    e.target.value
+                  )
                 }
               />
             </Grid>
@@ -202,12 +316,15 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
               {form.packages.length > 1 && (
                 <IconButton
                   color="error"
-                  onClick={() => removePackage(pkgIndex)}
+                  onClick={() =>
+                    removePackage(pkgIndex)
+                  }
                 >
                   <DeleteIcon />
                 </IconButton>
               )}
             </Grid>
+
           </Grid>
         </Paper>
       ))}
@@ -215,20 +332,9 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
       <Box
         display="flex"
         justifyContent="space-between"
-        position="sticky"
-        bottom={0}
-        bgcolor="#fff"
-        p={2}
-        zIndex={1}
       >
         <Button
           variant="contained"
-          sx={{
-            backgroundColor: "#157eee",
-            "&:hover": {
-              backgroundColor: "#1b63ce",
-            },
-          }}
           startIcon={<AddIcon />}
           onClick={addPackage}
         >
@@ -238,12 +344,6 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          sx={{
-            backgroundColor: "#e87619",
-            "&:hover": {
-              backgroundColor: "#cf6b08",
-            },
-          }}
         >
           {editId ? "Update Plan" : "Create Plan"}
         </Button>
