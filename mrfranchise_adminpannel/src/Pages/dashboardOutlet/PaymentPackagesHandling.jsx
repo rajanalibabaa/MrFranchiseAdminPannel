@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   Box,
@@ -15,17 +16,24 @@ import CloseIcon from "@mui/icons-material/Close";
 import CreatePackagePlan from "../../Components/Brands/AdvertiseCreationHandling/CreatePackagePlan";
 import PackagePlansTable from "../../Components/Brands/AdvertiseCreationHandling/PackagePlansTable";
 
+import CreateListingPackage from "../../Components/Brands/AdvertiseCreationHandling/CreateListingPackages";
+import ListingPackagesTable from "../../Components/Brands/AdvertiseCreationHandling/ListingPackagesTables";
+
 const PaymentPackagesPage = () => {
+
+  /* ---------------- PACKAGE PLAN STATE ---------------- */
   const [openCreate, setOpenCreate] = useState(false);
   const [range, setRange] = useState(1);
   const [editData, setEditData] = useState(null);
   const [editId, setEditId] = useState(null);
-
   const [refresh, setRefresh] = useState(false);
 
-  const handleRefresh = () => {
-    setRefresh(prev => !prev);
-  };
+  /* ---------------- LISTING STATE ---------------- */
+  const [openListing, setOpenListing] = useState(false);
+  const [listingRefresh, setListingRefresh] = useState(false);
+
+  const handleRefresh = () => setRefresh(prev => !prev);
+  const handleListingRefresh = () => setListingRefresh(prev => !prev);
 
   const handleOpen = () => setOpenCreate(true);
 
@@ -45,6 +53,8 @@ const PaymentPackagesPage = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+
+      {/* ================= PACKAGE PLAN ================= */}
       <Box
         display="flex"
         justifyContent="space-between"
@@ -73,20 +83,52 @@ const PaymentPackagesPage = () => {
           Package Plan
         </Typography>
 
-        <Button variant="contained"      sx={{
-                              backgroundColor: "#e87619",
-                              "&:hover": {
-                                backgroundColor: "#cf6b08",
-                              },
-                            }} onClick={handleOpen}>
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: "#e87619",
+            "&:hover": { backgroundColor: "#cf6b08" }
+          }}
+          onClick={handleOpen}
+        >
           Create Plan
         </Button>
       </Box>
 
+      <PackagePlansTable
+        range={range}
+        onEdit={handleEdit}
+        refresh={refresh}
+      />
+
+      {/* ================= LISTING PACKAGES ================= */}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={6}
+        mb={2}
+      >
+        <Typography variant="h5">
+          Listing Packages
+        </Typography>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => setOpenListing(true)}
+        >
+          Create Listing
+        </Button>
+      </Box>
+
+      <ListingPackagesTable refresh={listingRefresh} />
+
+      {/* ================= PACKAGE DIALOG ================= */}
       <Dialog open={openCreate} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>
           <Typography variant="h6" color="orange">
-            {editId ? "Edit Package Plan" : "Create Package Plan"}
+            {editId !== null ? "Update Package Plan" : "Create Package Plan"}
           </Typography>
 
           <IconButton
@@ -107,11 +149,31 @@ const PaymentPackagesPage = () => {
         </DialogContent>
       </Dialog>
 
-      <PackagePlansTable
-        range={range}
-        onEdit={handleEdit}
-        refresh={refresh}
-      />
+      {/* ================= LISTING DIALOG ================= */}
+      <Dialog
+        open={openListing}
+        onClose={() => setOpenListing(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          Create Listing Package
+          <IconButton
+            onClick={() => setOpenListing(false)}
+            sx={{ position: "absolute", right: 10, top: 10 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent>
+          <CreateListingPackage
+            onClose={() => setOpenListing(false)}
+            onSuccess={handleListingRefresh}
+          />
+        </DialogContent>
+      </Dialog>
+
     </Box>
   );
 };

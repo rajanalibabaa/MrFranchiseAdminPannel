@@ -59,12 +59,12 @@ const fetchPlans = async () => {
     fetchPlans();
   }, [refresh]);
 
-  const handleOpenDelete = (plan) => {
-    setDeleteId(plan._id);
-    setDeleteName(plan.planName);
-    setInputName("");
-    setOpenDelete(true);
-  };
+const handleOpenDelete = (plan, index) => {
+  setDeleteId(index);   // 👈 use index
+  setDeleteName(plan.planName);
+  setInputName("");
+  setOpenDelete(true);
+};
 
   const handleCloseDelete = () => {
     setOpenDelete(false);
@@ -73,7 +73,7 @@ const fetchPlans = async () => {
     setInputName("");
   };
 
-  const handleDelete = async () => {
+const handleDelete = async () => {
     try {
       if (inputName !== deleteName) {
         alert("Plan name does not match!");
@@ -91,6 +91,7 @@ const fetchPlans = async () => {
       console.error(error);
       alert("Error deleting plan");
     }
+    
   };
 
   return (
@@ -116,8 +117,8 @@ const fetchPlans = async () => {
                 </TableCell>
               </TableRow>
             ) : (
-              plans.map((plan) =>
-                plan.packages.map((pkg, index) => (
+         plans.map((plan, planIndex) =>
+  plan.packages.map((pkg, index) => (
                   <TableRow key={index} hover>
                     {index === 0 && (
                       <TableCell
@@ -182,7 +183,7 @@ const fetchPlans = async () => {
                           <Button
                             variant="contained"
                             size="small"
-                            onClick={() => onEdit(plan)}
+                            onClick={() => onEdit(plan, planIndex)}
                             sx={{
                               backgroundColor: "#3cba42",
                               "&:hover": {
@@ -197,7 +198,7 @@ const fetchPlans = async () => {
                             variant="contained"
                             color="error"
                             size="small"
-                            onClick={() => handleOpenDelete(plan)}
+                        onClick={() => handleOpenDelete(plan, planIndex)}
                           >
                             Delete
                           </Button>
