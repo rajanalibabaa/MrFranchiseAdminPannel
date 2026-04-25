@@ -18,7 +18,8 @@ import {
   DialogActions,
   TextField,
   Chip,
-  Stack
+  Stack,
+  Divider
 } from "@mui/material";
 import axios from "axios";
 
@@ -31,40 +32,46 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   const [deleteName, setDeleteName] = useState("");
   const [inputName, setInputName] = useState("");
 
-const fetchPlans = async () => {
-  try {
-    setLoading(true);
+  /* ================= FETCH ================= */
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
 
-    const res = await axios.get(
-      "http://localhost:5000/api/v1/admin/plans/getAllPlans"
-    );
+      const res = await axios.get(
+        "http://localhost:5000/api/v1/admin/plans/getAllPlans"
+      );
 
-    // normalize new schema
-    const formatted = res.data.data.map(item => ({
-      _id: item._id,
-      planName: item.planName || item.packagesPlan?.[0]?.planName,
-      packages: item.packages || item.packagesPlan?.[0]?.packages || []
-    }));
-    console.log("Fetched Plans:", res.data.data, "Formatted Plans:", formatted);
+      const formatted = res.data.data.map(item => ({
+        _id: item._id,
+        planName: item.planName,
+        packageType: item.packageType,
+        packages: item.packages || []
+      }));
 
-    setPlans(formatted);
+      setPlans(formatted);
 
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPlans();
   }, [refresh]);
 
-const handleOpenDelete = (plan, index) => {
-  setDeleteId(index);   // 👈 use index
-  setDeleteName(plan.planName);
-  setInputName("");
-  setOpenDelete(true);
-};
+  /* ================= SPLIT ================= */
+  const leadPlans = plans.filter(p => p.packageType === "LEAD");
+  const listingPlans = plans.filter(p => p.packageType === "LISTING");
+
+  /* ================= DELETE ================= */
+  const handleOpenDelete = (plan, index) => {
+   setDeleteId(plan._id);
+    setDeleteName(plan.planName);
+    setInputName("");
+    setOpenDelete(true);
+  };
 
   const handleCloseDelete = () => {
     setOpenDelete(false);
@@ -73,7 +80,7 @@ const handleOpenDelete = (plan, index) => {
     setInputName("");
   };
 
-const handleDelete = async () => {
+  const handleDelete = async () => {
     try {
       if (inputName !== deleteName) {
         alert("Plan name does not match!");
@@ -84,42 +91,75 @@ const handleDelete = async () => {
         `http://localhost:5000/api/v1/admin/plans/${deleteId}`
       );
 
-      alert("Plan deleted successfully 🗑️");
+      alert("Deleted");
       handleCloseDelete();
       fetchPlans();
     } catch (error) {
       console.error(error);
-      alert("Error deleting plan");
     }
-    
   };
 
-  return (
-    <Box p={2}>
-      <TableContainer component={Paper} elevation={2}>
-        <Table>
-          <TableHead sx={{ background: "#f5f7fa" }}>
+  /* ================= TABLE ================= */
+  const renderTable = (title, data, color) => (
+    <Box mb={5}>
+
+      {/* HEADER */}
+      <Box
+        sx={{
+          background: color,
+          color: "#fff",
+          px: 2,
+          py: 1.2,
+          borderRadius: "8px 8px 0 0",
+          fontWeight: 600,
+          fontSize: 16
+        }}
+      >
+        {title}
+      </Box>
+
+      <TableContainer
+        component={Paper}
+        elevation={3}
+        sx={{
+          borderRadius: "0 0 10px 10px",
+          overflow: "hidden"
+        }}
+      >
+        <Table size="medium">
+
+          {/* HEAD */}
+          <TableHead sx={{ background: "#f4f6f8" }}>
             <TableRow>
               <TableCell><b>Plans</b></TableCell>
               <TableCell><b>Investment Range</b></TableCell>
               <TableCell><b>Validity</b></TableCell>
               <TableCell><b>Total Leads</b></TableCell>
               <TableCell><b>Amount</b></TableCell>
-              <TableCell><b>Actions</b></TableCell>
+              <TableCell align="center"><b>Actions</b></TableCell>
             </TableRow>
           </TableHead>
 
+          {/* BODY */}
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} align="center">
-                  <CircularProgress size={24} />
+                  <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
             ) : (
-         plans.map((plan, planIndex) =>
-  plan.packages.map((pkg, index) => (
-                  <TableRow key={index} hover>
+              data.map((plan, planIndex) =>
+                plan.packages.map((pkg, index) => (
+                  <TableRow
+                    key={index}
+                    hover
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f9fafb"
+                      }
+                    }}
+                  >
                     {index === 0 && (
                       <TableCell
                         rowSpan={plan.packages.length}
@@ -127,42 +167,41 @@ const handleDelete = async () => {
                           fontWeight: 600,
                           verticalAlign: "top",
                           background: "#fafafa",
-                          width: 180
+                          minWidth: 160
                         }}
                       >
                         {plan.planName}
                       </TableCell>
                     )}
 
-                    {/* Investment Range */}
+                    {/* RANGE */}
                     <TableCell>
-                      <Box>
-                        {/* Label */}
-                        <Typography
-                          fontWeight={600}
-                          color="primary"
-                          fontSize={14}
-                          mb={0.5}
-                        >
-                          {pkg.investmentRangeLabel}
-                        </Typography>
+                      <Typography
+                        fontWeight={600}
+                        color="primary"
+                        fontSize={14}
+                      >
+                        {pkg.investmentRangeLabel}
+                      </Typography>
 
-                        {/* ranges */}
-                        <Stack
-                          direction="row"
-                          spacing={0.5}
-                          flexWrap="wrap"
-                        >
-                          {pkg.investmentRange?.map((range) => (
-                            <Chip
-                              key={range}
-                              label={range}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                        </Stack>
-                      </Box>
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                        flexWrap="wrap"
+                        mt={0.5}
+                      >
+                        {pkg.investmentRange?.map((r) => (
+                          <Chip
+                            key={r}
+                            label={r}
+                            size="small"
+                            sx={{
+                              fontSize: 11,
+                              background: "#eef2ff"
+                            }}
+                          />
+                        ))}
+                      </Stack>
                     </TableCell>
 
                     <TableCell>
@@ -177,34 +216,49 @@ const handleDelete = async () => {
                       ₹ {range * pkg.amount}
                     </TableCell>
 
-                    <TableCell>
+                    {/* ACTIONS */}
+                    <TableCell align="center">
                       {index === 0 && (
-                        <Box display="flex" gap={1}>
+                        <Box display="flex" gap={1} justifyContent="center">
+
+                          {/* EDIT */}
                           <Button
                             variant="contained"
                             size="small"
                             onClick={() => onEdit(plan, planIndex)}
                             sx={{
-                              backgroundColor: "#3cba42",
+                              backgroundColor: "#2e7d32",
+                              textTransform: "none",
+                              px: 2,
                               "&:hover": {
-                                backgroundColor: "#34a53a",
-                              },
+                                backgroundColor: "#1b5e20"
+                              }
                             }}
                           >
                             Edit
                           </Button>
 
+                          {/* DELETE */}
                           <Button
                             variant="contained"
-                            color="error"
                             size="small"
-                        onClick={() => handleOpenDelete(plan, planIndex)}
+                            onClick={() => handleOpenDelete(plan)}
+                            sx={{
+                              backgroundColor: "#d32f2f",
+                              textTransform: "none",
+                              px: 2,
+                              "&:hover": {
+                                backgroundColor: "#b71c1c"
+                              }
+                            }}
                           >
                             Delete
                           </Button>
+
                         </Box>
                       )}
                     </TableCell>
+
                   </TableRow>
                 ))
               )
@@ -212,20 +266,27 @@ const handleDelete = async () => {
           </TableBody>
         </Table>
       </TableContainer>
+    </Box>
+  );
 
-      {/* Delete Dialog */}
+  return (
+    <Box p={2}>
+
+      {renderTable("LEAD PACKAGES", leadPlans, "#55d25c")}
+      {renderTable("LISTING PACKAGES", listingPlans, "#f08c35")}
+
+      {/* DELETE DIALOG */}
       <Dialog open={openDelete} onClose={handleCloseDelete}>
         <DialogTitle>Delete Plan</DialogTitle>
 
         <DialogContent>
           <Typography mb={1}>
-            Type <b>{deleteName}</b> to confirm deletion
+            Type <b>{deleteName}</b> to confirm
           </Typography>
 
           <TextField
             fullWidth
             size="small"
-            placeholder="Enter plan name"
             value={inputName}
             onChange={(e) => setInputName(e.target.value)}
           />
@@ -238,7 +299,12 @@ const handleDelete = async () => {
 
           <Button
             variant="contained"
-            color="error"
+            sx={{
+              backgroundColor: "#d32f2f",
+              "&:hover": {
+                backgroundColor: "#b71c1c"
+              }
+            }}
             disabled={inputName !== deleteName}
             onClick={handleDelete}
           >
@@ -246,6 +312,7 @@ const handleDelete = async () => {
           </Button>
         </DialogActions>
       </Dialog>
+
     </Box>
   );
 };

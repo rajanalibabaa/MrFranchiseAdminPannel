@@ -65,6 +65,7 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
 
   const initialState = {
     planName: "",
+    packageType: "LEAD", // ✅ FIXED NAME
     packages: [
       {
         investmentRangeLabel: "",
@@ -82,6 +83,7 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
     if (editData) {
       setForm({
         planName: editData.planName || "",
+        packageType: editData.packageType || "LEAD", // ✅ FIX
         packages: editData.packages?.length
           ? editData.packages
           : initialState.packages,
@@ -93,6 +95,10 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
 
   const handlePlanChange = (e) => {
     setForm({ ...form, planName: e.target.value });
+  };
+
+  const handlePackageTypeChange = (e) => {
+    setForm({ ...form, packageType: e.target.value });
   };
 
   const handlePackageChange = (index, field, value) => {
@@ -137,54 +143,10 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
     }
   };
 
-const handleSubmit = async () => {
-  try {
-
-    // ================= EDIT =================
-    if (editId !== null) {
-
-      // update each package
-      for (let i = 0; i < form.packages.length; i++) {
-
-        const pkg = form.packages[i];
-
-        const ordered = investmentRanges.filter(r =>
-          pkg.investmentRange.includes(r)
-        );
-
-        const packageData = {
-          investmentRangeLabel: generateLabel(ordered),
-          investmentRange: ordered,
-          validityDays: Number(pkg.validityDays || 0),
-          amount: Number(pkg.amount || 0),
-          totalLeads: Number(pkg.totalLeads || 0),
-        };
-
-        await axios.put(
-          `http://localhost:5000/api/v1/admin/plans/${editId}`,
-          {
-            packageIndex: i,
-            packageData
-          }
-        );
-      }
-
-      // update plan name
-      await axios.put(
-        `http://localhost:5000/api/v1/admin/plans/${editId}`,
-        {
-          planName: form.planName
-        }
-      );
-
-      alert("Plan Updated Successfully");
-    }
-
-    // ================= CREATE =================
-    else {
+  const handleSubmit = async () => {
+    try {
 
       const formattedPackages = form.packages.map(pkg => {
-
         const ordered = investmentRanges.filter(r =>
           pkg.investmentRange.includes(r)
         );
@@ -198,28 +160,52 @@ const handleSubmit = async () => {
         };
       });
 
-      await axios.post(
-        "http://localhost:5000/api/v1/admin/plans/create",
-        {
-          planName: form.planName,
-          packages: formattedPackages
-        }
-      );
+      const payload = {
+        planName: form.planName,
+        packageType: form.packageType, // ✅ FINAL KEY
+        packages: formattedPackages
+      };
 
-      alert("Plan Created Successfully");
+      console.log("🔥 PAYLOAD:", payload);
+
+      if (editId === null) {
+        await axios.post(
+          "http://localhost:5000/api/v1/admin/plans/create",
+          payload
+        );
+        alert("Plan Created Successfully");
+      } else {
+        await axios.put(
+          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          payload
+        );
+        alert("Plan Updated Successfully");
+      }
+
+      onSuccess();
+      onClose();
+
+    } catch (err) {
+      console.error("❌ ERROR:", err.response?.data || err.message);
+      alert("Error saving plan");
     }
-
-    onSuccess();
-    onClose();
-
-  } catch (err) {
-    console.error(err);
-    alert("Error saving plan");
-  }
-};
+  };
 
   return (
     <Box p={1}>
+
+      {/* ✅ NO UI CHANGE */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Package Name</InputLabel>
+        <Select
+          value={form.packageType}
+          onChange={handlePackageTypeChange}
+        >
+          <MenuItem value="LISTING">LISTING PACKAGE</MenuItem>
+          <MenuItem value="LEAD">LEAD PACKAGE</MenuItem>
+        </Select>
+      </FormControl>
+
       <TextField
         fullWidth
         label="Plan Name"
@@ -241,7 +227,6 @@ const handleSubmit = async () => {
                   value={pkg.investmentRange}
                   displayEmpty
                   onChange={(e) => {
-
                     const value = e.target.value;
 
                     const ordered =
@@ -250,15 +235,11 @@ const handleSubmit = async () => {
                       );
 
                     const updated = [...form.packages];
-
                     updated[pkgIndex].investmentRange = ordered;
                     updated[pkgIndex].investmentRangeLabel =
                       generateLabel(ordered);
 
-                    setForm({
-                      ...form,
-                      packages: updated
-                    });
+                    setForm({ ...form, packages: updated });
                   }}
                   renderValue={() =>
                     pkg.investmentRangeLabel || "Select Range"
@@ -266,11 +247,7 @@ const handleSubmit = async () => {
                 >
                   {investmentRanges.map((range) => (
                     <MenuItem key={range} value={range}>
-                      <Checkbox
-                        checked={
-                          pkg.investmentRange.indexOf(range) > -1
-                        }
-                      />
+                      <Checkbox checked={pkg.investmentRange.includes(range)} />
                       <ListItemText primary={range} />
                     </MenuItem>
                   ))}
@@ -293,7 +270,7 @@ const handleSubmit = async () => {
                 type="number"
                 value={pkg.validityDays}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex,"validityDays",e.target.value)
+                  handlePackageChange(pkgIndex, "validityDays", e.target.value)
                 }
               />
             </Grid>
@@ -305,7 +282,7 @@ const handleSubmit = async () => {
                 type="number"
                 value={pkg.amount}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex,"amount",e.target.value)
+                  handlePackageChange(pkgIndex, "amount", e.target.value)
                 }
               />
             </Grid>
@@ -317,17 +294,14 @@ const handleSubmit = async () => {
                 type="number"
                 value={pkg.totalLeads}
                 onChange={(e) =>
-                  handlePackageChange(pkgIndex,"totalLeads",e.target.value)
+                  handlePackageChange(pkgIndex, "totalLeads", e.target.value)
                 }
               />
             </Grid>
 
             <Grid item xs={1}>
               {form.packages.length > 1 && (
-                <IconButton
-                  color="error"
-                  onClick={() => removePackage(pkgIndex)}
-                >
+                <IconButton color="error" onClick={() => removePackage(pkgIndex)}>
                   <DeleteIcon />
                 </IconButton>
               )}
@@ -338,18 +312,11 @@ const handleSubmit = async () => {
       ))}
 
       <Box display="flex" justifyContent="space-between">
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={addPackage}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={addPackage}>
           Add Package
         </Button>
 
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-        >
+        <Button variant="contained" onClick={handleSubmit}>
           {editId !== null ? "Update Plan" : "Create Plan"}
         </Button>
       </Box>

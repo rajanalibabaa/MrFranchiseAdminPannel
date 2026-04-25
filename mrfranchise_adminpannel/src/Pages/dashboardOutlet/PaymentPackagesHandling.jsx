@@ -16,8 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CreatePackagePlan from "../../Components/Brands/AdvertiseCreationHandling/CreatePackagePlan";
 import PackagePlansTable from "../../Components/Brands/AdvertiseCreationHandling/PackagePlansTable";
 
-import CreateListingPackage from "../../Components/Brands/AdvertiseCreationHandling/CreateListingPackages";
-import ListingPackagesTable from "../../Components/Brands/AdvertiseCreationHandling/ListingPackagesTables";
+
 
 const PaymentPackagesPage = () => {
 
@@ -101,29 +100,9 @@ const PaymentPackagesPage = () => {
         refresh={refresh}
       />
 
-      {/* ================= LISTING PACKAGES ================= */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mt={6}
-        mb={2}
-      >
-        <Typography variant="h5">
-          Listing Packages
-        </Typography>
+      
 
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => setOpenListing(true)}
-        >
-          Create Listing
-        </Button>
-      </Box>
-
-      <ListingPackagesTable refresh={listingRefresh} />
-
+   
       {/* ================= PACKAGE DIALOG ================= */}
       <Dialog open={openCreate} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>
@@ -149,30 +128,7 @@ const PaymentPackagesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ================= LISTING DIALOG ================= */}
-      <Dialog
-        open={openListing}
-        onClose={() => setOpenListing(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          Create Listing Package
-          <IconButton
-            onClick={() => setOpenListing(false)}
-            sx={{ position: "absolute", right: 10, top: 10 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent>
-          <CreateListingPackage
-            onClose={() => setOpenListing(false)}
-            onSuccess={handleListingRefresh}
-          />
-        </DialogContent>
-      </Dialog>
+     
 
     </Box>
   );
