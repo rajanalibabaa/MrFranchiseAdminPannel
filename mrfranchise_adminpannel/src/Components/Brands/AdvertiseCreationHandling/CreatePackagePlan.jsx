@@ -19,7 +19,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 
 const investmentRanges = [
-  "Below - 50k",
+  "Below 50k",
   "Rs. 50k - 2 Lakhs",
   "Rs. 2 Lakhs - 5 Lakhs",
   "Rs. 5 Lakhs - 10 Lakhs",
@@ -29,7 +29,7 @@ const investmentRanges = [
   "Rs. 50 Lakhs - 1 Crore",
   "Rs. 1 Crore - 2 Crores",
   "Rs. 2 Crore - 5 Crores",
-  "Rs. 5 Crores - above",
+  "Rs. 5 Crores above",
 ];
 
 const generateLabel = (selected) => {
@@ -37,28 +37,44 @@ const generateLabel = (selected) => {
 
   const first = selected[0];
   const last = selected[selected.length - 1];
-  const lastIsAbove = last.toLowerCase().includes("above");
 
-  if (selected.length === 1 && lastIsAbove) {
-    const value = last.split("-")[0].replace("Rs.", "").trim();
-    return `Above ${value}`;
+  const isBelow = first.toLowerCase().includes("below");
+  const isAboveOnly =
+    selected.length === 1 && last.toLowerCase().includes("above");
+
+  /* ================= ONLY BELOW ================= */
+  if (selected.length === 1 && isBelow) {
+    const value = first.replace(/below/i, "").trim();
+    return `Upto ${value}`;
   }
 
-  const firstLower = first.split("-")[0].replace("Rs.", "").trim();
+  /* ================= ONLY ABOVE ================= */
+  if (isAboveOnly) {
+    return last.replace("Rs.", "").trim(); // 👉 "5 Crores above"
+  }
 
-  if (lastIsAbove) {
-    const prev = selected[selected.length - 2] || first;
+  /* ================= RANGE WITH ABOVE END ================= */
+  if (last.toLowerCase().includes("above")) {
+    const firstValue = first.split("-")[0].replace("Rs.", "").trim();
+
+    const prev = selected[selected.length - 2];
     const upper = prev.split("-")[1].trim();
-    return `${firstLower} to ${upper} above`;
+
+    return `${firstValue} to ${upper} above`;
   }
 
-  const lastUpper = last.split("-")[1].trim();
+  /* ================= NORMAL RANGE ================= */
+  const firstValue = first.includes("-")
+    ? first.split("-")[0].replace("Rs.", "").trim()
+    : first.replace(/below/i, "").trim();
 
-  if (first.includes("Below")) {
-    return `Upto ${lastUpper}`;
+  const lastValue = last.split("-")[1].trim();
+
+  if (isBelow) {
+    return `Upto ${lastValue}`;
   }
 
-  return `${firstLower} to ${lastUpper}`;
+  return `${firstValue} to ${lastValue}`;
 };
 
 const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
