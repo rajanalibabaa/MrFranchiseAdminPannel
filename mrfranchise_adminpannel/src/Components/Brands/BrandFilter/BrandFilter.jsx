@@ -19,9 +19,9 @@ import {
   resetChildCategories,
   resetDistricts,
   resetCities,
+  resetSubCategories,
   clearErrors
 } from '../../../Redux/Slices/filterDropdownData';
-import { Margin } from '@mui/icons-material';
 
 const BrandFilter = ({ filters, onFilterChange }) => {
   const dispatch = useDispatch();
@@ -31,6 +31,45 @@ const BrandFilter = ({ filters, onFilterChange }) => {
   React.useEffect(() => {
     dispatch(fetchFilterOptions());
   }, [dispatch]);
+
+  // Filter subcategories based on selected main category
+  const filteredSubCategories = React.useMemo(() => {
+    if (!filters.maincat || !Array.isArray(filterData.subCategories)) {
+      return [];
+    }
+    console.log('Filtering subcategories for maincat:', filters.maincat);
+    console.log('Available subCategories:', filterData.subCategories);
+    const filtered = filterData.maincat.filter((sub) => {
+      const matches = sub.main && sub.main.trim() === filters.maincat.trim();
+      console.log('Sub:', sub.main, 'Maincat:', filters.maincat, 'Matches:', matches);
+      return matches;
+    });
+    console.log('Filtered result:', filtered);
+    return filtered;
+  }, [filters.maincat, filterData.subCategories]);
+
+  // Filter child categories based on selected sub category
+  const filteredChildCategories = React.useMemo(() => {
+    if (!filters.subcat || !Array.isArray(filterData.childCategories)) {
+      return [];
+    }
+    return filterData.childCategories.filter(
+      (child) => child.sub && child.sub.trim() === filters.subcat.trim()
+    );
+  }, [filters.subcat, filterData.childCategories]);
+
+  // Fetch subcategories when main category changes
+  React.useEffect(() => {
+    if (filters.maincat) {
+      console.log('Main category changed to:', filters.maincat);
+      dispatch(fetchFilterOptions({ maincat: filters.maincat }));
+    } else {
+      // dispatch(resetSubCategories());
+      dispatch(resetChildCategories());
+      onFilterChange('subcat', null);
+      onFilterChange('childcat', null);
+    }
+  }, [filters.maincat, dispatch, onFilterChange]);
 
   // Fetch child categories when subcategory changes
   React.useEffect(() => {
@@ -164,7 +203,7 @@ const BrandFilter = ({ filters, onFilterChange }) => {
 
         {/* Sub Category */}
         <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.maincat || filterData.loading}>
+          <FormControl fullWidth sx={{ width: '145px' }} size="small" disabled={!filters.maincat || filterData.loadingSubCategories}>
             <InputLabel>Sub Category</InputLabel>
             <Select
               value={filters.subcat || ''}
@@ -174,7 +213,7 @@ const BrandFilter = ({ filters, onFilterChange }) => {
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filterData.subCategories.map((sub) => (
+              {filteredSubCategories.map((sub) => (
                 <MenuItem key={sub._id || sub} value={sub._id || sub}>
                   {sub.name || sub}
                 </MenuItem>
@@ -195,7 +234,7 @@ const BrandFilter = ({ filters, onFilterChange }) => {
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {filterData.childCategories.map((child) => (
+              {filteredChildCategories.map((child) => (
                 <MenuItem key={child._id || child} value={child._id || child}>
                   {child.name || child}
                 </MenuItem>

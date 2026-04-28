@@ -6,18 +6,42 @@ const API_BASE_URL = 'http://localhost:5000/api/v1/';
 // Async thunk for fetching all filter options
 export const fetchFilterOptions = createAsyncThunk(
   'filterDropdown/fetchFilterOptions',
-  async (params = {}, { rejectWithValue }) => {
+  
+  async (filters = {}, { rejectWithValue }) => {
     try {
-      const { sub, state, district } = params;
       const queryParams = new URLSearchParams();
-     
-      if (sub) queryParams.append('sub', sub);
-      if (state) queryParams.append('state', state);
-      if (district) queryParams.append('district', district);
+
+      // Only append parameters if they exist (similar to filterBrandSlice pattern)
+      if (filters.maincat) queryParams.append('maincat', filters.maincat);
+      if (filters.sub) queryParams.append('sub', filters.sub);
+      if (filters.state) queryParams.append('state', filters.state);
+      if (filters.district) queryParams.append('district', filters.district);
+      
+      console.log('Filters passed:', filters);
+      console.log('Query params:', queryParams.toString());
  
-      const response = await axios.post(`${API_BASE_URL}filter/getAllBrandFiltersdata?${queryParams}`);
-      return response.data.data;
+      // Determine if this is a parameterized request or initial load
+      const hasFilters = filters.maincat || filters.sub || filters.state || filters.district;
+      
+      let endpoint;
+      let response;
+      
+      if (hasFilters) {
+        // Use GET with getAllBrandsAndFilter when filters are provided
+        endpoint = `${API_BASE_URL}filter/getAllBrandsAndFilter?${queryParams.toString()}`;
+        console.log('API Endpoint (GET):', endpoint);
+        response = await axios.get(endpoint);
+      } else {
+        // Use POST with getAllBrandFiltersdata for initial filter data
+        endpoint = `${API_BASE_URL}filter/getAllBrandFiltersdata`;
+        console.log('API Endpoint (POST):', endpoint);
+        response = await axios.post(endpoint);
+      }
+      
+      console.log('Response keys:', Object.keys(response.data.data || {}));
+      return { data: response.data.data, filters };
     } catch (error) {
+      console.error('API Error:', error.response?.data || error.message);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
@@ -36,12 +60,14 @@ const initialState = {
  
   // Loading states
   loading: false,
+  loadingSubCategories: false,
   loadingChildCategories: false,
   loadingDistricts: false,
   loadingCities: false,
  
   // Error states
   error: null,
+  subCategoriesError: null,
   childCategoriesError: null,
   districtsError: null,
   citiesError: null,
@@ -51,6 +77,9 @@ const filterDropdownSlice = createSlice({
   name: 'filterDropdown',
   initialState,
   reducers: {
+    resetSubCategories: (state) => {
+      state.subCategories = [];
+    },
     resetChildCategories: (state) => {
       state.childCategories = [];
     },
@@ -62,6 +91,7 @@ const filterDropdownSlice = createSlice({
     },
     clearErrors: (state) => {
       state.error = null;
+      state.subCategoriesError = null;
       state.childCategoriesError = null;
       state.districtsError = null;
       state.citiesError = null;
@@ -71,51 +101,162 @@ const filterDropdownSlice = createSlice({
     builder
       // Initial load of all filters
       .addCase(fetchFilterOptions.pending, (state, action) => {
-        if (!action.meta.arg) {
-          // Only set main loading if fetching all filters
+        const filters = action.meta.arg || {};
+        if (!filters || Object.keys(filters).length === 0) {
+          // Initial load of all filters
           state.loading = true;
+        } else if (filters.maincat) {
+          state.loadingSubCategories = true;
+        } else if (filters.sub) {
+          state.loadingChildCategories = true;
+        } else if (filters.state) {
+          state.loadingDistricts = true;
+        } else if (filters.district) {
+          state.loadingCities = true;
         }
       })
       .addCase(fetchFilterOptions.fulfilled, (state, action) => {
-        const params = action.meta.arg || {};
+        const filters = action.payload?.filters || {};
+        const data = action.payload?.data || {};
        
-        if (params.sub) {
-          // Child categories response
-          state.childCategories = action.payload;
+        if (filters.maincat) {
+          // Response from getAllBrandsAndFilter - extract subcategories and child categories
+          // Try multiple possible response structures
+          let brandCategories = data.brandCategories || data.categories || data.categorydata || [];
+          
+          // If brandCategories is still empty, try extracting from brands
+          if (!Array.isArray(brandCategories) || brandCategories.length === 0) {
+            if (Array.isArray(data.brands)) {
+              brandCategories = data.brands;
+            } else if (Array.isArray(data)) {
+              brandCategories = data;
+            }
+          }
+          
+          console.log('Extracted brandCategories for maincat:', brandCategories);
+          
+          // Extract unique subcategories
+          const uniqueSubCategories = [];
+          const subCatSet = new Set();
+          
+          if (Array.isArray(brandCategories)) {
+            brandCategories.forEach(cat => {
+              const subKey = cat.sub || cat.child || cat.subCategory;
+              if (subKey && !subCatSet.has(subKey)) {
+                subCatSet.add(subKey);
+                uniqueSubCategories.push({
+                  main: cat.main || cat.mainCategory || filters.maincat,
+                  sub: cat.sub || cat.subCategory,
+                  child: cat.child || cat.childCategory,
+                  name: cat.sub || cat.subCategory || cat.child || cat.childCategory,
+                  _id: cat.sub || cat.subCategory || cat.child || cat.childCategory
+                });
+              }
+            });
+          }
+          
+          // Extract unique child categories
+          const uniqueChildCategories = [];
+          const childCatSet = new Set();
+          
+          if (Array.isArray(brandCategories)) {
+            brandCategories.forEach(cat => {
+              const childKey = cat.child || cat.childCategory;
+              if (childKey && !childCatSet.has(childKey)) {
+                childCatSet.add(childKey);
+                uniqueChildCategories.push({
+                  sub: cat.sub || cat.subCategory,
+                  child: childKey,
+                  name: childKey,
+                  _id: childKey
+                });
+              }
+            });
+          }
+          
+          console.log('Unique SubCategories:', uniqueSubCategories);
+          console.log('Unique ChildCategories:', uniqueChildCategories);
+          
+          state.subCategories = uniqueSubCategories;
+          state.childCategories = uniqueChildCategories;
+          state.loadingSubCategories = false;
+        }
+        else if (filters.sub) {
+          // Response from getAllBrandsAndFilter - extract child categories and tags
+          let brandCategories = data.brandCategories || data.categories || data.categorydata || [];
+          
+          // If brandCategories is still empty, try extracting from brands
+          if (!Array.isArray(brandCategories) || brandCategories.length === 0) {
+            if (Array.isArray(data.brands)) {
+              brandCategories = data.brands;
+            } else if (Array.isArray(data)) {
+              brandCategories = data;
+            }
+          }
+          
+          console.log('Extracted brandCategories for subcat:', brandCategories);
+          
+          // Extract unique child categories
+          const uniqueChildCategories = [];
+          const childCatSet = new Set();
+          
+          if (Array.isArray(brandCategories)) {
+            brandCategories.forEach(cat => {
+              const childKey = cat.child || cat.childCategory;
+              if (childKey && !childCatSet.has(childKey)) {
+                childCatSet.add(childKey);
+                uniqueChildCategories.push({
+                  sub: cat.sub || cat.subCategory,
+                  child: childKey,
+                  name: childKey,
+                  _id: childKey,
+                  tag: cat.tag // Include product tag
+                });
+              }
+            });
+          }
+          
+          console.log('Unique ChildCategories for subcat:', uniqueChildCategories);
+          
+          state.childCategories = uniqueChildCategories;
           state.loadingChildCategories = false;
         }
-        else if (params.state) {
+        else if (filters.state) {
           // Districts response
-          state.districts = action.payload;
+          state.districts = data.district || data;
           state.loadingDistricts = false;
         }
-        else if (params.district) {
+        else if (filters.district) {
           // Cities response
-          state.cities = action.payload;
+          state.cities = data.city || data;
           state.loadingCities = false;
         }
         else {
           // Initial full filters response
-          state.mainCategories = action.payload.maincat || [];
-          state.subCategories = action.payload.subcat || [];
-          state.investmentRanges = action.payload.investmentRange || [];
-          state.franchiseModels = action.payload.franchiseModel || [];
-          state.states = action.payload.states || [];
+          state.mainCategories = data.maincat || [];
+          state.subCategories = data.subcat || [];
+          state.investmentRanges = data.investmentRange || [];
+          state.franchiseModels = data.franchiseModel || [];
+          state.states = data.states || [];
           state.loading = false;
         }
       })
       .addCase(fetchFilterOptions.rejected, (state, action) => {
-        const params = action.meta.arg || {};
+        const filters = action.meta.arg || {};
        
-        if (params.sub) {
+        if (filters.maincat) {
+          state.subCategoriesError = action.payload;
+          state.loadingSubCategories = false;
+        }
+        else if (filters.sub) {
           state.childCategoriesError = action.payload;
           state.loadingChildCategories = false;
         }
-        else if (params.state) {
+        else if (filters.state) {
           state.districtsError = action.payload;
           state.loadingDistricts = false;
         }
-        else if (params.district) {
+        else if (filters.district) {
           state.citiesError = action.payload;
           state.loadingCities = false;
         }
@@ -128,6 +269,7 @@ const filterDropdownSlice = createSlice({
 });
  
 export const {
+  resetSubCategories,
   resetChildCategories,
   resetDistricts,
   resetCities,
