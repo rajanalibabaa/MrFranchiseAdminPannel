@@ -102,7 +102,7 @@ editNewincomingShow,
                 <TableCell>Pause</TableCell>
               )}
               {editShow && !paidShow && <TableCell>Payment</TableCell>}
-              {/* {!pauseShow && <TableCell>Delete</TableCell>} */}
+              {!pauseShow && <TableCell>Delete</TableCell>}
 
               {/* <TableCell>Delete</TableCell> */}
               {!editShow && !pauseShow && !paidShow && (
@@ -308,7 +308,7 @@ editNewincomingShow,
                     </TableCell>
                   )}
 
-                  {/* {!pauseShow && (
+                  {!pauseShow && (
                     <TableCell>
                     <IconButton
                       color="error"
@@ -317,7 +317,7 @@ editNewincomingShow,
                       <Delete />
                     </IconButton>
                   </TableCell>
-                  )} */}
+                  )}
                   {!editShow && !paidShow && (
                     <TableCell>
                       {brand?.isApproved === false && (

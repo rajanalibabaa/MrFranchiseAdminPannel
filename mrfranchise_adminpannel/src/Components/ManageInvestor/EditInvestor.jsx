@@ -1,30 +1,29 @@
-  import React, { useState, useEffect, useCallback } from "react";
-  import {
-    Box,
-    Typography,
-    Paper,
-    Avatar,
-    CircularProgress,
-    Button,
-    TextField,
-    Snackbar,
-    IconButton,
-    MenuItem,
-    Dialog ,
-    DialogTitle ,
-    DialogContent ,
-    DialogActions ,
-  } from "@mui/material";
-  import CloseIcon from '@mui/icons-material/Close';
-  import SaveIcon from "@mui/icons-material/Save";
-  import DeleteIcon from "@mui/icons-material/Delete";
-  import AddIcon from "@mui/icons-material/Add";
-  import axios from "axios";
-  import MuiAlert from "@mui/material/Alert";
-  import { useNavigate, useParams, useLocation } from "react-router-dom";
-  import { categories } from "../Brands/BrandLIstingRegister/BrandCategories";
-  import { TbPhotoEdit } from "react-icons/tb";
-import { set } from "react-hook-form";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  Avatar,
+  CircularProgress,
+  Button,
+  TextField,
+  Snackbar,
+  IconButton,
+  MenuItem,
+  Dialog ,
+  DialogTitle ,
+  DialogContent ,
+  DialogActions ,
+} from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from "@mui/icons-material/Save";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import axios from "axios";
+import MuiAlert from "@mui/material/Alert";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { categories } from "../Brands/BrandLIstingRegister/BrandCategories";
+import { TbPhotoEdit } from "react-icons/tb";
 
   const EditInvestor = () => {
     
