@@ -19,7 +19,8 @@ import {
   TextField,
   Chip,
   Stack,
-  Divider
+  Select,
+  MenuItem
 } from "@mui/material";
 import axios from "axios";
 
@@ -31,6 +32,9 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState("");
   const [inputName, setInputName] = useState("");
+
+  // ✅ store selected lead per row
+  const [selectedLeads, setSelectedLeads] = useState({});
 
   /* ================= FETCH ================= */
   const fetchPlans = async () => {
@@ -62,12 +66,12 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   }, [refresh]);
 
   /* ================= SPLIT ================= */
-  const leadPlans = plans.filter(p => p.packageType === "LEAD");
+  const leadPlans = plans.filter(p => p.packageType === "LEAD" || p.packageType === "FREE");
   const listingPlans = plans.filter(p => p.packageType === "LISTING");
 
   /* ================= DELETE ================= */
-  const handleOpenDelete = (plan, index) => {
-   setDeleteId(plan._id);
+  const handleOpenDelete = (plan) => {
+    setDeleteId(plan._id);
     setDeleteName(plan.planName);
     setInputName("");
     setOpenDelete(true);
@@ -102,8 +106,6 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   /* ================= TABLE ================= */
   const renderTable = (title, data, color) => (
     <Box mb={5}>
-
-      {/* HEADER */}
       <Box
         sx={{
           background: color,
@@ -118,17 +120,9 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
         {title}
       </Box>
 
-      <TableContainer
-        component={Paper}
-        elevation={3}
-        sx={{
-          borderRadius: "0 0 10px 10px",
-          overflow: "hidden"
-        }}
-      >
-        <Table size="medium">
+      <TableContainer component={Paper} elevation={3}>
+        <Table>
 
-          {/* HEAD */}
           <TableHead sx={{ background: "#f4f6f8" }}>
             <TableRow>
               <TableCell><b>Plans</b></TableCell>
@@ -140,7 +134,6 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
             </TableRow>
           </TableHead>
 
-          {/* BODY */}
           <TableBody>
             {loading ? (
               <TableRow>
@@ -149,121 +142,101 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((plan, planIndex) =>
-                plan.packages.map((pkg, index) => (
-                  <TableRow
-                    key={index}
-                    hover
-                    sx={{
-                      "&:hover": {
-                        backgroundColor: "#f9fafb"
-                      }
-                    }}
-                  >
-                    {index === 0 && (
-                      <TableCell
-                        rowSpan={plan.packages.length}
-                        sx={{
-                          fontWeight: 600,
-                          verticalAlign: "top",
-                          background: "#fafafa",
-                          minWidth: 160
-                        }}
-                      >
-                        {plan.planName}
-                      </TableCell>
-                    )}
+              data.map((plan) =>
+                plan.packages.map((pkg, index) => {
+                  
+                  const key = `${plan._id}-${index}`;
+                  const leadsArray = Array.isArray(pkg.totalLeads)
+                    ? pkg.totalLeads
+                    : [];
 
-                    {/* RANGE */}
-                    <TableCell>
-                      <Typography
-                        fontWeight={600}
-                        color="primary"
-                        fontSize={14}
-                      >
-                        {pkg.investmentRangeLabel}
-                      </Typography>
+                  const selectedLead =
+                    selectedLeads[key] || leadsArray[0] || 0;
 
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        flexWrap="wrap"
-                        mt={0.5}
-                      >
-                        {pkg.investmentRange?.map((r) => (
-                          <Chip
-                            key={r}
-                            label={r}
-                            size="small"
-                            sx={{
-                              fontSize: 11,
-                              background: "#eef2ff"
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </TableCell>
+                  return (
+                    <TableRow key={key} hover>
 
-                    <TableCell>
-                      {pkg.validityDays} days
-                    </TableCell>
-
-                    <TableCell>
-                      {range * pkg.totalLeads}
-                    </TableCell>
-
-                    <TableCell>
-                      ₹ {range * pkg.amount}
-                    </TableCell>
-
-                    {/* ACTIONS */}
-                    <TableCell align="center">
                       {index === 0 && (
-                        <Box display="flex" gap={1} justifyContent="center">
-
-                          {/* EDIT */}
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => onEdit(plan, planIndex)}
-                            sx={{
-                              backgroundColor: "#2e7d32",
-                              textTransform: "none",
-                              px: 2,
-                              "&:hover": {
-                                backgroundColor: "#1b5e20"
-                              }
-                            }}
-                          >
-                            Edit
-                          </Button>
-
-                          {/* DELETE */}
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleOpenDelete(plan)}
-                            sx={{
-                              backgroundColor: "#d32f2f",
-                              textTransform: "none",
-                              px: 2,
-                              "&:hover": {
-                                backgroundColor: "#b71c1c"
-                              }
-                            }}
-                          >
-                            Delete
-                          </Button>
-
-                        </Box>
+                        <TableCell rowSpan={plan.packages.length}>
+                          {plan.planName}
+                        </TableCell>
                       )}
-                    </TableCell>
 
-                  </TableRow>
-                ))
+                      {/* RANGE */}
+                      <TableCell>
+                        <Typography fontWeight={600}>
+                          {pkg.investmentRangeLabel}
+                        </Typography>
+
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                          {pkg.investmentRange?.map((r) => (
+                            <Chip key={r} label={r} size="small" />
+                          ))}
+                        </Stack>
+                      </TableCell>
+
+                      <TableCell>
+                        {pkg.validityDays} days
+                      </TableCell>
+
+                      {/* ✅ DROPDOWN */}
+                      <TableCell>
+                        <Select
+                          size="small"
+                          value={selectedLead}
+                          onChange={(e) => {
+                            setSelectedLeads({
+                              ...selectedLeads,
+                              [key]: e.target.value
+                            });
+                          }}
+                        >
+                          {leadsArray.map((lead, i) => (
+                            <MenuItem key={i} value={lead}>
+                              {lead}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+
+                      {/* ✅ CALCULATED */}
+                      <TableCell>
+                        ₹ {pkg.amount *range }
+                      </TableCell>
+
+                      {/* ACTIONS */}
+                      <TableCell align="center">
+                        {index === 0 && (
+                          <Box display="flex" gap={1} justifyContent="center">
+
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => onEdit(plan)}
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="error"
+                              onClick={() => handleOpenDelete(plan)}
+                            >
+                              Delete
+                            </Button>
+
+                          </Box>
+                        )}
+                      </TableCell>
+
+                    </TableRow>
+                  );
+                })
               )
             )}
           </TableBody>
+
         </Table>
       </TableContainer>
     </Box>
@@ -293,18 +266,11 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCloseDelete}>
-            Cancel
-          </Button>
+          <Button onClick={handleCloseDelete}>Cancel</Button>
 
           <Button
             variant="contained"
-            sx={{
-              backgroundColor: "#d32f2f",
-              "&:hover": {
-                backgroundColor: "#b71c1c"
-              }
-            }}
+            color="error"
             disabled={inputName !== deleteName}
             onClick={handleDelete}
           >
