@@ -69,31 +69,79 @@ const generateLabel = (selected) => {
   return `${firstValue} to ${lastValue}`;
 };
 
+const leadPackageId = [
+  "LE_PA_001",
+  "LE_PA_002",
+  "LE_PA_003",
+  "LE_PA_004",
+  "LE_PA_005",
+] // Example ID, replace with actual logic
+const listingPackageId = [
+  "LI_PA_001",
+  "LI_PA_002",
+  "LI_PA_003",
+  "LI_PA_004",
+  "LI_PA_005",
+] // Example ID, replace with actual logic
+const freePackageId = [
+  "FR_PA_001"
+
+] // Example ID, replace with actual logic
+
+const indexNumberOptions = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5"
+] // Example ID, replace with actual logic
+
 const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
 
   const initialState = {
     planName: "",
     packageType: "LEAD",
+
+    /* ✅ ADDED */
+    planUniqueId : "",
+    indexNumber: "",
+
     packages: [
       {
         investmentRangeLabel: "",
         investmentRange: [],
         validityDays: "",
         amount: "0",
-        totalLeads: [],   // ✅ ARRAY
-        leadInput: ""     // ✅ TEMP INPUT
+        totalLeads: [],
+        leadInput: ""
       },
     ],
   };
 
   const [form, setForm] = useState(initialState);
 
+
+   /* ================= GET ID OPTIONS ================= */
+  const getPackageIdOptions = () => {
+    if (form.packageType === "LEAD") return leadPackageId;
+    if (form.packageType === "LISTING") return listingPackageId;
+    if (form.packageType === "FREE") return freePackageId;
+    return [];
+  };
+
+
   /* ================= EDIT MODE ================= */
   useEffect(() => {
     if (editData) {
+      console.log("Editing Plan:", editData);
       setForm({
         planName: editData.planName || "",
         packageType: editData.packageType || "LEAD",
+
+        /* ✅ ADDED */
+        planUniqueId : editData.planUniqueId  || "",
+        indexNumber: editData.indexNumber || "",
+
         packages: editData.packages?.length
           ? editData.packages.map(pkg => ({
               ...pkg,
@@ -180,11 +228,21 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
         };
       });
 
-      const payload = {
-        planName: form.planName,
-        packageType: form.packageType,
-        packages: formattedPackages
-      };
+   const payload = {
+  planName: form.planName,
+  packageType: form.packageType,
+
+  /* ✅ FIXED */
+  planUniqueId:form.planUniqueId ,
+ 
+
+  indexNumber:
+    form.indexNumber !== "" && !isNaN(form.indexNumber)
+      ? Number(form.indexNumber)
+      : undefined,
+
+  packages: formattedPackages
+};
 
       if (editId === null) {
         await axios.post(
@@ -212,6 +270,7 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
   return (
     <Box p={1}>
 
+    
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>Package Name</InputLabel>
         <Select
@@ -223,6 +282,59 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
           <MenuItem value="FREE">FREE PACKAGE</MenuItem>
         </Select>
       </FormControl>
+        {/* ✅ ADDED INPUTS */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+      
+        {/* PLAN UNIQUE ID DROPDOWN */}
+        <Grid item xs={6} width="100%">
+          <FormControl fullWidth>
+            <InputLabel >Plan Unique ID</InputLabel>
+            <Select
+              value={form.planUniqueId || ""}
+              label="Plan Unique ID"
+              onChange={(e) =>
+                setForm({ ...form, planUniqueId: e.target.value })
+              }
+            >
+              {getPackageIdOptions().map((id) => (
+                <MenuItem key={id} value={id}>
+                  {id}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={6} width="100%">
+          {/* <TextField
+            fullWidth
+            label="Index Number"
+            type="number"
+            value={form.indexNumber}
+            onChange={(e) =>
+  setForm({ ...form, indexNumber: e.target.value.replace(/\D/g, "") })
+}
+          /> */}
+
+             <FormControl fullWidth>
+            <InputLabel >Index Number</InputLabel>
+            <Select
+              value={form.indexNumber || ""}
+              label="Index Number"
+              onChange={(e) =>
+                setForm({ ...form, indexNumber: e.target.value })
+              }
+            >
+              {indexNumberOptions.map((id) => (
+                <MenuItem key={id} value={id}>
+                  {id}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
 
       <TextField
         fullWidth
@@ -232,6 +344,8 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
         sx={{ mb: 3 }}
       />
 
+
+      {/* ✅ EVERYTHING BELOW IS UNCHANGED */}
       {form.packages.map((pkg, pkgIndex) => (
         <Paper key={pkgIndex} sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2}>
@@ -239,7 +353,7 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
             {/* RANGE */}
             <Grid item xs={4}>
               <FormControl fullWidth>
-                <InputLabel shrink>Investment Range</InputLabel>
+                <InputLabel >Investment Range</InputLabel>
 
                 <Select
                   multiple
