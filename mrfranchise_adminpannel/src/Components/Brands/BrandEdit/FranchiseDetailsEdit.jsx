@@ -230,6 +230,8 @@ const FranchiseDetailsEdit = ({
     "KIOSK",
     "SHOP IN SHOP",
     "CLOUD KITCHEN",
+      "DEALERS & DISTRIBUTORS",
+    "CHANNEL PARTNERS",
   ];
 
   const investmentRanges = [
