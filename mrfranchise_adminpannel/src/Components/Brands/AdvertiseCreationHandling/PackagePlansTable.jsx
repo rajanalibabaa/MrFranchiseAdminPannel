@@ -19,7 +19,8 @@ import {
   TextField,
   Chip,
   Stack,
-  Divider
+  Select,
+  MenuItem,
 } from "@mui/material";
 import axios from "axios";
 
@@ -32,24 +33,29 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   const [deleteName, setDeleteName] = useState("");
   const [inputName, setInputName] = useState("");
 
+  const [selectedLeads, setSelectedLeads] = useState({});
+
   /* ================= FETCH ================= */
   const fetchPlans = async () => {
     try {
       setLoading(true);
 
       const res = await axios.get(
-        "http://localhost:5000/api/v1/admin/plans/getAllPlans"
+        "http://localhost:5000/api/v1/admin/plans/getAllPlans",
       );
 
-      const formatted = res.data.data.map(item => ({
-        _id: item._id,
-        planName: item.planName,
-        packageType: item.packageType,
-        packages: item.packages || []
-      }));
+      const formatted = res.data.data
+        .map((item) => ({
+          _id: item._id,
+          planName: item.planName,
+          planUniqueId: item.planUniqueId ?? "",
+          indexNumber: Number(item.indexNumber) || 9999, // fallback
+          packageType: item.packageType,
+          packages: item.packages || [],
+        }))
+        .sort((a, b) => a.indexNumber - b.indexNumber); // ✅ SORT
 
       setPlans(formatted);
-
     } catch (error) {
       console.error(error);
     } finally {
@@ -62,12 +68,15 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   }, [refresh]);
 
   /* ================= SPLIT ================= */
-  const leadPlans = plans.filter(p => p.packageType === "LEAD");
-  const listingPlans = plans.filter(p => p.packageType === "LISTING");
+  const leadPlans = plans.filter((p) => p.packageType === "LEAD");
+
+  const listingPlans = plans.filter((p) => p.packageType === "LISTING");
+
+  const freePlans = plans.filter((p) => p.packageType === "FREE");
 
   /* ================= DELETE ================= */
-  const handleOpenDelete = (plan, index) => {
-   setDeleteId(plan._id);
+  const handleOpenDelete = (plan) => {
+    setDeleteId(plan._id);
     setDeleteName(plan.planName);
     setInputName("");
     setOpenDelete(true);
@@ -88,7 +97,7 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
       }
 
       await axios.delete(
-        `http://localhost:5000/api/v1/admin/plans/${deleteId}`
+        `http://localhost:5000/api/v1/admin/plans/${deleteId}`,
       );
 
       alert("Deleted");
@@ -102,8 +111,6 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
   /* ================= TABLE ================= */
   const renderTable = (title, data, color) => (
     <Box mb={5}>
-
-      {/* HEADER */}
       <Box
         sx={{
           background: color,
@@ -112,155 +119,162 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
           py: 1.2,
           borderRadius: "8px 8px 0 0",
           fontWeight: 600,
-          fontSize: 16
         }}
       >
         {title}
       </Box>
 
-      <TableContainer
-        component={Paper}
-        elevation={3}
-        sx={{
-          borderRadius: "0 0 10px 10px",
-          overflow: "hidden"
-        }}
-      >
-        <Table size="medium">
-
-          {/* HEAD */}
+      <TableContainer component={Paper} elevation={3}>
+        <Table>
+          {/* ✅ HEADER */}
           <TableHead sx={{ background: "#f4f6f8" }}>
             <TableRow>
-              <TableCell><b>Plans</b></TableCell>
-              <TableCell><b>Investment Range</b></TableCell>
-              <TableCell><b>Validity</b></TableCell>
-              <TableCell><b>Total Leads</b></TableCell>
-              <TableCell><b>Amount</b></TableCell>
-              <TableCell align="center"><b>Actions</b></TableCell>
+              <TableCell>
+                <b>Plan Name</b>
+              </TableCell>
+              {/* <TableCell><b>Plan ID</b></TableCell> */}
+              {/* <TableCell><b>Index</b></TableCell> */}
+              <TableCell>
+                <b>Investment Range</b>
+              </TableCell>
+              <TableCell>
+                <b>Validity</b>
+              </TableCell>
+              <TableCell>
+                <b>Total Leads</b>
+              </TableCell>
+              <TableCell>
+                <b>Amount</b>
+              </TableCell>
+              <TableCell align="center">
+                <b>Actions</b>
+              </TableCell>
             </TableRow>
           </TableHead>
 
-          {/* BODY */}
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={8} align="center">
                   <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((plan, planIndex) =>
-                plan.packages.map((pkg, index) => (
-                  <TableRow
-                    key={index}
-                    hover
-                    sx={{
-                      "&:hover": {
-                        backgroundColor: "#f9fafb"
-                      }
-                    }}
-                  >
-                    {index === 0 && (
-                      <TableCell
-                        rowSpan={plan.packages.length}
-                        sx={{
-                          fontWeight: 600,
-                          verticalAlign: "top",
-                          background: "#fafafa",
-                          minWidth: 160
-                        }}
-                      >
-                        {plan.planName}
-                      </TableCell>
-                    )}
+              data.map((plan) =>
+                plan.packages.map((pkg, index) => {
+                  const key = `${plan._id}-${index}`;
+                  const leadsArray = Array.isArray(pkg.totalLeads)
+                    ? pkg.totalLeads
+                    : [];
 
-                    {/* RANGE */}
-                    <TableCell>
-                      <Typography
-                        fontWeight={600}
-                        color="primary"
-                        fontSize={14}
-                      >
-                        {pkg.investmentRangeLabel}
-                      </Typography>
+                  const selectedLead = selectedLeads[key] || leadsArray[0] || 0;
 
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        flexWrap="wrap"
-                        mt={0.5}
-                      >
-                        {pkg.investmentRange?.map((r) => (
-                          <Chip
-                            key={r}
-                            label={r}
-                            size="small"
-                            sx={{
-                              fontSize: 11,
-                              background: "#eef2ff"
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell>
-                      {pkg.validityDays} days
-                    </TableCell>
-
-                    <TableCell>
-                      {range * pkg.totalLeads}
-                    </TableCell>
-
-                    <TableCell>
-                      ₹ {range * pkg.amount}
-                    </TableCell>
-
-                    {/* ACTIONS */}
-                    <TableCell align="center">
+                  return (
+                    <TableRow key={key} hover>
+                      {/* ✅ PLAN DETAILS */}
                       {index === 0 && (
-                        <Box display="flex" gap={1} justifyContent="center">
-
-                          {/* EDIT */}
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => onEdit(plan, planIndex)}
+                        <>
+                          <TableCell
+                            rowSpan={plan.packages.length}
                             sx={{
-                              backgroundColor: "#2e7d32",
-                              textTransform: "none",
-                              px: 2,
-                              "&:hover": {
-                                backgroundColor: "#1b5e20"
-                              }
+                              verticalAlign: "top",
+                              minWidth: 180,
                             }}
                           >
-                            Edit
-                          </Button>
+                            <Box
+                              display="flex"
+                              flexDirection="column"
+                              gap={0.5}
+                            >
+                              {/* INDEX + PLAN NAME */}
+                              <Typography variant="subtitle2" fontWeight={600}>
+                                {plan.indexNumber}. {plan.planName}
+                              </Typography>
 
-                          {/* DELETE */}
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleOpenDelete(plan)}
-                            sx={{
-                              backgroundColor: "#d32f2f",
-                              textTransform: "none",
-                              px: 2,
-                              "&:hover": {
-                                backgroundColor: "#b71c1c"
-                              }
-                            }}
-                          >
-                            Delete
-                          </Button>
+                              {/* UNIQUE ID */}
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                ({plan.planUniqueId})
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          {/* <TableCell rowSpan={plan.packages.length}>
+                         
+                          </TableCell>
 
-                        </Box>
+                          <TableCell rowSpan={plan.packages.length}>
+                            <b></b>
+                          </TableCell> */}
+                        </>
                       )}
-                    </TableCell>
 
-                  </TableRow>
-                ))
+                      {/* RANGE */}
+                      <TableCell>
+                        <Typography fontWeight={600}>
+                          {pkg.investmentRangeLabel}
+                        </Typography>
+
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                          {pkg.investmentRange?.map((r) => (
+                            <Chip key={r} label={r} size="small" />
+                          ))}
+                        </Stack>
+                      </TableCell>
+
+                      {/* VALIDITY */}
+                      <TableCell>{pkg.validityDays} days</TableCell>
+
+                      {/* LEADS DROPDOWN */}
+                      <TableCell>
+                        <Select
+                          size="small"
+                          value={selectedLead}
+                          onChange={(e) => {
+                            setSelectedLeads({
+                              ...selectedLeads,
+                              [key]: e.target.value,
+                            });
+                          }}
+                        >
+                          {leadsArray.map((lead, i) => (
+                            <MenuItem key={i} value={lead}>
+                              {lead}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+
+                      {/* AMOUNT */}
+                      <TableCell>₹ {pkg.amount * range}</TableCell>
+
+                      {/* ACTIONS */}
+                      <TableCell align="center">
+                        {index === 0 && (
+                          <Box display="flex" gap={1} justifyContent="center">
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => onEdit(plan)}
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="error"
+                              onClick={() => handleOpenDelete(plan)}
+                            >
+                              Delete
+                            </Button>
+                          </Box>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }),
               )
             )}
           </TableBody>
@@ -271,9 +285,9 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
 
   return (
     <Box p={2}>
-
       {renderTable("LEAD PACKAGES", leadPlans, "#55d25c")}
       {renderTable("LISTING PACKAGES", listingPlans, "#f08c35")}
+      {renderTable("FREE PACKAGES", freePlans, "#3b82f6")}
 
       {/* DELETE DIALOG */}
       <Dialog open={openDelete} onClose={handleCloseDelete}>
@@ -293,18 +307,11 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCloseDelete}>
-            Cancel
-          </Button>
+          <Button onClick={handleCloseDelete}>Cancel</Button>
 
           <Button
             variant="contained"
-            sx={{
-              backgroundColor: "#d32f2f",
-              "&:hover": {
-                backgroundColor: "#b71c1c"
-              }
-            }}
+            color="error"
             disabled={inputName !== deleteName}
             onClick={handleDelete}
           >
@@ -312,7 +319,6 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 };
