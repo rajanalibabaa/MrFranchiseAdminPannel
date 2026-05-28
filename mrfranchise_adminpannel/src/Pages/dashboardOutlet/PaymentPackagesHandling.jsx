@@ -43,6 +43,7 @@ const PaymentPackagesPage = () => {
   };
 
   const handleEdit = (plan) => {
+    console.log("Editinggg plan:", plan);
     setEditData(plan);
     setEditId(plan._id);
     setOpenCreate(true);

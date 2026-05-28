@@ -131,6 +131,14 @@ const SidebarAdmin = () => {
           { label: "All Investors", path: "/dashboard/allinvestors" },
         ],
       },
+      {
+        label:"Payment Management",
+        icon:<AccountBalance />,
+        toggleKey:"payment",
+        submenu:[
+          {label:"paymentActivity",path:"/dashboard/paymentactivity"},
+        ]
+      }
     ],
     []
   );

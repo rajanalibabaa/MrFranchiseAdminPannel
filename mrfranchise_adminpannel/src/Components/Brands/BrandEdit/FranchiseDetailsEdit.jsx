@@ -230,6 +230,8 @@ const FranchiseDetailsEdit = ({
     "KIOSK",
     "SHOP IN SHOP",
     "CLOUD KITCHEN",
+      "DEALERS & DISTRIBUTORS",
+    "CHANNEL PARTNERS",
   ];
 
   const investmentRanges = [
@@ -1939,39 +1941,48 @@ const FranchiseDetailsEdit = ({
             </Grid>
             {/* Column 13 - ROI */}
             <Grid item>
-              <FormControl fullWidth size="medium" required error={!!errors.roi}>
-                <InputLabel>ROI (%)</InputLabel>
-                <Select
-                  label="ROI (%)"
-                  name="roi"
-                  value={currentFicoModel.roi || ""}
-                  onChange={handleFicoChange}
-                  renderValue={(selected) => (selected ? `${selected} %` : "")}
-                  disabled={noFees.roi}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        width: 390,
-                        maxHeight: 300,
-                        "& .MuiList-root": {
-                          display: "grid",
-                          gridTemplateColumns: "repeat(10, 1fr)",
-                          gap: "4px",
-                          padding: "4px",
-                        },
-                      },
+          <FormControl fullWidth size="medium" required error={!!errors.roi}>
+            <InputLabel>ROI (%)</InputLabel>
+            <Select
+              label="ROI (%)"
+              name="roi"
+              value={currentFicoModel.roi || ""}
+              onChange={handleFicoChange}
+              renderValue={(selected) => (selected ? `${selected} %` : "")}
+              disabled={noFees.roi}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    width: 390,
+                    maxHeight: 300,
+                    "& .MuiList-root": {
+                      display: "grid",
+                      gridTemplateColumns: "repeat(10, 1fr)",
+                      gap: "4px",
+                      padding: "4px",
                     },
+                  },
+                },
+              }}
+            >
+              {Array.from({ length: 99 }, (_, i) => (
+                <MenuItem
+                  key={i + 1}
+                  value={`${i + 1}`}
+                  sx={{
+                    minWidth: 0,
+                    padding: "6px 4px",
+                    display: "flex",
+                    justifyContent: "center",
                   }}
                 >
-                  {Array.from({ length: 99 }, (_, i) => (
-                    <MenuItem key={i + 1} value={`${i + 1}`}>
-                      {i + 1}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.roi && <FormHelperText error>{errors.roi}</FormHelperText>}
-              </FormControl>
-            </Grid>
+                  {i + 1}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.roi && <FormHelperText error>{errors.roi}</FormHelperText>}
+          </FormControl>
+        </Grid>
             {/* Column 14 - PayBack Period */}
             <Grid item>
               <TextField
@@ -1991,41 +2002,55 @@ const FranchiseDetailsEdit = ({
               />
             </Grid>
             {/* Column 15 - Margin on Sales */}
-            <Grid item>
-              <FormControl fullWidth size="medium" required error={!!errors.marginOnSales}>
-                <InputLabel>MarginOnSales (%)</InputLabel>
-                <Select
-                  label="Margin ON Sales (%)"
-                  name="marginOnSales"
-                  value={currentFicoModel.marginOnSales || ""}
-                  onChange={handleFicoChange}
-                  renderValue={(selected) => (selected ? `${selected} %` : "")}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        width: 390,
-                        maxHeight: 300,
-                        "& .MuiList-root": {
-                          display: "grid",
-                          gridTemplateColumns: "repeat(10, 1fr)",
-                          gap: "4px",
-                          padding: "4px",
-                        },
-                      },
+             <Grid item>
+          <FormControl
+            fullWidth
+            size="medium"
+            required
+            error={!!errors.marginOnSales}
+          >
+            <InputLabel>MarginOnSales (%)</InputLabel>
+            <Select
+              label="Margin ON Sales (%)"
+              name="marginOnSales"
+              value={currentFicoModel.marginOnSales || ""}
+              onChange={handleFicoChange}
+              renderValue={(selected) => (selected ? `${selected} %` : "")}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    width: 390,
+                    maxHeight: 300,
+                    "& .MuiList-root": {
+                      display: "grid",
+                      gridTemplateColumns: "repeat(10, 1fr)",
+                      gap: "4px",
+                      padding: "4px",
                     },
+                  },
+                },
+              }}
+            >
+              {Array.from({ length: 99 }, (_, i) => (
+                <MenuItem
+                  key={i + 1}
+                  value={`${i + 1}`}
+                  sx={{
+                    minWidth: 0,
+                    padding: "6px 4px",
+                    display: "flex",
+                    justifyContent: "center",
                   }}
                 >
-                  {Array.from({ length: 99 }, (_, i) => (
-                    <MenuItem key={i + 1} value={`${i + 1}`}>
-                      {i + 1}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.marginOnSales && (
-                  <FormHelperText error>{errors.marginOnSales}</FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
+                  {i + 1}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.marginOnSales && (
+              <FormHelperText error>{errors.marginOnSales}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
           </Grid>
 
           {/* Add/Update/Cancel Buttons */}
