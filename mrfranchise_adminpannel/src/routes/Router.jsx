@@ -22,6 +22,7 @@ import PaymentPackagesPage from "../Pages/dashboardOutlet/PaymentPackagesHandlin
 import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
 import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
 import IndustryManagementPage from "../Pages/dashboardOutlet/IndustryManagementPage";
+import PaymentActivityPage from "../Pages/payment/paymentActivity";
 
 const Router = () => {
   const dispatch = useDispatch();
@@ -59,6 +60,7 @@ const Router = () => {
             <Route path="allinvestors" element={<AllInvestor />} />
             <Route path="newinvestors" element={<InvestorRegister />} />
             <Route path="edit-investor/:id" element={<EditInvestor />} />
+            <Route path="paymentactivity" element={<PaymentActivityPage />} />
           </Route>
         )}
 
