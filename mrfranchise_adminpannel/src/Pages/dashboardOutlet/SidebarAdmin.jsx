@@ -138,6 +138,14 @@ const SidebarAdmin = () => {
         submenu:[
           {label:"paymentActivity",path:"/dashboard/paymentactivity"},
         ]
+      },
+      {
+        label:"Lead Management",
+        icon:<AccountBalance />,
+        toggleKey:"lead",
+        submenu:[
+          {label:"overallinvestorenquiryformdata",path:"/dashboard/overallinvestorenquiryformdata"},
+        ]
       }
     ],
     []

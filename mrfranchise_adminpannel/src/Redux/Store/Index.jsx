@@ -11,7 +11,7 @@ import applicationReducer from '../Slices/InstantApplyCreationSlice.jsx'
 import paymentPackageReducer  from "../Slices/AdvertiseHandlingSlices.jsx";
 import NotificationsReducer from "../Slices/NotificationsSlice/notificationsSliceget.jsx";
 import paymentHistoryReducer from "../Slices/paymentSlice/paymentActivity.jsx";
-
+import overallInvestorEnquiryReducer from "../Slices/leadHandlingSlice/overleadenquiryfetch.jsx";
 // Combine reducers
 const rootReducer = combineReducers({
   loading: loadingReducer,
@@ -23,6 +23,7 @@ const rootReducer = combineReducers({
   paymentPackages:paymentPackageReducer,
   notifications: NotificationsReducer,
   paymentHistory:paymentHistoryReducer,
+  overallInvestorEnquiries: overallInvestorEnquiryReducer,
 });
 
 // Persist config

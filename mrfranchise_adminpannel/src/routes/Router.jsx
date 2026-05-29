@@ -23,7 +23,7 @@ import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
 import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
 import IndustryManagementPage from "../Pages/dashboardOutlet/IndustryManagementPage";
 import PaymentActivityPage from "../Pages/payment/paymentActivity";
-
+import OverallInvestorEnquiryFormData from "../Pages/overallInvertorenquiry/overallivestoryenquiryformdata.jsx";
 const Router = () => {
   const dispatch = useDispatch();
   useEffect(() => {
@@ -61,6 +61,7 @@ const Router = () => {
             <Route path="newinvestors" element={<InvestorRegister />} />
             <Route path="edit-investor/:id" element={<EditInvestor />} />
             <Route path="paymentactivity" element={<PaymentActivityPage />} />
+             <Route path="overallinvestorenquiryformdata" element={<OverallInvestorEnquiryFormData   />}  />
           </Route>
         )}
 
