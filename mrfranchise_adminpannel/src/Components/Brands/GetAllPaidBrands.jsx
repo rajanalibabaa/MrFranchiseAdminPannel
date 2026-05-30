@@ -8,6 +8,7 @@ import PaymentPopup from "../../ui/PaymentPopup";
 import { PostApiCall } from "../../api/default/PostApi";
 import DefaultPopup from "../../ui/DefaultPopup";
 import { useNavigate } from "react-router-dom";
+import ViewPackagePopup from "./ViewPackagePopup";
 
 const GetAllPaidBrands = () => {
   const [brands, setBrands] = useState([]);
@@ -27,49 +28,116 @@ const GetAllPaidBrands = () => {
   const [data, setData] = useState(null);
   const [openPaymentPopup, setOpenPaymentPopup] = useState(false);
   const [openDefaultBrandPopup, setopenDefaultBrandPopup] = useState(false);
+
+    const [openViewPackagePopup, setOpenViewPackagePopup] = useState(false);
+  const [viewPackageData, setViewPackageData] = useState(null);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const fetchData = useCallback(
-    async (page = 1, token) => {
-      try {
-        if (page === 1) setLoading(true);
-        else setLoadingMore(true);
+const fetchData = useCallback(
+  async (page = 1, token) => {
+    try {
+      if (page === 1) setLoading(true);
+      else setLoadingMore(true);
 
-        const res = await GetApiCall(
-          `${Api.admin.get.brands.getallpaidbrands}?page=${page}&limit=${pagination.limit}`,
-          token
-        );
+      const res = await GetApiCall(
+        `${Api.admin.get.brandPackages.getAll}?page=${page}&limit=${pagination.limit}&packagesType=LEAD,LISTING`,
+        token
+      );
 
-        const responseData = res?.data?.data;
-        console.log("responseData:", responseData);
+      console.log("FULL RES:", res);
+      console.log("ALL BRANDS:", res?.data?.data);
 
-        if (responseData) {
-          setBrands((prev) =>
-            page === 1
-              ? responseData.brands || []
-              : [...prev, ...(responseData.brands || [])]
-          );
+      const responseData = res?.data;
 
-          const pg = responseData.pagination || {};
-          setPagination({
-            total: pg.total || 0,
-            totalPages:
-              pg.totalPages || Math.ceil((pg.total || 0) / (pg.limit || 10)),
-            currentPage: pg.currentPage || page,
-            limit: pg.limit || 10,
-            hasNext: pg.hasNext ?? false,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching paid brands:", error);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [pagination.limit]
+    if (responseData?.success) {
+  const allBrands = responseData.data || [];
+
+
+  const mappedBrands = allBrands.map((brand) => {
+    // get LEAD or LISTING packages only
+    const leadPackage = brand.packages?.find(
+      (pkg) => pkg.packagesType === "LEAD"
+    );
+    const listingPackage = brand.packages?.find(
+      (pkg) => pkg.packagesType === "LISTING"
+    );
+
+    const activePackage = leadPackage || listingPackage;
+
+    // get investment range label from first investment package
+    const firstInvestment = activePackage?.investmetPackages?.[0];
+
+    const investmentRange =
+      firstInvestment?.investmetRageLabel || "N/A";
+
+    // sending percentage
+    const sentLeadsPercentage =
+      firstInvestment?.sendingPercentage
+        ? `${firstInvestment.sendingPercentage}%`
+        : "0%";
+
+    return {
+      // keep original data
+      ...brand,
+
+      // map to TableOutlet expected fields
+      brandName: brand.brandName || "",
+      brandname: brand.brandName || "",
+
+      // logo — new API may not have logo, set null for now
+     uploads: { logo: brand.logo || null },
+
+      // category mapping
+      brandCategories: {
+        sub: brand.category || "N/A",
+        child: brand.category || "N/A",
+      },
+
+      // investment range
+      investmentRange: investmentRange,
+      fico: { investmentRange: investmentRange },
+
+      // for LeadSend(%) column
+      activePackage: {
+        sentLeadsPercentage,
+      },
+
+      // payment status — from first active investment package
+      payment: firstInvestment?.isActive || false,
+
+      // pause status
+      isPaidBrandLeadPaused: firstInvestment?.isPaused || false,
+
+      // keep packages
+      packages: brand.packages,
+    };
+  });
+
+  console.log("MAPPED BRANDS:", mappedBrands);
+
+  setBrands((prev) =>
+    page === 1 ? mappedBrands : [...prev, ...mappedBrands]
   );
+
+  setPagination({
+    total: responseData.total || 0,
+    totalPages: responseData.totalPages || 0,
+    currentPage: responseData.page || page,
+    limit: pagination.limit,
+    hasNext: page < (responseData.totalPages || 0),
+  });
+}
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  },
+  [pagination.limit]
+);
 
   useEffect(() => {
     if (token) fetchData(1, token);
@@ -87,17 +155,12 @@ const GetAllPaidBrands = () => {
   };
 
   const handleConformApprove = async (brandId) => {
-    console.log("===brandId=== :", brandId);
-    // setData(brand)
-    // setopenDefaultBrandPopup(true);
-
     const res = await PostApiCall(
       `${Api.admin.post.brand.togglePaidBrandLeadpausePlayById}/${brandId}`
     );
+
     if (res?.data?.statuscode === 200) {
       const apiBrand = res?.data?.data;
-      console.log("apiBrand :", apiBrand);
-      // console.log("brand :", brands);
 
       setBrands((prev) =>
         prev.map((b) =>
@@ -118,8 +181,14 @@ const GetAllPaidBrands = () => {
     setopenDefaultBrandPopup(true);
     setData(brand);
   };
+
   const handleNavigation = (brand) => {
-    navigate(`leads/${brand.uuid}`,{ state: { brand } });
+    navigate(`leads/${brand.uuid}`, { state: { brand } });
+  };
+
+   const handleViewPackage = (brand) => {
+    setViewPackageData(brand);
+    setOpenViewPackagePopup(true);
   };
 
   return (
@@ -140,6 +209,7 @@ const GetAllPaidBrands = () => {
             handlepayment={handlepayment}
             handlePaidLeadPause={handlePaidLeadPause}
             handleNavigation={handleNavigation}
+            handleViewPackage={handleViewPackage}
           />
 
           {pagination.hasNext && (
@@ -161,7 +231,7 @@ const GetAllPaidBrands = () => {
         </Box>
       ) : (
         <p style={{ textAlign: "center", color: "gray" }}>
-          No paid brands found.
+          No brands found.
         </p>
       )}
 
@@ -182,8 +252,14 @@ const GetAllPaidBrands = () => {
           handleConformApprove={handleConformApprove}
           onClose={() => setopenDefaultBrandPopup(false)}
           header={"Approved Brand Lead Pause"}
-          // onConfirm={confirmDelete}
-          // newIncomingDeleteId={selectedBrandId}
+        />
+      )}
+
+       {openViewPackagePopup && (
+        <ViewPackagePopup
+          open={openViewPackagePopup}
+          onClose={() => setOpenViewPackagePopup(false)}
+          data={viewPackageData}
         />
       )}
     </Box>

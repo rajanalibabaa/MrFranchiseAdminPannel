@@ -43,7 +43,10 @@ export const Api = {
         getallpaidbrands:`${BASE_URL}/getAllPaidBrand`,
         getleadsbybrandid:`${BASE_URL_2}/getleadsbybrandid`,
         
-      }
+      },
+       brandPackages: {
+        getAll: `${BASE_URL_2}/brand-packages-plans/get-all`,
+      },
     },
 
     post : {
