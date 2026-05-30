@@ -96,7 +96,7 @@ const total = useSelector((state) => state.brands.totalBrands);
             }
           />
           <StyledTab label="All Pause Brands" />
-          <StyledTab label="All Paid Brands" />
+          <StyledTab label="All Brands Plans" />
         </StyledTabs>
         
       </Box>

@@ -41,7 +41,6 @@ editNewincomingShow,
   handleOpenFreeLeadPausePopup,
   handlePaidLeadPause,
   handleNavigation,
-  handleViewPackage
 }) => {
   const observer = useRef();
 
@@ -80,31 +79,30 @@ editNewincomingShow,
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell sx={{textAlign:"center"}}>Logo</TableCell>
-              <TableCell sx={{textAlign:"center"}}>Brand Name</TableCell>
-              <TableCell sx={{textAlign:"center"}}>Category (Sub)</TableCell>
-              <TableCell >Investment Range</TableCell>
+              <TableCell>Logo</TableCell>
+              <TableCell>Brand Name</TableCell>
+              <TableCell>Category (Sub)</TableCell>
+              <TableCell>Investment Range</TableCell>
               {!pauseShow && !paidShow && <TableCell>Details</TableCell>}
               {editNewincomingShow && <TableCell>Edit</TableCell>}
                {editNewincomingShow && <TableCell>Upgrade/Renew Package</TableCell>}
 
               {editShow && !paidShow && <TableCell>Edit</TableCell>}
-              {editShow && !paidShow && <TableCell>Upgrade/Renew Package</TableCell>}
+              {/* {editShow && !paidShow && <TableCell>Upgrade/Renew Package</TableCell>} */}
               {editShow && !paidShow && <TableCell>BrandPause</TableCell>}
-              {editShow && !paidShow && <TableCell>FreeLeadPause</TableCell>}
+              {/* {editShow && !paidShow && <TableCell>FreeLeadPause</TableCell>} */}
               
               {/* paid Band Show */}
-              {/* {paidShow && <TableCell>PaidLeadPause</TableCell>} */}
-              {/* {paidShow && <TableCell>LeadSend(%)</TableCell>} */}
-              {paidShow && <TableCell>Action</TableCell>}
-               {paidShow && <TableCell sx={{textAlign:"center"}} >Details</TableCell>}
+              {paidShow && <TableCell>PaidLeadPause</TableCell>}
+              {paidShow && <TableCell>LeadSend(%)</TableCell>}
+              {paidShow && <TableCell>Paid</TableCell>}
 
 
               {pauseShow && !editShow && !paidShow && (
                 <TableCell>Pause</TableCell>
               )}
-              {editShow && !paidShow && <TableCell>Payment</TableCell>}
-              {/* {!pauseShow && <TableCell>Delete</TableCell>} */}
+              {/* {editShow && !paidShow && <TableCell>Payment</TableCell>} */}
+              {!pauseShow && <TableCell>Delete</TableCell>}
 
               {/* <TableCell>Delete</TableCell> */}
               {!editShow && !pauseShow && !paidShow && (
@@ -179,7 +177,8 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
-                      {editShow && !paidShow &&  (
+
+                      {/* {editShow && !paidShow &&  (
                     <TableCell>
                       <IconButton
                         sx={{ color: "blue" }}
@@ -188,7 +187,7 @@ editNewincomingShow,
                         <UpgradeIcon />
                       </IconButton>
                     </TableCell>
-                  )}
+                  )} */}
                   {editNewincomingShow &&  (
                     <TableCell>
                       <IconButton
@@ -227,7 +226,7 @@ editNewincomingShow,
                   )}
 
                   {/* paid Band Show */}
-                  {/* {paidShow && (
+                  {paidShow && (
                     <TableCell>
                       <IconButton
                         onClick={() => handlePaidLeadPause(brand)}
@@ -238,8 +237,19 @@ editNewincomingShow,
                           <CheckCircle />
                       </IconButton>
                     </TableCell>
-                  )} */}
-             
+                  )}
+                  {paidShow && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleNavigation(brand)}
+                        // sx={{
+                        //   color: brand?.isBrandPause ? "#ecc517" : "#5cbe24ff",
+                        // }}
+                      >
+                       { brand?.activePackage?.sentLeadsPercentage || "0%"}
+                      </IconButton>
+                    </TableCell>
+                  )}
                   {paidShow && (
                     <TableCell>
                       <IconButton
@@ -254,19 +264,6 @@ editNewincomingShow,
                           <PlayCircleFilledWhiteIcon />
                         )}
                       </IconButton>
-                    </TableCell>
-                  )}
-
-                   {paidShow && (
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleViewPackage(brand)}
-                        sx={{ fontSize: "11px", textTransform: "none" }}
-                      >
-                        View Package
-                      </Button>
                     </TableCell>
                   )}
 
@@ -287,7 +284,7 @@ editNewincomingShow,
                       </IconButton>
                     </TableCell>
                   )}
-                  {editShow && !paidShow && (
+                  {/* {editShow && !paidShow && (
                     <TableCell>
                       <IconButton
                         onClick={() => handleOpenFreeLeadPausePopup(brand)}
@@ -310,9 +307,9 @@ editNewincomingShow,
                         <CheckCircle />
                       </IconButton>
                     </TableCell>
-                  )}
+                  )} */}
 
-                  {/* {!pauseShow && (
+                  {!pauseShow && (
                     <TableCell>
                     <IconButton
                       color="error"
@@ -321,7 +318,7 @@ editNewincomingShow,
                       <Delete />
                     </IconButton>
                   </TableCell>
-                  )} */}
+                  )}
                   {!editShow && !paidShow && (
                     <TableCell>
                       {brand?.isApproved === false && (

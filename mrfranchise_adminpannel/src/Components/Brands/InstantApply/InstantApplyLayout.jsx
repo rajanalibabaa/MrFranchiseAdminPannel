@@ -419,7 +419,7 @@ const InstantApplyLayout = () => {
             variant="scrollable"
             scrollButtons="auto"
           >
-            <Tab 
+            {/* <Tab 
               icon={<ListIcon />} 
               label={
                 <Badge 
@@ -432,25 +432,25 @@ const InstantApplyLayout = () => {
               }
               iconPosition="start"
               {...a11yProps(0)} 
-            />
+            /> */}
             <Tab 
               icon={<AddIcon />} 
               label="Manual Lead Submission"
               iconPosition="start"
-              {...a11yProps(1)} 
+              {...a11yProps(0)} 
             />
             <Tab 
               icon={<CloudUploadIcon />} 
               label="Lead Bulk Upload"
               iconPosition="start"
-              {...a11yProps(2)} 
+              {...a11yProps(1)} 
             />
           </Tabs>
         </Box>
 
         {/* Tab Panels */}
-        <TabPanel value={tabValue} index={0}>
-          {/* List View */}
+        {/* <TabPanel value={tabValue} index={0}>
+          {/* List View 
           <Box sx={{ px: 2 }}>
             {loading && !clearFilterLoading && instantApplyList.length === 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
@@ -502,9 +502,9 @@ const InstantApplyLayout = () => {
               loading={loading}
             />
           </Box>
-        </TabPanel>
+        </TabPanel> */}
 
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={0}>
           {/* Manual Form */}
           <Box sx={{ px: 2 }}>
             <ManualSubmissionForm 
@@ -515,7 +515,7 @@ const InstantApplyLayout = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={1}>
           {/* Bulk Upload */}
           <Box sx={{ px: 2 }}>
             <ExcelUploadForm 

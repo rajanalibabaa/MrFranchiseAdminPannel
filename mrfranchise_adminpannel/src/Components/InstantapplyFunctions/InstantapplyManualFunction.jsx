@@ -1,5 +1,4 @@
-// components/ManualSubmissionForm.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,28 +10,55 @@ import {
   CircularProgress,
   MenuItem,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
   FormHelperText,
   Chip,
-  Divider,
-  Card,
-  CardContent,
+  Stack,
+  Paper,
 } from "@mui/material";
-import {
-  submitApplication,
-  resetSubmitState,
-} from "../../Redux/Slices/InstantApplyCreationSlice";
-import { categories } from "../../Components/Brands/BrandLIstingRegister/BrandCategories";
+import SendIcon from "@mui/icons-material/Send";
+import CloseIcon from "@mui/icons-material/Close";
+import axios from "axios";
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+
+const INVESTMENT_RANGES = [
+  "Below - 50k",
+  "Rs. 50k - 2 Lakhs",
+  "Rs. 2 Lakhs - 5 Lakhs",
+  "Rs. 5 Lakhs - 10 Lakhs",
+  "Rs. 10 Lakhs - 20 Lakhs",
+  "Rs. 20 Lakhs - 30 Lakhs",
+  "Rs. 30 Lakhs - 50 Lakhs",
+  "Rs. 50 Lakhs - 1 Crore",
+  "Rs. 1 Crores - 2 Crores",
+  "Rs. 2 Crores - 5 Crores",
+  "Rs. 5 Crores - above",
+];
+
+const PLAN_TO_INVEST = [
+  "Immediately",
+  "1 - 3 months",
+  "3 - 6 months",
+  "6 + months",
+  "More than 1 year",
+];
+
+const READY_TO_INVEST = [
+  "own Investment",
+  "Going for loan",
+  "Need loan assistance",
+];
+
+// ═══════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════
 
 const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isSubmitting, submitSuccess, error } = useSelector(
-    (state) => state.applications
-  );
 
+  // Form state
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -43,47 +69,115 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     investmentRange: "",
     planToInvest: "",
     readyToInvest: "",
-    categories: [], // This should be an array
+    categories: [],
     brandName: "",
     isManualEntry: true,
   });
 
-  // Category related states - for UI interaction only
-  const [currentCategory, setCurrentCategory] = useState({
-    main: "",
-    sub: "",
-    child: "",
-  });
+  // API data state
+  const [industries, setIndustries] = useState([]);
+  const [industryData, setIndustryData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingIndustryDetails, setLoadingIndustryDetails] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Category selection state
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
 
   const [validationErrors, setValidationErrors] = useState({});
+  const [apiError, setApiError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const investmentRanges = [
-    "Below - 50k",
-    "Rs. 50k - 2 Lakhs",
-    "Rs. 2 Lakhs - 5 Lakhs",
-    "Rs. 5 Lakhs - 10 Lakhs",
-    "Rs. 10 Lakhs - 20 Lakhs",
-    "Rs. 20 Lakhs - 30 Lakhs",
-    "Rs. 30 Lakhs - 50 Lakhs",
-    "Rs. 50 Lakhs - 1 Crore",
-    "Rs. 1 Crores - 2 Crores",
-    "Rs. 2 Crores - 5 Crores",
-    "Rs. 5 Crores - above",
-  ];
+  // ═══════════════════════════════════════════════════════════
+  // API CALLS
+  // ═══════════════════════════════════════════════════════════
 
-  const planToInvestOptions = [
-    "Immediately",
-    "1 - 3 months",
-    "3 - 6 months",
-    "6 + months",
-    "More than 1 year",
-  ];
+  const fetchIndustries = async () => {
+    console.log("🔄 Fetching industries...");
+    try {
+      setLoading(true);
+      const url = `http://localhost:5000/api/v1/admin/getIndustryByIndustryName`;
+      console.log("📡 API URL:", url);
 
-  const readyToInvestOptions = [
-    "own Investment",
-    "Going for loan",
-    "Need loan assistance",
-  ];
+      const response = await fetch(url);
+      const result = await response.json();
+
+      console.log("✅ Industries API Response:", result);
+
+      if (result.success && result.data) {
+        // Handle different possible response structures
+        const industriesArray = result.data.Industry || result.data.industries || result.data || [];
+        console.log("📦 Industries Array:", industriesArray);
+        setIndustries(Array.isArray(industriesArray) ? industriesArray : []);
+      } else {
+        console.warn("⚠️ No industries found in response");
+        setIndustries([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching industries:", error);
+      setApiError("Failed to load industries");
+      setIndustries([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIndustryDetails = async (industryName) => {
+    if (!industryName) return;
+
+    console.log("🔄 Fetching details for industry:", industryName);
+
+    try {
+      setLoadingIndustryDetails(true);
+      const url = `http://localhost:5000/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(
+        industryName
+      )}`;
+      console.log("📡 Industry Details URL:", url);
+
+      const response = await fetch(url);
+      const result = await response.json();
+
+      console.log("✅ Industry Details Response:", result);
+
+      if (result.success && result.data) {
+        const apiData = result.data;
+
+        // Extract categories from various possible keys
+        const categories =
+          apiData.categories ||
+          apiData.category ||
+          apiData.subCategories ||
+          apiData.subIndustry ||
+          apiData.children ||
+          [];
+
+        console.log("📦 Categories found:", categories);
+
+        setIndustryData({
+          ...apiData,
+          categories: Array.isArray(categories) ? categories : [],
+        });
+      } else {
+        console.warn("⚠️ No data for industry:", industryName);
+        setIndustryData({ categories: [] });
+      }
+    } catch (error) {
+      console.error("❌ Error fetching industry details:", error);
+      setIndustryData({ categories: [] });
+    } finally {
+      setLoadingIndustryDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIndustries();
+  }, []);
+
+  // ═══════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═══════════════════════════════════════════════════════════
 
   const handleInputChange = useCallback(
     (e) => {
@@ -97,47 +191,74 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     [validationErrors]
   );
 
-  // Handle category selection and automatically add to categories array
-  const handleCategoryChange = (level, value) => {
-    let newCurrentCategory = { ...currentCategory };
-    
-    if (level === 'main') {
-      newCurrentCategory = { main: value, sub: "", child: "" };
-    } else if (level === 'sub') {
-      newCurrentCategory = { ...currentCategory, sub: value, child: "" };
-    } else if (level === 'child') {
-      newCurrentCategory = { ...currentCategory, child: value };
+  const handleIndustryChange = (e) => {
+    const industry = e.target.value;
+    console.log("🏭 Industry selected:", industry);
+    setSelectedIndustry(industry);
+    setSelectedCategory("");
+    setSelectedSubCategory("");
+    fetchIndustryDetails(industry);
+  };
+
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
+    console.log("📂 Category selected:", category);
+    setSelectedCategory(category);
+    setSelectedSubCategory("");
+  };
+
+  const handleSubCategoryChange = (e) => {
+    const subCategory = e.target.value;
+    console.log("📁 Sub-category entered:", subCategory);
+    setSelectedSubCategory(subCategory);
+  };
+
+  const handleAddCategory = () => {
+    if (!selectedIndustry || !selectedCategory) {
+      alert("Please select Industry and Category first");
+      return;
     }
 
-    setCurrentCategory(newCurrentCategory);
+    const categoryObject = {
+      main: selectedIndustry,
+      sub: selectedCategory,
+      child: selectedSubCategory || "",
+    };
 
-    // If we have at least main and sub category, add to categories array
-    if (newCurrentCategory.main && newCurrentCategory.sub) {
-      const categoryObject = {
-        main: newCurrentCategory.main,
-        sub: newCurrentCategory.sub,
-        child: newCurrentCategory.child || ""
-      };
-
-      // Check if this combination already exists
-      const exists = formData.categories.some(cat => 
-        cat.main === categoryObject.main && 
-        cat.sub === categoryObject.sub && 
+    const exists = formData.categories.some(
+      (cat) =>
+        cat.main === categoryObject.main &&
+        cat.sub === categoryObject.sub &&
         cat.child === categoryObject.child
-      );
+    );
 
-      if (!exists) {
-        setFormData(prev => ({
-          ...prev,
-          categories: [categoryObject] // For now, just replace with one category
-        }));
-
-        // Clear validation error
-        if (validationErrors.categories) {
-          setValidationErrors(prev => ({ ...prev, categories: "" }));
-        }
-      }
+    if (exists) {
+      alert("This category combination already added");
+      return;
     }
+
+    console.log("➕ Adding category:", categoryObject);
+
+    setFormData((prev) => ({
+      ...prev,
+      categories: [...prev.categories, categoryObject],
+    }));
+
+    if (validationErrors.categories) {
+      setValidationErrors((prev) => ({ ...prev, categories: "" }));
+    }
+
+    // Reset selections
+    setSelectedCategory("");
+    setSelectedSubCategory("");
+  };
+
+  const handleRemoveCategory = (index) => {
+    console.log("➖ Removing category at index:", index);
+    setFormData((prev) => ({
+      ...prev,
+      categories: prev.categories.filter((_, i) => i !== index),
+    }));
   };
 
   const validateForm = () => {
@@ -158,18 +279,18 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       }
     });
 
-    // Category validation - check if categories array has at least one item
-    if (!Array.isArray(formData.categories) || formData.categories.length === 0) {
-      errors.categories = "Please select at least one business category";
+    if (formData.categories.length === 0) {
+      errors.categories = "Please add at least one business category";
     }
 
-    // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Please enter a valid email address";
     }
 
-    // Mobile number validation
-    if (formData.mobileNumber && !/^\d{10}$/.test(formData.mobileNumber.replace(/\s/g, ""))) {
+    if (
+      formData.mobileNumber &&
+      !/^\d{10}$/.test(formData.mobileNumber.replace(/\s/g, ""))
+    ) {
       errors.mobileNumber = "Please enter a valid 10-digit mobile number";
     }
 
@@ -177,448 +298,404 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-      console.log("Form submission started");
-      console.log("Form data:", formData);
-      console.log("Categories array:", formData.categories);
+    console.log("📤 Form submission started");
+    console.log("📋 Form Data:", formData);
 
-      if (!validateForm()) {
-        console.log("Form validation failed", validationErrors);
-        return;
-      }
+    if (!validateForm()) {
+      console.log("❌ Validation failed:", validationErrors);
+      return;
+    }
 
-      // Get user credentials
-      const investorUUID = localStorage.getItem("investorUUID");
-      const brandUUID = localStorage.getItem("brandUUID");
-      const accessToken = localStorage.getItem("accessToken");
+    const AccessToken = localStorage.getItem("accessToken");
+    console.log("🔑 Access Token exists:", !!AccessToken);
 
-      console.log("User credentials:", {
-        investorUUID,
-        brandUUID,
-        accessToken: !!accessToken,
+    const payload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      mobileNumber: formData.mobileNumber.trim(),
+      state: formData.state.trim(),
+      district: formData.district?.trim() || "",
+      city: formData.city?.trim() || "",
+      investmentRange: formData.investmentRange,
+      planToInvest: formData.planToInvest,
+      readyToInvest: formData.readyToInvest,
+      categories: formData.categories,
+      brandName:
+        selectedBrand?.[0]?.brandDetails?.brandName ||
+        formData.brandName ||
+        "Manual Entry",
+      isManualEntry: !selectedBrand || selectedBrand.length === 0,
+      leadType: "manual",
+    };
+
+    console.log("📦 Payload:", payload);
+
+    try {
+      setIsSubmitting(true);
+      setApiError("");
+
+      const url = `http://localhost:5000/api/v1/instantapply/postApplication`;
+      console.log("📡 Submission URL:", url);
+      console.log("📡 Submission Payload:", payload);
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${AccessToken}`,
+        },
+        withCredentials: true,
       });
 
-      // const id = investorUUID || brandUUID;
-      // if (!id) {
-      //   console.log("No user ID found");
-      //   alert("User not logged in or missing ID. Please login again.");
-      //   navigate("/registerhandleuser");
-      //   return;
-      // }
+      console.log("✅ Submission Response:", response.data);
 
-      // Prepare payload for manual submission
-      const payload = {
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim(),
-        mobileNumber: formData.mobileNumber.trim(),
-        state: formData.state.trim(),
-        district: formData.district?.trim() || "",
-        city: formData.city?.trim() || "",
-        investmentRange: formData.investmentRange,
-        planToInvest: formData.planToInvest,
-        readyToInvest: formData.readyToInvest,
-        categories: formData.categories, // This is now properly an array
-        brandName: selectedBrand?.[0]?.brandDetails?.brandName || formData.brandName || "Manual Entry",
-        isManualEntry: !selectedBrand || selectedBrand.length === 0,
-        leadType: "manual",
-      };
+      setSuccessMessage("✅ Manual lead submitted successfully!");
+      alert("✅ Success! Your manual lead has been submitted.");
 
-      console.log("Payload to be submitted:", payload);
-      console.log("Categories in payload:", payload.categories);
+      // Reset form
+      setFormData({
+        fullName: "",
+        email: "",
+        mobileNumber: "",
+        state: "",
+        district: "",
+        city: "",
+        investmentRange: "",
+        planToInvest: "",
+        readyToInvest: "",
+        categories: [],
+        brandName: "",
+        isManualEntry: true,
+      });
 
-      try {
-        const result = await dispatch(submitApplication(payload)).unwrap();
-        console.log("Submission successful:", result);
+      setSelectedIndustry("");
+      setSelectedCategory("");
+      setSelectedSubCategory("");
+      setValidationErrors({});
 
-        alert("✅ Success! Your manual lead has been submitted.");
-
-        // Reset form
-        setFormData({
-          fullName: "",
-          email: "",
-          mobileNumber: "",
-          state: "",
-          district: "",
-          city: "",
-          investmentRange: "",
-          planToInvest: "",
-          readyToInvest: "",
-          categories: [],
-          brandName: "",
-          isManualEntry: true,
-        });
-
-        setCurrentCategory({ main: "", sub: "", child: "" });
-        setValidationErrors({});
-
+      setTimeout(() => {
         onClose && onClose();
-      } catch (error) {
-        console.error("Submission error:", error);
-        const errorMessage = error?.message || error?.data?.message || "Unknown error occurred";
-        alert(`❌ Failed to submit application: ${errorMessage}`);
-      }
-    },
-    [formData, selectedBrand, dispatch, navigate, onClose, validationErrors]
-  );
+      }, 1500);
+    } catch (error) {
+      console.error("❌ Submission Error:", error);
+      console.error("Error Response:", error.response?.data);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to submit application";
+
+      setApiError(errorMessage);
+      alert(`❌ Error: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════
+
+  console.log("🎨 Render - Industries:", industries);
+  console.log("🎨 Render - Industry Data:", industryData);
+  console.log("🎨 Render - Selected Industry:", selectedIndustry);
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 1, sm: 2, md: 3 } }}>
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={() => dispatch(resetSubmitState())}
-        >
-          {typeof error === "object"
-            ? error.message || JSON.stringify(error)
-            : error}
+    <Box sx={{ maxWidth: 900, mx: "auto", p: 2 }}>
+      {/* Alerts */}
+      {apiError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError("")}>
+          {apiError}
         </Alert>
       )}
 
-      {submitSuccess && (
-        <Alert
-          severity="success"
-          sx={{ mb: 3 }}
-          onClose={() => dispatch(resetSubmitState())}
-        >
-          Manual lead submitted successfully!
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage("")}>
+          {successMessage}
         </Alert>
       )}
 
       <Box component="form" onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          {/* Personal Information Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
-              Personal Information
-            </Typography>
+        {/* Personal Information */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: "#f57c00", fontWeight: 600, mb: 2 }}>
+            Personal Information
+          </Typography>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Full Name"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.fullName}
-                  helperText={validationErrors.fullName}
-                  required
-                  size="medium"
-                />
-              </Grid>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Full Name *"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                error={!!validationErrors.fullName}
+                helperText={validationErrors.fullName}
+                size="small"
+              />
+            </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.email}
-                  helperText={validationErrors.email}
-                  required
-                  size="medium"
-                />
-              </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Email *"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={!!validationErrors.email}
+                helperText={validationErrors.email}
+                size="small"
+              />
+            </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Mobile Number"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.mobileNumber}
-                  helperText={validationErrors.mobileNumber}
-                  required
-                  size="medium"
-                />
-              </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Mobile Number *"
+                name="mobileNumber"
+                value={formData.mobileNumber}
+                onChange={handleInputChange}
+                error={!!validationErrors.mobileNumber}
+                helperText={validationErrors.mobileNumber}
+                size="small"
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Business Categories */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: "#f57c00", fontWeight: 600, mb: 2 }}>
+            Business Categories
+          </Typography>
+
+          {loading && (
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <CircularProgress size={24} />
+              <Typography sx={{ ml: 2 }}>Loading industries...</Typography>
+            </Box>
+          )}
+
+          {!loading && industries.length === 0 && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              No industries available. Please try refreshing the page.
+            </Alert>
+          )}
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                select
+                label="Industry *"
+                sx={{ textTransform: "capitalize" ,minWidth: 150}}
+                value={selectedIndustry}
+                onChange={handleIndustryChange}
+                disabled={loading || industries.length === 0}
+                size="small"
+              >
+                {industries.map((ind, index) => (
+                  <MenuItem key={index} value={ind}>
+                    {ind}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                select
+                label="Category *"
+                value={selectedCategory}
+                                sx={{ textTransform: "capitalize" ,minWidth: 150}}
+
+                onChange={handleCategoryChange}
+                disabled={!selectedIndustry || loadingIndustryDetails}
+                size="small"
+              >
+                {loadingIndustryDetails ? (
+                  <MenuItem disabled>Loading...</MenuItem>
+                ) : (
+                  industryData?.categories?.map((cat, index) => (
+                    <MenuItem key={index} value={cat}>
+                      {cat}
+                    </MenuItem>
+                  ))
+                )}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                label="Sub-Category (Optional)"
+                value={selectedSubCategory}
+                onChange={handleSubCategoryChange}
+                disabled={!selectedCategory}
+                size="small"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={3}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleAddCategory}
+                disabled={!selectedIndustry || !selectedCategory}
+                sx={{ height: "100%" }}
+              >
+                Add Category
+              </Button>
             </Grid>
           </Grid>
 
-          {/* Business Categories Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom color="warning.main" sx={{ mb: 2 }}>
-              Business Categories *
-            </Typography>
-
-            <Grid container spacing={2}>
-              {/* Main Category */}
-              <Grid item xs={12} sm={4}>
-                <FormControl fullWidth error={!!validationErrors.categories} size="medium" >
-                  <InputLabel>Industry *</InputLabel>
-                  <Select
-                    value={currentCategory.main}
-                    onChange={(e) => handleCategoryChange('main', e.target.value)}
-                    label="Industry *"
-                    sx={{width:'40vh'}}
-                    
-                  >
-                    {categories.map((cat) => (
-                      <MenuItem key={cat.name} value={cat.name}>
-                        {cat.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Sub Category */}
-              <Grid item xs={12} sm={4}>
-                <FormControl fullWidth disabled={!currentCategory.main} size="medium">
-                  <InputLabel>Category *</InputLabel>
-                  <Select
-                    value={currentCategory.sub}
-                    onChange={(e) => handleCategoryChange('sub', e.target.value)}
-                    label="Category *"
-                     sx={{width:'40vh'}}
-                  >
-                    {currentCategory.main
-                      ? categories
-                          .find((cat) => cat.name === currentCategory.main)
-                          ?.children?.map((sub) => (
-                            <MenuItem key={sub.name} value={sub.name}>
-                              {sub.name}
-                            </MenuItem>
-                          )) || []
-                      : []}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Child Category */}
-              <Grid item xs={12} sm={4}>
-                <FormControl fullWidth disabled={!currentCategory.sub} size="medium">
-                  <InputLabel>Specific Tags</InputLabel>
-                  <Select
-                    value={currentCategory.child}
-                    onChange={(e) => handleCategoryChange('child', e.target.value)}
-                    label="Specific Tags"
-                     sx={{width:'40vh'}}
-                  >
-                    {currentCategory.sub
-                      ? categories
-                          .find((cat) => cat.name === currentCategory.main)
-                          ?.children?.find((sub) => sub.name === currentCategory.sub)
-                          ?.children?.map((child) => (
-                            <MenuItem key={child} value={child}>
-                              {child}
-                            </MenuItem>
-                          )) || []
-                      : []}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            {/* Display selected categories */}
-            {formData.categories.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Selected Categories:
-                </Typography>
+          {/* Selected Categories */}
+          {formData.categories.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block", fontWeight: 600 }}>
+                Selected Categories ({formData.categories.length}):
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {formData.categories.map((cat, index) => (
                   <Chip
                     key={index}
-                    label={`${cat.main} > ${cat.sub}${cat.child ? ` > ${cat.child}` : ''}`}
+                    label={`${cat.main} > ${cat.sub}${cat.child ? ` > ${cat.child}` : ""}`}
+                    onDelete={() => handleRemoveCategory(index)}
                     color="primary"
-                    sx={{ mr: 1, mb: 1 }}
-                    onDelete={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        categories: prev.categories.filter((_, i) => i !== index)
-                      }));
-                    }}
+                    variant="outlined"
+                    size="small"
                   />
                 ))}
-              </Box>
-            )}
-
-            {validationErrors.categories && (
-              <FormHelperText error sx={{ mt: 1 }}>
-                {validationErrors.categories}
-              </FormHelperText>
-            )}
-          </Grid>
-
-          {/* Location Information Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
-              Location Information
-            </Typography>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="State"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.state}
-                  helperText={validationErrors.state}
-                  required
-                  size="medium"
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="District"
-                  name="district"
-                  value={formData.district}
-                  onChange={handleInputChange}
-                  size="medium"
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="City"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  size="medium"
-                />
-              </Grid>
-            </Grid>
-          </Grid>
-
-          {/* Investment Plans Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom color="warning" sx={{ mb: 2 }}>
-              Investment Plans
-            </Typography>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Investment Range"
-                  name="investmentRange"
-                  select
-                  value={formData.investmentRange}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.investmentRange}
-                  helperText={validationErrors.investmentRange}
-                  required
-                  size="medium"
-                   sx={{width:'40vh'}}
-                >
-                  {investmentRanges.map((range) => (
-                    <MenuItem key={range} value={range}>
-                      {range}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Plan to Invest"
-                  name="planToInvest"
-                  select
-                  value={formData.planToInvest}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.planToInvest}
-                  helperText={validationErrors.planToInvest}
-                  required
-                  size="medium"
-                   sx={{width:'40vh'}}
-                >
-                  {planToInvestOptions.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Ready to Invest"
-                  name="readyToInvest"
-                  select
-                  value={formData.readyToInvest}
-                  onChange={handleInputChange}
-                  error={!!validationErrors.readyToInvest}
-                  helperText={validationErrors.readyToInvest}
-                  required
-                  size="medium"
-                   sx={{width:'40vh'}}
-                >
-                  {readyToInvestOptions.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </Grid>
-
-          {/* Submit Button Section */}
-          <Grid item xs={12}>
-            <Divider sx={{ my: 3 }} />
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                justifyContent: "center",
-                flexDirection: { xs: "column", sm: "row" },
-              }}
-            >
-              <Button
-                type="submit"
-                variant="contained"
-                color="warning"
-                size="large"
-                disabled={isSubmitting}
-                sx={{
-                  minWidth: { xs: "100%", sm: "200px" },
-                  py: 1.5,
-                  fontSize: "1.1rem",
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <CircularProgress size={20} sx={{ mr: 1 }} />
-                    Submitting Lead...
-                  </>
-                ) : (
-                  "Submit Manual Lead"
-                )}
-              </Button>
-
-              {onClose && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="large"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                  sx={{
-                    minWidth: { xs: "100%", sm: "150px" },
-                    py: 1.5,
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  Cancel
-                </Button>
-              )}
+              </Stack>
             </Box>
+          )}
+
+          {validationErrors.categories && (
+            <FormHelperText error sx={{ mt: 1 }}>
+              {validationErrors.categories}
+            </FormHelperText>
+          )}
+        </Paper>
+
+        {/* Location Information */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: "#f57c00", fontWeight: 600, mb: 2 }}>
+            Location Information
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="State *"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                error={!!validationErrors.state}
+                helperText={validationErrors.state}
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth label="District" name="district" value={formData.district} onChange={handleInputChange} size="small" />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth label="City" name="city" value={formData.city} onChange={handleInputChange} size="small" />
+            </Grid>
           </Grid>
-        </Grid>
+        </Paper>
+
+        {/* Investment Plans */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: "#f57c00", fontWeight: 600, mb: 2 }}>
+            Investment Plans
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Investment Range *"
+                name="investmentRange"
+                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
+
+                value={formData.investmentRange}
+                onChange={handleInputChange}
+                error={!!validationErrors.investmentRange}
+                helperText={validationErrors.investmentRange}
+                size="small"
+              >
+                {INVESTMENT_RANGES.map((range) => (
+                  <MenuItem key={range} value={range}>
+                    {range}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Plan to Invest *"
+                name="planToInvest"
+                value={formData.planToInvest}
+                onChange={handleInputChange}
+                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
+
+                error={!!validationErrors.planToInvest}
+                helperText={validationErrors.planToInvest}
+                size="small"
+              >
+                {PLAN_TO_INVEST.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Ready to Invest *"
+                name="readyToInvest"
+                value={formData.readyToInvest}
+                onChange={handleInputChange}
+                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
+
+                error={!!validationErrors.readyToInvest}
+                helperText={validationErrors.readyToInvest}
+                size="small"
+              >
+                {READY_TO_INVEST.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Submit Actions */}
+        <Paper sx={{ p: 2, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+          {onClose && (
+            <Button variant="outlined" onClick={onClose} disabled={isSubmitting} startIcon={<CloseIcon />}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" variant="contained" disabled={isSubmitting} startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}>
+            {isSubmitting ? "Submitting..." : "Submit Manual Lead"}
+          </Button>
+        </Paper>
       </Box>
     </Box>
   );
