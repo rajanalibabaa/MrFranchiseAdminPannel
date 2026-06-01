@@ -65,7 +65,7 @@ const SidebarAdmin = () => {
       const res = await PostApiCall(
         `${Api.admin.post.logout}/${adminData?.adminData?.uuid}`,
         adminData?.adminAccessToken,
-        {}
+        {},
       );
 
       if (res.data.success === true) {
@@ -116,12 +116,25 @@ const SidebarAdmin = () => {
           { label: "Create Brand", path: "/dashboard/createbrand" },
           { label: "All Brands", path: "/dashboard/getallbrands" },
           { label: "Instant Apply", path: "/dashboard/instantapply" },
-          {label:"Leads Management",path:"/dashboard/freeleadlist"},
-          {label:"Package Management",path:"/dashboard/packagemanagement"},
-          {label:"Industry Management",path:"/dashboard/industrymanagement"},
-          
+          { label: "Leads Management", path: "/dashboard/freeleadlist" },
+      
         ],
       },
+         {
+        label: "Manage CMS",
+        icon: <Business />,
+        toggleKey: "cms",
+        submenu: [
+
+          { label: "Package Management", path: "/dashboard/packagemanagement" },
+          { label: "Lead Match Management", path: "/dashboard/leadmatchcms" },
+          {
+            label: "Industry Management",
+            path: "/dashboard/industrymanagement",
+          },
+        ],
+      },
+      
       {
         label: "Manage Investor",
         icon: <AccountBalance />,
@@ -132,7 +145,7 @@ const SidebarAdmin = () => {
         ],
       },
     ],
-    []
+    [],
   );
 
   /** ---------- Sidebar Content ---------- */
