@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+// OverallInvestorEnquiryFormData.jsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -13,7 +14,6 @@ import {
   TableCell,
   TableBody,
   TableContainer,
-  Chip,
   Avatar,
   CircularProgress,
   Dialog,
@@ -24,9 +24,11 @@ import {
   Stack,
   Button,
   Tooltip,
+  Pagination,
+  Divider,
+  Chip,
 } from "@mui/material";
 
-// Icons
 import SearchIcon from "@mui/icons-material/Search";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -35,48 +37,140 @@ import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
 
-// Redux
 import { useDispatch, useSelector } from "react-redux";
 import { getInvestorEnquiries } from "../../Redux/Slices/leadHandlingSlice/investorThunk";
-
-// Component
 import SendLeadDialog from "./SendLeadDialog";
 
+// ─── Debounce Hook ────────────────────────────────────────────────────────────
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+const StatCard = ({ title, value, icon, color = "#1976d2" }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 3,
+      borderRadius: 4,
+      border: "1px solid #e5e7eb",
+      background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+      transition: "0.3s",
+      "&:hover": {
+        transform: "translateY(-4px)",
+        boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+      },
+    }}
+  >
+    <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box>
+        <Typography color="text.secondary" fontSize={14}>
+          {title}
+        </Typography>
+        <Typography variant="h4" fontWeight={800} mt={1}>
+          {value}
+        </Typography>
+      </Box>
+      <Avatar sx={{ width: 56, height: 56, bgcolor: color }}>{icon}</Avatar>
+    </Box>
+  </Paper>
+);
+
+// ─── Detail Row ───────────────────────────────────────────────────────────────
+const DetailRow = ({ label, value }) => (
+  <Box>
+    <Typography variant="caption" color="text.secondary" fontWeight={500}>
+      {label}
+    </Typography>
+    <Typography fontWeight={600} mt={0.3}>
+      {value || "N/A"}
+    </Typography>
+  </Box>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const OverallInvestorEnquiryFormData = () => {
   const dispatch = useDispatch();
 
-  const { loading, enquiries } = useSelector(
+  const { loading, enquiries, total, totalPages, currentPage } = useSelector(
     (state) => state.overallInvestorEnquiries
   );
 
-  // State management
+  const LIMIT = 20;
+
+  // ── Local State ──
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     search: "",
     industry: "",
     category: "",
-    state: "",
+    investmentRange: "",
   });
-
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
   const [sortOrder, setSortOrder] = useState("latest");
   const [dateFilter, setDateFilter] = useState("");
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
   const [openSendLead, setOpenSendLead] = useState(false);
 
-  // Handlers
-  const handleClearFilters = () => {
-    setFilters({
-      search: "",
-      industry: "",
-      category: "",
-      state: "",
-    });
-    setDateFilter("");
-    setSortOrder("latest");
+  // Debounce search so we don't hit API on every keystroke
+  const debouncedSearch = useDebounce(filters.search, 500);
+
+  // ── Fetch Data ──────────────────────────────────────────────────────────────
+  const fetchData = useCallback(() => {
+    dispatch(
+      getInvestorEnquiries({
+        page,
+        limit: LIMIT,
+        search: debouncedSearch,
+        industry: filters.industry,
+        category: filters.category,
+        investmentRange: filters.investmentRange,
+      })
+    );
+  }, [
+    dispatch,
+    page,
+    debouncedSearch,
+    filters.industry,
+    filters.category,
+    filters.investmentRange,
+  ]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [
+    debouncedSearch,
+    filters.industry,
+    filters.category,
+    filters.investmentRange,
+  ]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const handleFilterChange = (field) => (e) => {
+    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleRefresh = () => {
-    dispatch(getInvestorEnquiries());
+  const handleClearFilters = () => {
+    setFilters({ search: "", industry: "", category: "", investmentRange: "" });
+    setDateFilter("");
+    setSortOrder("latest");
+    setPage(1);
+  };
+
+  const handlePageChange = (_, value) => {
+    setPage(value);
+    // Scroll to top of table
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleView = (lead) => {
@@ -89,100 +183,47 @@ const OverallInvestorEnquiryFormData = () => {
     setSelectedLead(null);
   };
 
-  const handleOpenSendLead = () => {
-    setOpenSendLead(true);
-  };
-
-  const handleCloseSendLead = () => {
-    setOpenSendLead(false);
-  };
-
-  // Initial data fetch
-  useEffect(() => {
-    dispatch(getInvestorEnquiries());
-  }, [dispatch]);
-
-  // Filtered and sorted data
-  const filteredData = useMemo(() => {
+  // ── Client-side sort only (server handles filter/pagination) ────────────────
+  const displayData = useMemo(() => {
     let data = [...(enquiries || [])];
 
-    // Apply filters
-    data = data.filter((item) => {
-      const searchMatch =
-        !filters.search ||
-        item.investorName?.toLowerCase().includes(filters.search.toLowerCase()) ||
-        item.investorEmail?.toLowerCase().includes(filters.search.toLowerCase()) ||
-        item.investorPhone?.toLowerCase().includes(filters.search.toLowerCase());
+    // Date filter (client-side on current page)
+    if (dateFilter) {
+      data = data.filter((item) =>
+        item.createdAt?.split("T")[0] === dateFilter
+      );
+    }
 
-      const industryMatch = !filters.industry || item.industry === filters.industry;
-      const categoryMatch = !filters.category || item.category === filters.category;
-      const stateMatch = !filters.state || item.state === filters.state;
-      const dateMatch = !dateFilter || item.createdAt?.split("T")[0].includes(dateFilter);
-
-      return searchMatch && industryMatch && categoryMatch && stateMatch && dateMatch;
-    });
-
-    // Apply sorting
+    // Sort
     if (sortOrder === "az") {
-      data.sort((a, b) => (a.investorName || "").localeCompare(b.investorName || ""));
+      data.sort((a, b) =>
+        (a.investorName || "").localeCompare(b.investorName || "")
+      );
     } else if (sortOrder === "za") {
-      data.sort((a, b) => (b.investorName || "").localeCompare(a.investorName || ""));
-    } else if (sortOrder === "latest") {
-      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      data.sort((a, b) =>
+        (b.investorName || "").localeCompare(a.investorName || "")
+      );
     } else if (sortOrder === "oldest") {
       data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else {
+      // latest (default — already sorted by server)
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     return data;
-  }, [enquiries, filters, sortOrder, dateFilter]);
+  }, [enquiries, sortOrder, dateFilter]);
 
-  // Statistics
-  const stats = useMemo(() => {
-    return {
-      total: filteredData.length,
-    };
-  }, [filteredData]);
+  const hasActiveFilters =
+    filters.search ||
+    filters.industry ||
+    filters.category ||
+    filters.investmentRange ||
+    dateFilter;
 
-  // Unique values for filters
-  const states = useMemo(() => [...new Set(enquiries?.map((item) => item.state).filter(Boolean))], [enquiries]);
-  const industries = useMemo(() => [...new Set(enquiries?.map((item) => item.industry).filter(Boolean))], [enquiries]);
-  const categories = useMemo(() => [...new Set(enquiries?.map((item) => item.category).filter(Boolean))], [enquiries]);
-
-  // Stat Card Component
-  const StatCard = ({ title, value, icon, color = "#1976d2" }) => (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: 4,
-        border: "1px solid #e5e7eb",
-        background: "linear-gradient(135deg, #ffffff, #f8fafc)",
-        transition: "0.3s",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
-        },
-      }}
-    >
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography color="text.secondary" fontSize={14}>
-            {title}
-          </Typography>
-          <Typography variant="h4" fontWeight={800} mt={1}>
-            {value}
-          </Typography>
-        </Box>
-        <Avatar sx={{ width: 56, height: 56, bgcolor: color }}>
-          {icon}
-        </Avatar>
-      </Box>
-    </Paper>
-  );
-
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <Box p={3}>
-      {/* Header */}
+      {/* ── Header ── */}
       <Box
         sx={{
           mb: 4,
@@ -204,55 +245,85 @@ const OverallInvestorEnquiryFormData = () => {
 
         <Box display="flex" gap={2}>
           <Tooltip title="Refresh Data">
-            <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh}>
+            <Button
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              onClick={fetchData}
+            >
               Refresh
             </Button>
           </Tooltip>
-
           <Tooltip title="Clear Filters">
-            <Button variant="outlined" startIcon={<FilterAltOffIcon />} onClick={handleClearFilters}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterAltOffIcon />}
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+            >
               Reset
             </Button>
           </Tooltip>
         </Box>
       </Box>
 
-      {/* Stats */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Total Leads" value={stats.total} icon={<PeopleAltIcon />} />
+      {/* ── Stat Cards ── */}
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Leads"
+            value={total}
+            icon={<PeopleAltIcon />}
+            color="#1976d2"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Current Page"
+            value={`${currentPage} / ${totalPages || 1}`}
+            icon={<PeopleAltIcon />}
+            color="#388e3c"
+          />
         </Grid>
       </Grid>
 
-      {/* Filters */}
-      <Paper sx={{ p: 3, mt: 4, borderRadius: 4 }}>
+      {/* ── Filters ── */}
+      <Paper sx={{ p: 3, borderRadius: 4, mb: 4 }}>
+        <Typography variant="subtitle2" fontWeight={600} mb={2} color="text.secondary">
+          FILTERS
+        </Typography>
         <Grid container spacing={2}>
+          {/* Search */}
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              label="Search"
+              label="Search name / email / phone"
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={handleFilterChange("search")}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon color="action" />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
 
+          {/* Industry */}
           <Grid item xs={12} md={2}>
             <TextField
               select
               fullWidth
               label="Industry"
               value={filters.industry}
-              onChange={(e) => setFilters({ ...filters, industry: e.target.value })}
+              onChange={handleFilterChange("industry")}
             >
-              <MenuItem value="">All</MenuItem>
-              {industries.map((item) => (
+              <MenuItem value="">All Industries</MenuItem>
+              {[
+                ...new Set(
+                  enquiries?.map((i) => i.industry).filter(Boolean)
+                ),
+              ].map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
                 </MenuItem>
@@ -260,16 +331,21 @@ const OverallInvestorEnquiryFormData = () => {
             </TextField>
           </Grid>
 
+          {/* Category */}
           <Grid item xs={12} md={2}>
             <TextField
               select
               fullWidth
               label="Category"
               value={filters.category}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+              onChange={handleFilterChange("category")}
             >
-              <MenuItem value="">All</MenuItem>
-              {categories.map((item) => (
+              <MenuItem value="">All Categories</MenuItem>
+              {[
+                ...new Set(
+                  enquiries?.map((i) => i.category).filter(Boolean)
+                ),
+              ].map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
                 </MenuItem>
@@ -277,16 +353,21 @@ const OverallInvestorEnquiryFormData = () => {
             </TextField>
           </Grid>
 
+          {/* Investment Range */}
           <Grid item xs={12} md={2}>
             <TextField
               select
               fullWidth
-              label="State"
-              value={filters.state}
-              onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+              label="Investment Range"
+              value={filters.investmentRange}
+              onChange={handleFilterChange("investmentRange")}
             >
-              <MenuItem value="">All</MenuItem>
-              {states.map((item) => (
+              <MenuItem value="">All Ranges</MenuItem>
+              {[
+                ...new Set(
+                  enquiries?.map((i) => i.investmentRange).filter(Boolean)
+                ),
+              ].map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
                 </MenuItem>
@@ -294,18 +375,20 @@ const OverallInvestorEnquiryFormData = () => {
             </TextField>
           </Grid>
 
+          {/* Date */}
           <Grid item xs={12} md={2}>
             <TextField
               type="date"
               fullWidth
-              label="Date"
+              label="Enquiry Date"
               InputLabelProps={{ shrink: true }}
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
             />
           </Grid>
 
-          <Grid item xs={12} md={2}>
+          {/* Sort */}
+          <Grid item xs={12} md={1}>
             <TextField
               select
               fullWidth
@@ -313,96 +396,271 @@ const OverallInvestorEnquiryFormData = () => {
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
             >
-              <MenuItem value="latest">Latest First</MenuItem>
-              <MenuItem value="oldest">Oldest First</MenuItem>
-              <MenuItem value="az">A-Z</MenuItem>
-              <MenuItem value="za">Z-A</MenuItem>
+              <MenuItem value="latest">Latest</MenuItem>
+              <MenuItem value="oldest">Oldest</MenuItem>
+              <MenuItem value="az">A → Z</MenuItem>
+              <MenuItem value="za">Z → A</MenuItem>
             </TextField>
           </Grid>
         </Grid>
-      </Paper>
 
-      {/* Data Table */}
-      <Paper sx={{ mt: 4, borderRadius: 4, overflow: "hidden" }}>
-        {loading ? (
-          <Box p={5} textAlign="center">
-            <CircularProgress />
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <Box display="flex" flexWrap="wrap" gap={1} mt={2}>
+            {filters.search && (
+              <Chip
+                size="small"
+                label={`Search: ${filters.search}`}
+                onDelete={() =>
+                  setFilters((p) => ({ ...p, search: "" }))
+                }
+              />
+            )}
+            {filters.industry && (
+              <Chip
+                size="small"
+                label={`Industry: ${filters.industry}`}
+                onDelete={() =>
+                  setFilters((p) => ({ ...p, industry: "" }))
+                }
+              />
+            )}
+            {filters.category && (
+              <Chip
+                size="small"
+                label={`Category: ${filters.category}`}
+                onDelete={() =>
+                  setFilters((p) => ({ ...p, category: "" }))
+                }
+              />
+            )}
+            {filters.investmentRange && (
+              <Chip
+                size="small"
+                label={`Range: ${filters.investmentRange}`}
+                onDelete={() =>
+                  setFilters((p) => ({ ...p, investmentRange: "" }))
+                }
+              />
+            )}
+            {dateFilter && (
+              <Chip
+                size="small"
+                label={`Date: ${dateFilter}`}
+                onDelete={() => setDateFilter("")}
+              />
+            )}
           </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Investor</TableCell>
-                  <TableCell>Industry</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Investment</TableCell>
-                  <TableCell>Brand</TableCell>
-                  <TableCell>Enquiry Date</TableCell>
-                  <TableCell align="center">Action</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {filteredData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      <Typography variant="body2" color="text.secondary" py={4}>
-                        No enquiries found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredData.map((row) => (
-                    <TableRow hover key={row.uuid}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar>{row.investorName?.[0]}</Avatar>
-                          <Box>
-                            <Typography fontWeight={600}>{row.investorName}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {row.investorEmail}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{row.industry || "N/A"}</TableCell>
-                      <TableCell>{row.category || "N/A"}</TableCell>
-                      <TableCell>{row.investmentRange || "N/A"}</TableCell>
-                      <TableCell>{row.brandName || "N/A"}</TableCell>
-                      <TableCell>
-                        <Typography fontWeight={600}>
-                          {new Date(row.createdAt).toLocaleDateString()}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(row.createdAt).toLocaleTimeString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton color="primary" onClick={() => handleView(row)}>
-                          <VisibilityIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
         )}
       </Paper>
 
-      {/* Investor Details Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      {/* ── Table ── */}
+      <Paper sx={{ borderRadius: 4, overflow: "hidden" }}>
+        {loading ? (
+          <Box p={8} textAlign="center">
+            <CircularProgress size={48} />
+            <Typography mt={2} color="text.secondary">
+              Loading enquiries...
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "#f8fafc" }}>
+                    <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Investor</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Industry</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      Investment Range
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Brand</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Enquiry Date</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>
+                      Action
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {displayData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        <Box py={6}>
+                          <Typography
+                            variant="body1"
+                            color="text.secondary"
+                            fontWeight={500}
+                          >
+                            No enquiries found
+                          </Typography>
+                          {hasActiveFilters && (
+                            <Button
+                              size="small"
+                              sx={{ mt: 1 }}
+                              onClick={handleClearFilters}
+                            >
+                              Clear filters
+                            </Button>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    displayData.map((row, index) => (
+                      <TableRow hover key={row._id || row.uuid}>
+                        <TableCell>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            {(page - 1) * LIMIT + index + 1}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <Box display="flex" alignItems="center" gap={1.5}>
+                            <Avatar
+                              sx={{
+                                bgcolor: "#1976d2",
+                                width: 38,
+                                height: 38,
+                                fontSize: 14,
+                              }}
+                            >
+                              {row.investorName?.[0]?.toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography fontWeight={600} fontSize={14}>
+                                {row.investorName}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {row.investorEmail}
+                              </Typography>
+                              <br />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {row.investorPhone}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+
+                        <TableCell>{row.industry || "—"}</TableCell>
+                        <TableCell>{row.category || "—"}</TableCell>
+                        <TableCell>
+                          {row.investmentRange ? (
+                            <Chip
+                              label={row.investmentRange}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>{row.brandName || "—"}</TableCell>
+
+                        <TableCell>
+                          <Typography fontSize={13} fontWeight={600}>
+                            {new Date(row.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(row.createdAt).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell align="center">
+                          <Tooltip title="View Details">
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleView(row)}
+                              size="small"
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* ── Pagination ── */}
+            {totalPages > 1 && (
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                px={3}
+                py={2}
+                sx={{ borderTop: "1px solid #e5e7eb" }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Showing{" "}
+                  <strong>
+                    {(page - 1) * LIMIT + 1}–
+                    {Math.min(page * LIMIT, total)}
+                  </strong>{" "}
+                  of <strong>{total}</strong> results
+                </Typography>
+
+                <Pagination
+                  page={page}
+                  count={totalPages} // ✅ Now correctly calculated in slice
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                  onChange={handlePageChange}
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Paper>
+
+      {/* ── Investor Detail Dialog ── */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             borderBottom: "1px solid #e0e0e0",
+            pb: 2,
           }}
         >
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" fontWeight={700}>
             Investor Details
           </Typography>
           <IconButton onClick={handleCloseDialog} size="small">
@@ -412,110 +670,62 @@ const OverallInvestorEnquiryFormData = () => {
 
         <DialogContent sx={{ pt: 3 }}>
           {selectedLead && (
-            <Stack spacing={2} disableGutters divider={<Box sx={{ borderBottom: "1px solid #e0e0e0" }} />} >
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Investor Name
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.investorName}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Investor Email
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.investorEmail}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Investor Phone
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.investorPhone}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Brand Name
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.brandName || "N/A"}</Typography>
-              </Box>
-
- <Box>
-                <Typography variant="caption" color="text.secondary">
-                 Brand Investment Range
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.investmentRange}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                 Brand Industry
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.industry}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                 Brand Category
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.category}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                 Brand Expansion State
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.state}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                 Brand Expansion District
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.district || "N/A"}</Typography>
-              </Box>
-
-             
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Plan to Invest
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.planToInvest}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Ready to Invest
-                </Typography>
-                <Typography fontWeight={600}>{selectedLead.readyToInvest}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Created At
-                </Typography>
-                <Typography fontWeight={600}>
-                  {new Date(selectedLead.createdAt).toLocaleString()}
-                </Typography>
-              </Box>
+            <Stack spacing={2} divider={<Divider />}>
+              <DetailRow label="Investor Name" value={selectedLead.investorName} />
+              <DetailRow label="Enquiry ID" value={selectedLead.uuid} />
+              <DetailRow label="Email" value={selectedLead.investorEmail} />
+              <DetailRow label="Phone" value={selectedLead.investorPhone} />
+              <DetailRow label="Brand Name" value={selectedLead.brandName} />
+              <DetailRow
+                label="Investment Range"
+                value={selectedLead.investmentRange}
+              />
+              <DetailRow label="Industry" value={selectedLead.industry} />
+              <DetailRow label="Category" value={selectedLead.category} />
+              <DetailRow
+                label="Expansion State"
+                value={selectedLead.state}
+              />
+              <DetailRow
+                label="Expansion District"
+                value={selectedLead.district}
+              />
+              <DetailRow
+                label="Plan to Invest"
+                value={selectedLead.planToInvest}
+              />
+              <DetailRow
+                label="Ready to Invest"
+                value={selectedLead.readyToInvest}
+              />
+              <DetailRow
+                label="Submitted At"
+                value={new Date(selectedLead.createdAt).toLocaleString("en-IN")}
+              />
             </Stack>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0" }}>
+        <DialogActions
+          sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0", gap: 1 }}
+        >
           <Button variant="outlined" onClick={handleCloseDialog}>
             Close
           </Button>
-          <Button variant="contained" startIcon={<SendIcon />} onClick={handleOpenSendLead}>
+          <Button
+            variant="contained"
+            startIcon={<SendIcon />}
+            onClick={() => setOpenSendLead(true)}
+          >
             Send Lead to Brands
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Send Lead Dialog */}
+      {/* ── Send Lead Dialog ── */}
       <SendLeadDialog
         open={openSendLead}
-        onClose={handleCloseSendLead}
+        onClose={() => setOpenSendLead(false)}
         investorData={selectedLead}
       />
     </Box>
