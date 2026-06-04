@@ -20,7 +20,7 @@ import {
   Chip,
 } from "@mui/material";
 
-const LeadMatchCMSPage = () => {
+const LeadMatchingRulePerBrand = () => {
   const [loading, setLoading] =
     useState(false);
 
@@ -28,6 +28,9 @@ const LeadMatchCMSPage = () => {
     useState(false);
 
   const [rules, setRules] = useState([]);
+
+  const [brandName, setBrandName] =
+  useState("");
 
   const [tabs, setTabs] = useState([]);
 
@@ -40,17 +43,21 @@ const LeadMatchCMSPage = () => {
   /* =====================================================
      GET API
   ===================================================== */
+  const brandId = "80469c64-efe0-4ef1-891c-86c033f46d91";
 
   const fetchLeadMatch = async () => {
     try {
       setLoading(true);
 
       const response = await axios.get(
-        "http://localhost:5000/api/v1/getLeadMatch",
+        `http://localhost:5000/api/v1/leadMatchingRulePerBrand/get/${brandId}`,
       );
 
-      const allRules =
-        response?.data?.data?.rules || [];
+const data = response?.data?.data;
+
+setBrandName(data?.brandName || "");
+
+const allRules = data?.rules || [];
 
       setRules(allRules);
 
@@ -208,7 +215,7 @@ const LeadMatchCMSPage = () => {
         });
 
       await axios.put(
-        "http://localhost:5000/api/v1/updateLeadMatch",
+        `http://localhost:5000/api/v1/leadMatchingRulePerBrand/update/${brandId}`,
         {
           packageType: activeTab,
 
@@ -279,8 +286,20 @@ const LeadMatchCMSPage = () => {
             color: "#222",
           }}
         >
-          Lead Match CMS
+          Lead Matching Rules Per Brand
         </Typography>
+
+
+  <Typography
+    sx={{
+      fontSize: "13px",
+      fontWeight: 600,
+      color: "#f59e0b",
+      mt: 0.3,
+    }}
+  >
+    {brandName}
+  </Typography>
 
         <Button
           variant="contained"
@@ -525,4 +544,4 @@ const LeadMatchCMSPage = () => {
   );
 };
 
-export default LeadMatchCMSPage;  
+export default LeadMatchingRulePerBrand;  

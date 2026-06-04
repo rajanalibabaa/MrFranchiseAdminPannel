@@ -20,6 +20,7 @@ import { Logout } from "../Redux/Slices/admin/authSlice";
 import FreeLeadPage from "../Pages/LeadsHandling/FreeLeadPage";
 import PaymentPackagesPage from "../Pages/dashboardOutlet/PaymentPackagesHandling";
 import LeadMatchCMSPage from "../Pages/dashboardOutlet/LeadMatchCMSPage";
+import LeadMatchingRulePerBrand from "../Pages/dashboardOutlet/LeadMatchingRulePerBrand";
 import AllNotificationsPage from "../Components/Dashboard/AllNotigicationPage";
 import MembershipPakagesEdit from "../Components/Brands/MembershipPakagesEdit/MembershipPakagesEdit";
 import IndustryManagementPage from "../Pages/dashboardOutlet/IndustryManagementPage";
@@ -59,6 +60,7 @@ const Router = () => {
             <Route path="freeleadlist" element={<FreeLeadPage />} />
             <Route path="packagemanagement" element={<PaymentPackagesPage />} />
             <Route path="leadmatchcms" element={<LeadMatchCMSPage />} />
+            <Route path="leadmatchingruleperbrand" element={<LeadMatchingRulePerBrand />} />
             <Route
               path="industrymanagement"
               element={<IndustryManagementPage />}

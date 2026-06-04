@@ -128,6 +128,7 @@ const SidebarAdmin = () => {
 
           { label: "Package Management", path: "/dashboard/packagemanagement" },
           { label: "Lead Match Management", path: "/dashboard/leadmatchcms" },
+          { label: "Lead Matching Rules Per Brand", path: "/dashboard/leadmatchingruleperbrand" },
           {
             label: "Industry Management",
             path: "/dashboard/industrymanagement",
