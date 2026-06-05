@@ -127,7 +127,7 @@ const SidebarAdmin = () => {
         submenu: [
 
           { label: "Package Management", path: "/dashboard/packagemanagement" },
-          { label: "Lead Match Management", path: "/dashboard/leadmatchcms" },
+          { label: "Lead Matching Rules For All Brands", path: "/dashboard/leadmatchcms" },
           { label: "Lead Matching Rules Per Brand", path: "/dashboard/leadmatchingruleperbrand" },
           {
             label: "Industry Management",

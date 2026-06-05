@@ -279,7 +279,7 @@ const LeadMatchCMSPage = () => {
             color: "#222",
           }}
         >
-          Lead Match CMS
+          Lead Matching Rules For All Brands
         </Typography>
 
         <Button
