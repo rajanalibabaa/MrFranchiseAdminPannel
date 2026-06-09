@@ -27,6 +27,10 @@ import {
   Pagination,
   Divider,
   Chip,
+   Accordion,
+  AccordionSummary,
+  AccordionDetails,
+ 
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
@@ -36,7 +40,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
-
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useDispatch, useSelector } from "react-redux";
 import { getInvestorEnquiries } from "../../Redux/Slices/leadHandlingSlice/investorThunk";
 import SendLeadDialog from "./SendLeadDialog";
@@ -101,6 +105,8 @@ const OverallInvestorEnquiryFormData = () => {
     (state) => state.overallInvestorEnquiries
   );
 
+  console.log("overall ennquires", enquiries);
+  
   const LIMIT = 20;
 
   // ── Local State ──
@@ -648,7 +654,7 @@ const OverallInvestorEnquiryFormData = () => {
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle
@@ -668,43 +674,201 @@ const OverallInvestorEnquiryFormData = () => {
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ pt: 3 }}>
-          {selectedLead && (
-            <Stack spacing={2} divider={<Divider />}>
-              <DetailRow label="Investor Name" value={selectedLead.investorName} />
-              <DetailRow label="Enquiry ID" value={selectedLead.uuid} />
-              <DetailRow label="Email" value={selectedLead.investorEmail} />
-              <DetailRow label="Phone" value={selectedLead.investorPhone} />
-              <DetailRow label="Brand Name" value={selectedLead.brandName} />
-              <DetailRow
-                label="Investment Range"
-                value={selectedLead.investmentRange}
-              />
-              <DetailRow label="Industry" value={selectedLead.industry} />
-              <DetailRow label="Category" value={selectedLead.category} />
-              <DetailRow
-                label="Expansion State"
-                value={selectedLead.state}
-              />
-              <DetailRow
-                label="Expansion District"
-                value={selectedLead.district}
-              />
-              <DetailRow
-                label="Plan to Invest"
-                value={selectedLead.planToInvest}
-              />
-              <DetailRow
-                label="Ready to Invest"
-                value={selectedLead.readyToInvest}
-              />
-              <DetailRow
-                label="Submitted At"
-                value={new Date(selectedLead.createdAt).toLocaleString("en-IN")}
-              />
-            </Stack>
+    <DialogContent sx={{ pt: 3 }}>
+
+  {/* Investor Details Accordion */}
+  <Accordion defaultExpanded>
+    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+      <Typography fontWeight={700}>
+        Investor Enquiry Details
+      </Typography>
+    </AccordionSummary>
+
+    <AccordionDetails>
+      {selectedLead && (
+        <Stack spacing={2} divider={<Divider />}>
+          <DetailRow
+            label="Investor Name"
+            value={selectedLead.investorName}
+          />
+
+          <DetailRow
+            label="Email"
+            value={selectedLead.investorEmail}
+          />
+
+          <DetailRow
+            label="Phone"
+            value={selectedLead.investorPhone}
+          />
+
+          <DetailRow
+            label="Brand Name"
+            value={selectedLead.brandName}
+          />
+
+          <DetailRow
+            label="Investment Range"
+            value={selectedLead.investmentRange}
+          />
+
+          <DetailRow
+            label="Industry"
+            value={selectedLead.industry}
+          />
+
+          <DetailRow
+            label="Category"
+            value={selectedLead.category}
+          />
+
+          <DetailRow
+            label="Expansion State"
+            value={selectedLead.state}
+          />
+
+          <DetailRow
+            label="Expansion District"
+            value={selectedLead.district}
+          />
+
+          <DetailRow
+            label="Plan To Invest"
+            value={selectedLead.planToInvest}
+          />
+
+          <DetailRow
+            label="Ready To Invest"
+            value={selectedLead.readyToInvest}
+          />
+
+          <DetailRow
+            label="Submitted At"
+            value={new Date(
+              selectedLead.createdAt
+            ).toLocaleString("en-IN")}
+          />
+        </Stack>
+      )}
+    </AccordionDetails>
+  </Accordion>
+
+  {/* Brands Sent Accordion */}
+  {selectedLead?.brandsSent?.length > 0 && (
+    <Accordion sx={{ mt: 2 }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Typography fontWeight={700}>
+            Brands Sent
+          </Typography>
+
+          <Chip
+            label={selectedLead.brandsSent.length}
+            size="small"
+            color="primary"
+          />
+        </Box>
+      </AccordionSummary>
+
+      <AccordionDetails>
+        <Stack spacing={2}>
+          {selectedLead.brandsSent.map(
+            (brand, index) => (
+              <Paper
+                key={brand.brandId || index}
+                elevation={1}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                }}
+              >
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Brand Name
+                    </Typography>
+
+                    <Typography fontWeight={600}>
+                      {brand.brandName}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Brand Email
+                    </Typography>
+
+                    <Typography>
+                      {brand.brandEmail}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Email Status
+                    </Typography>
+
+                    <Box mt={0.5}>
+                      <Chip
+                        size="small"
+                        color={
+                          brand.emailSent
+                            ? "success"
+                            : "error"
+                        }
+                        label={
+                          brand.emailSent
+                            ? "Sent"
+                            : "Pending"
+                        }
+                      />
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Email Sent Time
+                    </Typography>
+
+                    <Typography>
+                      {brand.emailSentAt
+                        ? new Date(
+                            brand.emailSentAt
+                          ).toLocaleString(
+                            "en-IN"
+                          )
+                        : "-"}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )
           )}
-        </DialogContent>
+        </Stack>
+      </AccordionDetails>
+    </Accordion>
+  )}
+
+</DialogContent>
 
         <DialogActions
           sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0", gap: 1 }}
