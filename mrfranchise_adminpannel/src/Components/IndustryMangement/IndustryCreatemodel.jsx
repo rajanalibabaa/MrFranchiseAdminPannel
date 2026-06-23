@@ -14,7 +14,6 @@ const IndustryModal = ({ data, isEdit, onClose, onSaveSuccess }) => {
           <CloseIcon />
         </IconButton>
       </Box>
-      {/* Actual Form */}
       <IndustryForm
         initialData={data}
         isEdit={isEdit}
