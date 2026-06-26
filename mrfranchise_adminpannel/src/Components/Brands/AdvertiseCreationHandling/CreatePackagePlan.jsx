@@ -29,7 +29,9 @@ const investmentRanges = [
   "Rs. 50 Lakhs - 1 Crore",
   "Rs. 1 Crore - 2 Crores",
   "Rs. 2 Crore - 5 Crores",
-  "Rs. 5 Crores above",
+  "Rs. 5 Crore - 8 Crores",
+  "Rs. 8 Crore - 10 Crores",
+  "Rs. 10 Crores above",
 ];
 
 const generateLabel = (selected) => {

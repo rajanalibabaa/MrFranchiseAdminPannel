@@ -20,6 +20,7 @@ import { goToNewIncoming } from "../../Redux/Slices/newIncomingSlice";
 import socket from "../../Utils/socket";
 import FbCount from "./FoodandBevaragesCount";
 import LeadToggleControl from "./AutomationLeadPause";
+import LeadPlansCountManage from "./LeadPlanCountManagement";
 
 const Count = () => {
   const [brandsData, setBrandsData] = useState(null);
@@ -324,6 +325,10 @@ const Count = () => {
     </Grid>
       </Grid>
 
+      <Grid item xs={12} sx={{ mt: 2,mb: 2 }}>
+        <LeadPlansCountManage />
+      </Grid>
+
       {/* Bottom Row - Controls */}
       <Grid
         container
@@ -472,6 +477,8 @@ const Count = () => {
           </Card>
         </Grid>
       </Grid>
+
+
     </Box>
   );
 };
