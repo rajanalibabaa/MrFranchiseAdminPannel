@@ -27,10 +27,9 @@ import {
   Pagination,
   Divider,
   Chip,
-   Accordion,
+  Accordion,
   AccordionSummary,
   AccordionDetails,
- 
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
@@ -102,11 +101,11 @@ const OverallInvestorEnquiryFormData = () => {
   const dispatch = useDispatch();
 
   const { loading, enquiries, total, totalPages, currentPage } = useSelector(
-    (state) => state.overallInvestorEnquiries
+    (state) => state.overallInvestorEnquiries,
   );
 
   console.log("overall ennquires", enquiries);
-  
+
   const LIMIT = 20;
 
   // ── Local State ──
@@ -136,7 +135,7 @@ const OverallInvestorEnquiryFormData = () => {
         industry: filters.industry,
         category: filters.category,
         investmentRange: filters.investmentRange,
-      })
+      }),
     );
   }, [
     dispatch,
@@ -195,19 +194,19 @@ const OverallInvestorEnquiryFormData = () => {
 
     // Date filter (client-side on current page)
     if (dateFilter) {
-      data = data.filter((item) =>
-        item.createdAt?.split("T")[0] === dateFilter
+      data = data.filter(
+        (item) => item.createdAt?.split("T")[0] === dateFilter,
       );
     }
 
     // Sort
     if (sortOrder === "az") {
       data.sort((a, b) =>
-        (a.investorName || "").localeCompare(b.investorName || "")
+        (a.investorName || "").localeCompare(b.investorName || ""),
       );
     } else if (sortOrder === "za") {
       data.sort((a, b) =>
-        (b.investorName || "").localeCompare(a.investorName || "")
+        (b.investorName || "").localeCompare(a.investorName || ""),
       );
     } else if (sortOrder === "oldest") {
       data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -294,7 +293,12 @@ const OverallInvestorEnquiryFormData = () => {
 
       {/* ── Filters ── */}
       <Paper sx={{ p: 3, borderRadius: 4, mb: 4 }}>
-        <Typography variant="subtitle2" fontWeight={600} mb={2} color="text.secondary">
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          mb={2}
+          color="text.secondary"
+        >
           FILTERS
         </Typography>
         <Grid container spacing={2}>
@@ -326,9 +330,7 @@ const OverallInvestorEnquiryFormData = () => {
             >
               <MenuItem value="">All Industries</MenuItem>
               {[
-                ...new Set(
-                  enquiries?.map((i) => i.industry).filter(Boolean)
-                ),
+                ...new Set(enquiries?.map((i) => i.industry).filter(Boolean)),
               ].map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
@@ -348,9 +350,7 @@ const OverallInvestorEnquiryFormData = () => {
             >
               <MenuItem value="">All Categories</MenuItem>
               {[
-                ...new Set(
-                  enquiries?.map((i) => i.category).filter(Boolean)
-                ),
+                ...new Set(enquiries?.map((i) => i.category).filter(Boolean)),
               ].map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
@@ -371,7 +371,7 @@ const OverallInvestorEnquiryFormData = () => {
               <MenuItem value="">All Ranges</MenuItem>
               {[
                 ...new Set(
-                  enquiries?.map((i) => i.investmentRange).filter(Boolean)
+                  enquiries?.map((i) => i.investmentRange).filter(Boolean),
                 ),
               ].map((item) => (
                 <MenuItem key={item} value={item}>
@@ -417,27 +417,21 @@ const OverallInvestorEnquiryFormData = () => {
               <Chip
                 size="small"
                 label={`Search: ${filters.search}`}
-                onDelete={() =>
-                  setFilters((p) => ({ ...p, search: "" }))
-                }
+                onDelete={() => setFilters((p) => ({ ...p, search: "" }))}
               />
             )}
             {filters.industry && (
               <Chip
                 size="small"
                 label={`Industry: ${filters.industry}`}
-                onDelete={() =>
-                  setFilters((p) => ({ ...p, industry: "" }))
-                }
+                onDelete={() => setFilters((p) => ({ ...p, industry: "" }))}
               />
             )}
             {filters.category && (
               <Chip
                 size="small"
                 label={`Category: ${filters.category}`}
-                onDelete={() =>
-                  setFilters((p) => ({ ...p, category: "" }))
-                }
+                onDelete={() => setFilters((p) => ({ ...p, category: "" }))}
               />
             )}
             {filters.investmentRange && (
@@ -584,7 +578,7 @@ const OverallInvestorEnquiryFormData = () => {
                                 day: "2-digit",
                                 month: "short",
                                 year: "numeric",
-                              }
+                              },
                             )}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -593,7 +587,7 @@ const OverallInvestorEnquiryFormData = () => {
                               {
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              }
+                              },
                             )}
                           </Typography>
                         </TableCell>
@@ -629,8 +623,7 @@ const OverallInvestorEnquiryFormData = () => {
                 <Typography variant="body2" color="text.secondary">
                   Showing{" "}
                   <strong>
-                    {(page - 1) * LIMIT + 1}–
-                    {Math.min(page * LIMIT, total)}
+                    {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)}
                   </strong>{" "}
                   of <strong>{total}</strong> results
                 </Typography>
@@ -674,201 +667,161 @@ const OverallInvestorEnquiryFormData = () => {
           </IconButton>
         </DialogTitle>
 
-    <DialogContent sx={{ pt: 3 }}>
+        <DialogContent sx={{ pt: 3 }}>
+          {/* Investor Details Accordion */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography fontWeight={700}>Investor Enquiry Details</Typography>
+            </AccordionSummary>
 
-  {/* Investor Details Accordion */}
-  <Accordion defaultExpanded>
-    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-      <Typography fontWeight={700}>
-        Investor Enquiry Details
-      </Typography>
-    </AccordionSummary>
+            <AccordionDetails>
+              {selectedLead && (
+                <Stack spacing={2} divider={<Divider />}>
+                  <DetailRow
+                    label="Investor Name"
+                    value={selectedLead.investorName}
+                  />
 
-    <AccordionDetails>
-      {selectedLead && (
-        <Stack spacing={2} divider={<Divider />}>
-          <DetailRow
-            label="Investor Name"
-            value={selectedLead.investorName}
-          />
+                  <DetailRow label="Email" value={selectedLead.investorEmail} />
 
-          <DetailRow
-            label="Email"
-            value={selectedLead.investorEmail}
-          />
+                  <DetailRow label="Phone" value={selectedLead.investorPhone} />
+                  <DetailRow
+                    label="Investor Enquiry business Type"
+                    value={selectedLead.investorEnquiryModel}
+                  />
 
-          <DetailRow
-            label="Phone"
-            value={selectedLead.investorPhone}
-          />
+                  <DetailRow
+                    label="Brand Name"
+                    value={selectedLead.brandName}
+                  />
 
-          <DetailRow
-            label="Brand Name"
-            value={selectedLead.brandName}
-          />
+                  <DetailRow
+                    label="Investment Range"
+                    value={selectedLead.investmentRange}
+                  />
 
-          <DetailRow
-            label="Investment Range"
-            value={selectedLead.investmentRange}
-          />
+                  <DetailRow label="Industry" value={selectedLead.industry} />
 
-          <DetailRow
-            label="Industry"
-            value={selectedLead.industry}
-          />
+                  <DetailRow label="Category" value={selectedLead.category} />
 
-          <DetailRow
-            label="Category"
-            value={selectedLead.category}
-          />
+                  <DetailRow
+                    label="Expansion State"
+                    value={selectedLead.state}
+                  />
 
-          <DetailRow
-            label="Expansion State"
-            value={selectedLead.state}
-          />
+                  <DetailRow
+                    label="Expansion District"
+                    value={selectedLead.district}
+                  />
 
-          <DetailRow
-            label="Expansion District"
-            value={selectedLead.district}
-          />
+                  <DetailRow
+                    label="Plan To Invest"
+                    value={selectedLead.planToInvest}
+                  />
 
-          <DetailRow
-            label="Plan To Invest"
-            value={selectedLead.planToInvest}
-          />
+                  <DetailRow
+                    label="Ready To Invest"
+                    value={selectedLead.readyToInvest}
+                  />
 
-          <DetailRow
-            label="Ready To Invest"
-            value={selectedLead.readyToInvest}
-          />
+                  <DetailRow
+                    label="Submitted At"
+                    value={new Date(selectedLead.createdAt).toLocaleString(
+                      "en-IN",
+                    )}
+                  />
+                </Stack>
+              )}
+            </AccordionDetails>
+          </Accordion>
 
-          <DetailRow
-            label="Submitted At"
-            value={new Date(
-              selectedLead.createdAt
-            ).toLocaleString("en-IN")}
-          />
-        </Stack>
-      )}
-    </AccordionDetails>
-  </Accordion>
+          {/* Brands Sent Accordion */}
+          {selectedLead?.brandsSent?.length > 0 && (
+            <Accordion sx={{ mt: 2 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography fontWeight={700}>Brands Sent</Typography>
 
-  {/* Brands Sent Accordion */}
-  {selectedLead?.brandsSent?.length > 0 && (
-    <Accordion sx={{ mt: 2 }}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
-        >
-          <Typography fontWeight={700}>
-            Brands Sent
-          </Typography>
+                  <Chip
+                    label={selectedLead.brandsSent.length}
+                    size="small"
+                    color="primary"
+                  />
+                </Box>
+              </AccordionSummary>
 
-          <Chip
-            label={selectedLead.brandsSent.length}
-            size="small"
-            color="primary"
-          />
-        </Box>
-      </AccordionSummary>
-
-      <AccordionDetails>
-        <Stack spacing={2}>
-          {selectedLead.brandsSent.map(
-            (brand, index) => (
-              <Paper
-                key={brand.brandId || index}
-                elevation={1}
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  border: "1px solid #e0e0e0",
-                }}
-              >
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  {selectedLead.brandsSent.map((brand, index) => (
+                    <Paper
+                      key={brand.brandId || index}
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        border: "1px solid #e0e0e0",
+                      }}
                     >
-                      Brand Name
-                    </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Brand Name
+                          </Typography>
 
-                    <Typography fontWeight={600}>
-                      {brand.brandName}
-                    </Typography>
-                  </Grid>
+                          <Typography fontWeight={600}>
+                            {brand.brandName}
+                          </Typography>
+                        </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      Brand Email
-                    </Typography>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Brand Email
+                          </Typography>
 
-                    <Typography>
-                      {brand.brandEmail}
-                    </Typography>
-                  </Grid>
+                          <Typography>{brand.brandEmail}</Typography>
+                        </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      Email Status
-                    </Typography>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Email Status
+                          </Typography>
 
-                    <Box mt={0.5}>
-                      <Chip
-                        size="small"
-                        color={
-                          brand.emailSent
-                            ? "success"
-                            : "error"
-                        }
-                        label={
-                          brand.emailSent
-                            ? "Sent"
-                            : "Pending"
-                        }
-                      />
-                    </Box>
-                  </Grid>
+                          <Box mt={0.5}>
+                            <Chip
+                              size="small"
+                              color={brand.emailSent ? "success" : "error"}
+                              label={brand.emailSent ? "Sent" : "Pending"}
+                            />
+                          </Box>
+                        </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      Email Sent Time
-                    </Typography>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="caption" color="text.secondary">
+                            Email Sent Time
+                          </Typography>
 
-                    <Typography>
-                      {brand.emailSentAt
-                        ? new Date(
-                            brand.emailSentAt
-                          ).toLocaleString(
-                            "en-IN"
-                          )
-                        : "-"}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            )
+                          <Typography>
+                            {brand.emailSentAt
+                              ? new Date(brand.emailSentAt).toLocaleString(
+                                  "en-IN",
+                                )
+                              : "-"}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  ))}
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
           )}
-        </Stack>
-      </AccordionDetails>
-    </Accordion>
-  )}
-
-</DialogContent>
+        </DialogContent>
 
         <DialogActions
           sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0", gap: 1 }}

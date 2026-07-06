@@ -66,6 +66,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     state: "",
     district: "",
     city: "",
+    investorEnquiryModel: "",
     investmentRange: "",
     planToInvest: "",
     readyToInvest: "",
@@ -320,6 +321,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       district: formData.district?.trim() || "",
       city: formData.city?.trim() || "",
       investmentRange: formData.investmentRange,
+      investorEnquiryModel: formData.investorEnquiryModel || "",
       planToInvest: formData.planToInvest,
       readyToInvest: formData.readyToInvest,
       categories: formData.categories,
@@ -368,6 +370,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
         categories: [],
         brandName: "",
         isManualEntry: true,
+        investorEnquiryModel: "",
       });
 
       setSelectedIndustry("");
@@ -401,6 +404,16 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
   console.log("🎨 Render - Industries:", industries);
   console.log("🎨 Render - Industry Data:", industryData);
   console.log("🎨 Render - Selected Industry:", selectedIndustry);
+
+
+
+  const INVESTOR_ENQUIRY_MODELS = [
+  "Franchise Business",
+  "Dealer & Distributor",
+
+  "Channel Partner",
+];
+
 
   return (
     <Box sx={{ maxWidth: 900, mx: "auto", p: 2 }}>
@@ -464,6 +477,34 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 size="small"
               />
             </Grid>
+
+            <Grid item xs={12} sm={4}>
+  <TextField
+    fullWidth
+    select
+    label="Investor Enquiry Model"
+    name="investorEnquiryModel"
+    value={formData.investorEnquiryModel}
+    onChange={handleInputChange}
+    size="small"
+    sx={{
+      textTransform: "capitalize",
+      minWidth: 190,
+    }}
+  >
+    <MenuItem value="">
+      <em>Select Investor Enquiry Model</em>
+    </MenuItem>
+
+    {INVESTOR_ENQUIRY_MODELS.map((option) => (
+      <MenuItem key={option} value={option}>
+        {option}
+      </MenuItem>
+    ))}
+  </TextField>
+</Grid>
+
+
           </Grid>
         </Paper>
 
