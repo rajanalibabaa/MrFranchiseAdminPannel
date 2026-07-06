@@ -14,10 +14,32 @@ import {
   Chip,
   Stack,
   Paper,
+  InputBase,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
+import { Close } from "@mui/icons-material";
 import axios from "axios";
+
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+
+// NOTE: `process.env.NEXT_PUBLIC_*` only exists in Next.js apps.
+// In a plain CRA/Vite React app `process` is undefined in the browser,
+// which throws "process is not defined". Use a safe fallback instead.
+//
+// - If you're on Create React App, use: process.env.REACT_APP_API_URL
+//   (CRA replaces this at build time, so it IS safe there).
+// - If you're on Vite, use: import.meta.env.VITE_API_URL
+// - Otherwise, just hardcode it below.
+const API_BASE_URL =
+  (typeof process !== "undefined" && process.env && process.env.REACT_APP_API_URL) ||
+  "http://localhost:5000";
+
+const INDUSTRY_ENDPOINT = `${API_BASE_URL}/api/v1/admin/getIndustryByIndustryName`;
+const SUBMIT_ENDPOINT = `${API_BASE_URL}/api/v1/instantapply/postApplication`;
 
 // ═══════════════════════════════════════════════════════════
 // CONSTANTS
@@ -51,6 +73,73 @@ const READY_TO_INVEST = [
   "Need loan assistance",
 ];
 
+const INVESTOR_ENQUIRY_MODELS = [
+  "Franchise Business",
+  "Dealer & Distributor",
+  "Channel Partner",
+];
+
+// ═══════════════════════════════════════════════════════════
+// Small reusable search box used inside the Industry / Category
+// dropdowns (same pattern as FranchiseDetails.jsx)
+// ═══════════════════════════════════════════════════════════
+
+const DropdownSearchBox = ({ value, onChange, onClear, placeholder, inputRef }) => (
+  <Box
+    onKeyDown={(e) => e.stopPropagation()}
+    onMouseDown={(e) => e.stopPropagation()}
+    onClick={(e) => e.stopPropagation()}
+    sx={{
+      position: "sticky",
+      top: 0,
+      zIndex: 10,
+      bgcolor: "background.paper",
+      px: 1.5,
+      py: 1,
+      borderBottom: "1px solid #f0f0f0",
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        border: "1.5px solid #ff9800",
+        borderRadius: "8px",
+        px: 1.2,
+        py: 0.6,
+        gap: 1,
+        backgroundColor: "#fff",
+      }}
+    >
+      <SearchIcon sx={{ color: "#ff9800", fontSize: 20, flexShrink: 0 }} />
+      <InputBase
+        inputRef={inputRef}
+        fullWidth
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.stopPropagation()}
+        sx={{ fontSize: "0.9rem", flex: 1, "& input": { padding: 0 } }}
+      />
+      {value && (
+        <Close
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onClear();
+          }}
+          sx={{
+            color: "#aaa",
+            fontSize: 18,
+            cursor: "pointer",
+            flexShrink: 0,
+            "&:hover": { color: "#ff9800" },
+          }}
+        />
+      )}
+    </Box>
+  </Box>
+);
+
 // ═══════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════
@@ -75,9 +164,10 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     isManualEntry: true,
   });
 
-  // API data state
-  const [industries, setIndustries] = useState([]);
-  const [industryData, setIndustryData] = useState(null);
+  // ── Industry / Category API data ────────────────────────
+  // industriesWithHeadings shape: [{ heading: "FOOD & BEVERAGE", industries: ["Cafe", "Bakery", ...] }, ...]
+  const [industriesWithHeadings, setIndustriesWithHeadings] = useState([]);
+  const [industryData, setIndustryData] = useState(null); // { categories: [...], ... } for the selected industry
   const [loading, setLoading] = useState(false);
   const [loadingIndustryDetails, setLoadingIndustryDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,6 +177,10 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
 
+  // Search text for the two dropdowns
+  const [industrySearch, setIndustrySearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+
   const [validationErrors, setValidationErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -95,36 +189,39 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
   // API CALLS
   // ═══════════════════════════════════════════════════════════
 
+  // Fetch the full, heading-grouped industry list
   const fetchIndustries = async () => {
     console.log("🔄 Fetching industries...");
     try {
       setLoading(true);
-      const url = `http://localhost:5000/api/v1/admin/getIndustryByIndustryName`;
-      console.log("📡 API URL:", url);
+      setApiError("");
+      console.log("📡 API URL:", INDUSTRY_ENDPOINT);
 
-      const response = await fetch(url);
+      const response = await fetch(INDUSTRY_ENDPOINT);
       const result = await response.json();
 
       console.log("✅ Industries API Response:", result);
 
-      if (result.success && result.data) {
-        // Handle different possible response structures
-        const industriesArray = result.data.Industry || result.data.industries || result.data || [];
-        console.log("📦 Industries Array:", industriesArray);
-        setIndustries(Array.isArray(industriesArray) ? industriesArray : []);
+      // The API returns result.data.Industry as an array of
+      // { heading, industries: [...] } groups.
+      if (result.success && result.data?.Industry) {
+        setIndustriesWithHeadings(
+          Array.isArray(result.data.Industry) ? result.data.Industry : []
+        );
       } else {
         console.warn("⚠️ No industries found in response");
-        setIndustries([]);
+        setIndustriesWithHeadings([]);
       }
     } catch (error) {
       console.error("❌ Error fetching industries:", error);
       setApiError("Failed to load industries");
-      setIndustries([]);
+      setIndustriesWithHeadings([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch categories (and any other detail) for a single chosen industry
   const fetchIndustryDetails = async (industryName) => {
     if (!industryName) return;
 
@@ -132,7 +229,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
 
     try {
       setLoadingIndustryDetails(true);
-      const url = `http://localhost:5000/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(
+      const url = `${INDUSTRY_ENDPOINT}?industry=${encodeURIComponent(
         industryName
       )}`;
       console.log("📡 Industry Details URL:", url);
@@ -145,20 +242,22 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       if (result.success && result.data) {
         const apiData = result.data;
 
-        // Extract categories from various possible keys
-        const categories =
-          apiData.categories ||
-          apiData.category ||
-          apiData.subCategories ||
-          apiData.subIndustry ||
-          apiData.children ||
-          [];
-
-        console.log("📦 Categories found:", categories);
+        // Normalize categories: the API may send an array of strings,
+        // or an array of objects like { category: "Bakery" }.
+        let normalizedCategories = [];
+        if (Array.isArray(apiData.categories)) {
+          normalizedCategories = apiData.categories
+            .map((cat) => (typeof cat === "string" ? cat : cat?.category))
+            .filter(Boolean);
+        } else if (Array.isArray(apiData.category)) {
+          normalizedCategories = apiData.category
+            .map((cat) => (typeof cat === "string" ? cat : cat?.category))
+            .filter(Boolean);
+        }
 
         setIndustryData({
           ...apiData,
-          categories: Array.isArray(categories) ? categories : [],
+          categories: normalizedCategories,
         });
       } else {
         console.warn("⚠️ No data for industry:", industryName);
@@ -198,6 +297,8 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
     setSelectedIndustry(industry);
     setSelectedCategory("");
     setSelectedSubCategory("");
+    setIndustryData(null);
+    setCategorySearch("");
     fetchIndustryDetails(industry);
   };
 
@@ -339,11 +440,10 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       setIsSubmitting(true);
       setApiError("");
 
-      const url = `http://localhost:5000/api/v1/instantapply/postApplication`;
-      console.log("📡 Submission URL:", url);
+      console.log("📡 Submission URL:", SUBMIT_ENDPOINT);
       console.log("📡 Submission Payload:", payload);
 
-      const response = await axios.post(url, payload, {
+      const response = await axios.post(SUBMIT_ENDPOINT, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${AccessToken}`,
@@ -376,6 +476,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
       setSelectedIndustry("");
       setSelectedCategory("");
       setSelectedSubCategory("");
+      setIndustryData(null);
       setValidationErrors({});
 
       setTimeout(() => {
@@ -398,22 +499,118 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
   };
 
   // ═══════════════════════════════════════════════════════════
-  // RENDER
+  // RENDER HELPERS: build grouped MenuItems (heading + children)
   // ═══════════════════════════════════════════════════════════
 
-  console.log("🎨 Render - Industries:", industries);
-  console.log("🎨 Render - Industry Data:", industryData);
-  console.log("🎨 Render - Selected Industry:", selectedIndustry);
+  const renderIndustryMenuItems = () => {
+    if (loading) {
+      return (
+        <MenuItem value="" disabled>
+          Loading industries...
+        </MenuItem>
+      );
+    }
 
+    if (industriesWithHeadings.length === 0) {
+      return (
+        <MenuItem value="" disabled>
+          No industries available
+        </MenuItem>
+      );
+    }
 
+    const lower = industrySearch.toLowerCase().trim();
 
-  const INVESTOR_ENQUIRY_MODELS = [
-  "Franchise Business",
-  "Dealer & Distributor",
+    const items = industriesWithHeadings.flatMap((group, groupIndex) => {
+      const matched = (group.industries || []).filter((name) =>
+        name.toLowerCase().includes(lower)
+      );
 
-  "Channel Partner",
-];
+      // If searching and this whole group has no matches, skip it entirely
+      if (lower && matched.length === 0) return [];
 
+      return [
+        <MenuItem
+          key={`heading-${groupIndex}`}
+          disabled
+          sx={{
+            fontWeight: 700,
+            backgroundColor: "#f8f8f8",
+            color: "#ff9800 !important",
+            fontSize: "0.75rem",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            justifyContent: "center",
+            opacity: "1 !important",
+            pointerEvents: "none",
+            mt: groupIndex > 0 ? 1 : 0,
+          }}
+        >
+          {group.heading}
+        </MenuItem>,
+        ...matched.map((industryName, idx) => (
+          <MenuItem
+            key={`industry-${groupIndex}-${idx}`}
+            value={industryName}
+            sx={{ pl: 3 }}
+          >
+            {industryName}
+          </MenuItem>
+        )),
+      ];
+    });
+
+    return items.length > 0 ? (
+      items
+    ) : (
+      <MenuItem disabled>
+        <Typography variant="body2" color="text.secondary">
+          No results found
+        </Typography>
+      </MenuItem>
+    );
+  };
+
+  const renderCategoryMenuItems = () => {
+    if (loadingIndustryDetails) {
+      return (
+        <MenuItem value="" disabled>
+          Loading categories...
+        </MenuItem>
+      );
+    }
+
+    if (!industryData?.categories?.length) {
+      return (
+        <MenuItem value="" disabled>
+          No categories available
+        </MenuItem>
+      );
+    }
+
+    const lower = categorySearch.toLowerCase().trim();
+    const filtered = industryData.categories.filter((cat) =>
+      cat.toLowerCase().includes(lower)
+    );
+
+    return filtered.length > 0 ? (
+      filtered.map((cat, index) => (
+        <MenuItem key={`${cat}-${index}`} value={cat}>
+          {cat}
+        </MenuItem>
+      ))
+    ) : (
+      <MenuItem disabled>
+        <Typography variant="body2" color="text.secondary">
+          No results found
+        </Typography>
+      </MenuItem>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════
 
   return (
     <Box sx={{ maxWidth: 900, mx: "auto", p: 2 }}>
@@ -479,32 +676,27 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
             </Grid>
 
             <Grid item xs={12} sm={4}>
-  <TextField
-    fullWidth
-    select
-    label="Investor Enquiry Model"
-    name="investorEnquiryModel"
-    value={formData.investorEnquiryModel}
-    onChange={handleInputChange}
-    size="small"
-    sx={{
-      textTransform: "capitalize",
-      minWidth: 190,
-    }}
-  >
-    <MenuItem value="">
-      <em>Select Investor Enquiry Model</em>
-    </MenuItem>
+              <TextField
+                fullWidth
+                select
+                label="Investor Enquiry Model"
+                name="investorEnquiryModel"
+                value={formData.investorEnquiryModel}
+                onChange={handleInputChange}
+                size="small"
+                sx={{ textTransform: "capitalize", minWidth: 190 }}
+              >
+                <MenuItem value="">
+                  <em>Select Investor Enquiry Model</em>
+                </MenuItem>
 
-    {INVESTOR_ENQUIRY_MODELS.map((option) => (
-      <MenuItem key={option} value={option}>
-        {option}
-      </MenuItem>
-    ))}
-  </TextField>
-</Grid>
-
-
+                {INVESTOR_ENQUIRY_MODELS.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
         </Paper>
 
@@ -521,65 +713,69 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
             </Box>
           )}
 
-          {!loading && industries.length === 0 && (
+          {!loading && industriesWithHeadings.length === 0 && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               No industries available. Please try refreshing the page.
             </Alert>
           )}
 
           <Grid container spacing={2}>
+            {/* Industry (grouped by heading, with search) */}
             <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 select
                 label="Industry *"
-                sx={{ textTransform: "capitalize" ,minWidth: 150}}
+                sx={{ textTransform: "capitalize", minWidth: 150 }}
                 value={selectedIndustry}
                 onChange={handleIndustryChange}
-                disabled={loading || industries.length === 0}
+                disabled={loading || industriesWithHeadings.length === 0}
                 size="small"
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: { sx: { maxHeight: 400 } },
+                    disableAutoFocusItem: true,
+                  },
+                  onClose: () => setIndustrySearch(""),
+                }}
               >
-                {industries.map((ind, index) => (
-                  <MenuItem key={index} value={ind}>
-                    {ind}
-                  </MenuItem>
-                ))}
+                <DropdownSearchBox
+                  value={industrySearch}
+                  onChange={setIndustrySearch}
+                  onClear={() => setIndustrySearch("")}
+                  placeholder="Search industries…"
+                />
+                {renderIndustryMenuItems()}
               </TextField>
             </Grid>
 
+            {/* Category (from the selected industry's data, with search) */}
             <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 select
                 label="Category *"
                 value={selectedCategory}
-                                sx={{ textTransform: "capitalize" ,minWidth: 150}}
-
+                sx={{ textTransform: "capitalize", minWidth: 150 }}
                 onChange={handleCategoryChange}
                 disabled={!selectedIndustry || loadingIndustryDetails}
                 size="small"
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: { sx: { maxHeight: 400 } },
+                    disableAutoFocusItem: true,
+                  },
+                  onClose: () => setCategorySearch(""),
+                }}
               >
-                {loadingIndustryDetails ? (
-                  <MenuItem disabled>Loading...</MenuItem>
-                ) : (
-                  industryData?.categories?.map((cat, index) => (
-                    <MenuItem key={index} value={cat}>
-                      {cat}
-                    </MenuItem>
-                  ))
-                )}
+                <DropdownSearchBox
+                  value={categorySearch}
+                  onChange={setCategorySearch}
+                  onClear={() => setCategorySearch("")}
+                  placeholder="Search categories…"
+                />
+                {renderCategoryMenuItems()}
               </TextField>
-            </Grid>
-
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                label="Sub-Category (Optional)"
-                value={selectedSubCategory}
-                onChange={handleSubCategoryChange}
-                disabled={!selectedCategory}
-                size="small"
-              />
             </Grid>
 
             <Grid item xs={12} sm={3}>
@@ -664,8 +860,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 select
                 label="Investment Range *"
                 name="investmentRange"
-                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
-
+                sx={{ textTransform: "capitalize", minWidth: 190 }}
                 value={formData.investmentRange}
                 onChange={handleInputChange}
                 error={!!validationErrors.investmentRange}
@@ -688,8 +883,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 name="planToInvest"
                 value={formData.planToInvest}
                 onChange={handleInputChange}
-                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
-
+                sx={{ textTransform: "capitalize", minWidth: 190 }}
                 error={!!validationErrors.planToInvest}
                 helperText={validationErrors.planToInvest}
                 size="small"
@@ -710,8 +904,7 @@ const ManualSubmissionForm = ({ selectedBrand, onClose }) => {
                 name="readyToInvest"
                 value={formData.readyToInvest}
                 onChange={handleInputChange}
-                                sx={{ textTransform: "capitalize" ,minWidth: 190}}
-
+                sx={{ textTransform: "capitalize", minWidth: 190 }}
                 error={!!validationErrors.readyToInvest}
                 helperText={validationErrors.readyToInvest}
                 size="small"
