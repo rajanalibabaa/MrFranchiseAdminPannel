@@ -659,7 +659,6 @@
 // };
 
 // export default IndustryManagementPage;
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -673,6 +672,45 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import IndustryModal from "../../Components/IndustryMangement/IndustryCreatemodel";
 
+// ── API base URLs ───────────────────────────────────────────────────────────
+const ADMIN_API_BASE = "http://localhost:5000/api/v1/admin";
+
+// NOTE: adjust this prefix to match wherever you mounted FilterBlockRouter,
+// e.g. app.use("/api/v1/admin/filterblock", FilterBlockRouter)
+const FILTER_BLOCK_API_BASE = `${ADMIN_API_BASE}`;
+
+// ── Small reusable "Block" checkbox ─────────────────────────────────────────
+const BlockCheckbox = ({ checked, onChange, loading, label = "Block" }) => (
+  <FormControlLabel
+    onClick={(e) => e.stopPropagation()}
+    control={
+      <Checkbox
+        size="small"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={loading}
+      />
+    }
+    label={
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        {loading && <CircularProgress size={12} />}
+      </Box>
+    }
+    sx={{ mr: 2, ml: 0 }}
+  />
+);
+
+const emptyBlockConfig = {
+  headings: [],
+  industries: [],
+  categories: [],
+  productTags: [],
+  serviceTags: [],
+};
+
 const IndustryManagementPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -680,6 +718,11 @@ const IndustryManagementPage = () => {
   const [headings, setHeadings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ── Filter-block (checkbox blocking) state ────────────────────────────────
+  const [blockConfig, setBlockConfig] = useState(emptyBlockConfig);
+  const [blockLoadingKeys, setBlockLoadingKeys] = useState(new Set());
+  const [blockError, setBlockError] = useState(null);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -696,35 +739,54 @@ const IndustryManagementPage = () => {
 
   useEffect(() => {
     fetchIndustries();
+    fetchBlockConfig();
   }, []);
 
-// In fetchIndustries, change the error handling:
+  const fetchIndustries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        `${ADMIN_API_BASE}/getAllIndustry`
+      );
+      if (response.data.success) {
+        setHeadings(response.data.data || []);
+      } else {
+        // Don't treat "no data" as a blocking error — just set empty
+        setHeadings([]);
+      }
+    } catch (err) {
+      console.error("Error fetching industries:", err);
+      // 404 just means no data yet, not a real error
+      if (err.response?.status === 404) {
+        setHeadings([]);
+      } else {
+        setError("Error fetching industries. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const fetchIndustries = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    const response = await axios.get(
-      "http://localhost:5000/api/v1/admin/getAllIndustry"
-    );
-    if (response.data.success) {
-      setHeadings(response.data.data || []);
-    } else {
-      // Don't treat "no data" as a blocking error — just set empty
-      setHeadings([]);
+  const fetchBlockConfig = async () => {
+    try {
+      setBlockError(null);
+      const response = await axios.get(`${FILTER_BLOCK_API_BASE}/getblocks`);
+      if (response.data.success) {
+        const data = response.data.data || {};
+        setBlockConfig({
+          headings: data.headings || [],
+          industries: data.industries || [],
+          categories: data.categories || [],
+          productTags: data.productTags || [],
+          serviceTags: data.serviceTags || [],
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching filter block config:", err);
+      setBlockError("Error fetching block settings. Checkboxes may be out of sync.");
     }
-  } catch (err) {
-    console.error("Error fetching industries:", err);
-    // 404 just means no data yet, not a real error
-    if (err.response?.status === 404) {
-      setHeadings([]);
-    } else {
-      setError("Error fetching industries. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleCreate = () => {
     setModalData(null);
@@ -766,7 +828,7 @@ const fetchIndustries = async () => {
     setDeleteError(null);
   };
 
-  // ── Toggle helpers ──────────────────────────────────────────────────────────
+  // ── Toggle helpers (delete-selection checkboxes) ────────────────────────────
   const handleCategoryToggle = (categoryId) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId)
@@ -851,7 +913,7 @@ const fetchIndustries = async () => {
             };
 
       const response = await axios.delete(
-        `http://localhost:5000/api/v1/admin/deleteIndustryById/${selectedIndustry.uuid}`,
+        `${ADMIN_API_BASE}/deleteIndustryById/${selectedIndustry.uuid}`,
         { data: payload }
       );
 
@@ -869,6 +931,165 @@ const fetchIndustries = async () => {
       setDeleteError(err.response?.data?.message || err.message || "Something went wrong");
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  // ── Filter-block (checkbox blocking) logic ──────────────────────────────────
+
+  const isKeyLoading = (key) => blockLoadingKeys.has(key);
+
+  const setKeyLoading = (key, isLoading) => {
+    setBlockLoadingKeys((prev) => {
+      const next = new Set(prev);
+      if (isLoading) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  // headings / industries / categories are plain string arrays
+  const isSimpleBlocked = (type, value) => (blockConfig[type] || []).includes(value);
+
+  // productTags / serviceTags are [{ parent, tags: [] }]
+  const isParentBlocked = (type, parentName) =>
+    (blockConfig[type] || []).some((g) => g.parent === parentName);
+
+  const isTagBlocked = (type, parentName, tagName) =>
+    (blockConfig[type] || []).some(
+      (g) => g.parent === parentName && (g.tags || []).includes(tagName)
+    );
+
+  // Toggle a plain string value (headings / industries / categories)
+  const toggleSimpleBlock = async (type, value, isChecked) => {
+    const key = `${type}:${value}`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    // optimistic update
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      const updated = isChecked
+        ? Array.from(new Set([...list, value]))
+        : list.filter((v) => v !== value);
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [value],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} block for "${value}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      // revert optimistic update
+      setBlockConfig((prev) => {
+        const list = prev[type] || [];
+        const reverted = isChecked
+          ? list.filter((v) => v !== value)
+          : Array.from(new Set([...list, value]));
+        return { ...prev, [type]: reverted };
+      });
+    } finally {
+      setKeyLoading(key, false);
+    }
+  };
+
+  // Toggle "block entire parent" for productTags / serviceTags
+  const toggleParentBlock = async (type, parentName, isChecked) => {
+    const key = `${type}:${parentName}:__parent__`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    const prevConfigSnapshot = blockConfig[type] || [];
+
+    // optimistic update
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      if (isChecked) {
+        const exists = list.some((g) => g.parent === parentName);
+        const updated = exists ? list : [...list, { parent: parentName, tags: [] }];
+        return { ...prev, [type]: updated };
+      }
+      // unchecking a parent drops the whole group (tags included)
+      const updated = list.filter((g) => g.parent !== parentName);
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [{ parent: parentName, tags: [] }],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} parent block for "${parentName}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      // revert to snapshot taken before optimistic update
+      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
+    } finally {
+      setKeyLoading(key, false);
+    }
+  };
+
+  // Toggle a single tag under a parent for productTags / serviceTags
+  const toggleTagBlock = async (type, parentName, tagName, isChecked) => {
+    const key = `${type}:${parentName}:${tagName}`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    const prevConfigSnapshot = blockConfig[type] || [];
+
+    // optimistic update
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      const idx = list.findIndex((g) => g.parent === parentName);
+
+      if (isChecked) {
+        if (idx === -1) {
+          return { ...prev, [type]: [...list, { parent: parentName, tags: [tagName] }] };
+        }
+        const updatedTags = Array.from(new Set([...(list[idx].tags || []), tagName]));
+        const updated = [...list];
+        updated[idx] = { ...updated[idx], tags: updatedTags };
+        return { ...prev, [type]: updated };
+      }
+
+      // unchecking: remove tag, drop the group entirely if no tags remain
+      if (idx === -1) return prev;
+      const remainingTags = (list[idx].tags || []).filter((t) => t !== tagName);
+      let updated;
+      if (remainingTags.length === 0) {
+        updated = list.filter((g) => g.parent !== parentName);
+      } else {
+        updated = [...list];
+        updated[idx] = { ...updated[idx], tags: remainingTags };
+      }
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [{ parent: parentName, tags: [tagName] }],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} tag block for "${parentName}/${tagName}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
+    } finally {
+      setKeyLoading(key, false);
     }
   };
 
@@ -1029,10 +1250,17 @@ const fetchIndustries = async () => {
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ width: "97%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-            {item.industry}
-          </Typography>
-          <Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+              {item.industry}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <BlockCheckbox
+              checked={isSimpleBlocked("industries", item.industry)}
+              loading={isKeyLoading(`industries:${item.industry}`)}
+              onChange={(checked) => toggleSimpleBlock("industries", item.industry, checked)}
+            />
             <IconButton
               onClick={(e) => { e.stopPropagation(); handleEditClick(item, headingName); }}
               color="primary"
@@ -1059,8 +1287,17 @@ const fetchIndustries = async () => {
         {item.categories?.length > 0 ? (
           <List disablePadding>
             {item.categories.map((cat, i) => (
-              <ListItem key={cat.id || i} disablePadding>
+              <ListItem
+                key={cat.id || i}
+                disablePadding
+                sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
                 <ListItemText primary={`• ${cat.category}`} />
+                <BlockCheckbox
+                  checked={isSimpleBlocked("categories", cat.category)}
+                  loading={isKeyLoading(`categories:${cat.category}`)}
+                  onChange={(checked) => toggleSimpleBlock("categories", cat.category, checked)}
+                />
               </ListItem>
             ))}
           </List>
@@ -1077,12 +1314,29 @@ const fetchIndustries = async () => {
         {item.productTags?.length > 0 ? (
           item.productTags.map((pt, ptIndex) => (
             <Box key={pt.id || ptIndex} sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>{pt.parent}</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>{pt.parent}</Typography>
+                <BlockCheckbox
+                  label="Block parent"
+                  checked={isParentBlocked("productTags", pt.parent)}
+                  loading={isKeyLoading(`productTags:${pt.parent}:__parent__`)}
+                  onChange={(checked) => toggleParentBlock("productTags", pt.parent, checked)}
+                />
+              </Box>
               {pt.tags?.length > 0 ? (
                 <List disablePadding>
                   {pt.tags.map((t, tIndex) => (
-                    <ListItem key={t.id || tIndex} disablePadding sx={{ pl: 2 }}>
+                    <ListItem
+                      key={t.id || tIndex}
+                      disablePadding
+                      sx={{ pl: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                    >
                       <ListItemText primary={<Typography variant="body2">• {t.tag}</Typography>} />
+                      <BlockCheckbox
+                        checked={isTagBlocked("productTags", pt.parent, t.tag)}
+                        loading={isKeyLoading(`productTags:${pt.parent}:${t.tag}`)}
+                        onChange={(checked) => toggleTagBlock("productTags", pt.parent, t.tag, checked)}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -1104,12 +1358,29 @@ const fetchIndustries = async () => {
         {item.serviceTags?.length > 0 ? (
           item.serviceTags.map((st, stIndex) => (
             <Box key={st.id || stIndex} sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>{st.parent}</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>{st.parent}</Typography>
+                <BlockCheckbox
+                  label="Block parent"
+                  checked={isParentBlocked("serviceTags", st.parent)}
+                  loading={isKeyLoading(`serviceTags:${st.parent}:__parent__`)}
+                  onChange={(checked) => toggleParentBlock("serviceTags", st.parent, checked)}
+                />
+              </Box>
               {st.tags?.length > 0 ? (
                 <List disablePadding>
                   {st.tags.map((tag, tagIndex) => (
-                    <ListItem key={tag.id || tagIndex} disablePadding sx={{ pl: 2 }}>
+                    <ListItem
+                      key={tag.id || tagIndex}
+                      disablePadding
+                      sx={{ pl: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                    >
                       <ListItemText primary={<Typography variant="body2">• {tag.tag}</Typography>} />
+                      <BlockCheckbox
+                        checked={isTagBlocked("serviceTags", st.parent, tag.tag)}
+                        loading={isKeyLoading(`serviceTags:${st.parent}:${tag.tag}`)}
+                        onChange={(checked) => toggleTagBlock("serviceTags", st.parent, tag.tag, checked)}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -1125,20 +1396,12 @@ const fetchIndustries = async () => {
     </Accordion>
   );
 
-  // ── Loading / error states ───────────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <Box sx={{ p: 3, display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
         <CircularProgress />
         <Typography variant="body1" sx={{ ml: 2 }}>Loading industries...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
-        <Typography variant="body1" color="error">{error}</Typography>
       </Box>
     );
   }
@@ -1152,27 +1415,34 @@ const fetchIndustries = async () => {
         <Button variant="contained" onClick={handleCreate} sx={{ mb: 2 }}>
           Create Industry
         </Button>
-          {/* Show error inline, never block the whole page */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+
+        {/* Show errors inline, never block the whole page */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {blockError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setBlockError(null)}>
+            {blockError}
+          </Alert>
+        )}
 
         <Typography variant="h5" gutterBottom>Industries</Typography>
 
-         {totalIndustries === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No industries found. Click "Create Industry" to add one.
-        </Typography>
-      ) : (
+        {totalIndustries === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No industries found. Click "Create Industry" to add one.
+          </Typography>
+        ) : (
           headings.map((headingObj, hIndex) => (
             <Box key={hIndex} sx={{ mb: 4 }}>
               {/* Heading label */}
-              <Typography
-                variant="h6"
+              <Box
                 sx={{
-                  fontWeight: "bold",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   mb: 1,
                   px: 1,
                   py: 0.5,
@@ -1181,8 +1451,15 @@ const fetchIndustries = async () => {
                   borderRadius: 1,
                 }}
               >
-                {headingObj.heading}
-              </Typography>
+                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                  {headingObj.heading}
+                </Typography>
+                <BlockCheckbox
+                  checked={isSimpleBlocked("headings", headingObj.heading)}
+                  loading={isKeyLoading(`headings:${headingObj.heading}`)}
+                  onChange={(checked) => toggleSimpleBlock("headings", headingObj.heading, checked)}
+                />
+              </Box>
 
               {headingObj.industries?.map((item, index) =>
                 renderIndustry(item, index, headingObj.heading)
