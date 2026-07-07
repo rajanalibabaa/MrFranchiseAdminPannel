@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   TextField,
@@ -37,16 +39,79 @@ import {
   Drawer,
   Toolbar,
   AppBar,
+  InputBase,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   InfoOutlined,
   Close,
   ExpandMore,
   ExpandLess,
 } from "@mui/icons-material";
-import AddIcon from '@mui/icons-material/Add';
+import AddIcon from "@mui/icons-material/Add";
+
+// ✅ Reusable Search Box component to use inside all 3 dropdowns
+const DropdownSearchBox = ({ value, onChange, onClear, placeholder, inputRef }) => (
+  <Box
+    onKeyDown={(e) => e.stopPropagation()}
+    onMouseDown={(e) => e.stopPropagation()}
+    onClick={(e) => e.stopPropagation()}
+    sx={{
+      position: "sticky",
+      top: 0,
+      zIndex: 10,
+      bgcolor: "background.paper",
+      px: 1.5,
+      py: 1,
+      borderBottom: "1px solid #f0f0f0",
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        border: "1.5px solid #ff9800",
+        borderRadius: "8px",
+        px: 1.2,
+        py: 0.6,
+        gap: 1,
+        backgroundColor: "#fff",
+      }}
+    >
+      <SearchIcon sx={{ color: "#ff9800", fontSize: 20, flexShrink: 0 }} />
+      <InputBase
+        inputRef={inputRef}
+        fullWidth
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.stopPropagation()}
+        sx={{
+          fontSize: "0.9rem",
+          flex: 1,
+          "& input": { padding: 0 },
+        }}
+      />
+      {value && (
+        <Close
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onClear();
+          }}
+          sx={{
+            color: "#aaa",
+            fontSize: 18,
+            cursor: "pointer",
+            flexShrink: 0,
+            "&:hover": { color: "#ff9800" },
+          }}
+        />
+      )}
+    </Box>
+  </Box>
+);
 const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
   // Define fee unit options
   const royaltyFeeUnits = [
@@ -64,11 +129,10 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
   ];
  
   // State for API data
-  const [industries, setIndustries] = useState([]);
+  const [industriesWithHeadings, setIndustriesWithHeadings] = useState([]); // NEW
   const [industryData, setIndustryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingIndustryDetails, setLoadingIndustryDetails] = useState(false);
- 
   const [currentFicoModel, setCurrentFicoModel] = React.useState({
     investmentRange: "",
     areaRequired: "",
@@ -101,7 +165,7 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     royaltyFee: false,
     roi: false,
   });
-  const [savedFicoModels, setSavedFicoModels] = React.useState([]);
+ const [savedFicoModels, setSavedFicoModels] = React.useState([]);
   const [currentUSP, setCurrentUSP] = useState("");
   const [showSelectedBar, setShowSelectedBar] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -109,53 +173,111 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
   const [tempProductTags, setTempProductTags] = useState([]);
   const [tempServiceTags, setTempServiceTags] = useState([]);
   const [showSelectedServiceTags, setShowSelectedServiceTags] = useState(false);
+  const [industrySearch, setIndustrySearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [franchiseTypeSearch, setFranchiseTypeSearch] = useState("");
   // Fetch industries on component mount
   useEffect(() => {
     fetchIndustries();
+    // fetchIndustryDetails()
   }, []);
+  const apiBaseUrl = "http://localhost:5000" || "";
+
   // Fetch industries list
   const fetchIndustries = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/v1/admin/getIndustryByIndustryName');
+      const response = await fetch(
+        `${apiBaseUrl}/api/v1/admin/getIndustryByIndustryName`,
+      );
       const result = await response.json();
-     
-      if (result.success && result.data.Industry) {
-        setIndustries(result.data.Industry);
+
+      if (result.success && result.data?.Industry) {
+        setIndustriesWithHeadings(result.data.Industry); // ← Store grouped data
       }
     } catch (error) {
-      console.error('Error fetching industries:', error);
+      console.error("Error fetching industries:", error);
     } finally {
       setLoading(false);
     }
   };
   // Fetch industry details when an industry is selected
-  const fetchIndustryDetails = async (industryName) => {
+const fetchIndustryDetails = async (industryName) => {
     if (!industryName) return;
-   
+
     try {
       setLoadingIndustryDetails(true);
       const response = await fetch(
-        `http://localhost:5000/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(industryName)}`
+        `${apiBaseUrl}/api/v1/admin/getIndustryByIndustryName?industry=${encodeURIComponent(industryName)}`,
       );
       const result = await response.json();
-     
+
       if (result.success && result.data) {
-        setIndustryData(result.data);
-       
-        // Update selected category state
+        const apiData = result.data;
+
+        // Normalize categories (extract string values)
+        let normalizedCategories = [];
+        if (Array.isArray(apiData.categories)) {
+          normalizedCategories = apiData.categories
+            .map((cat) => cat?.category || cat) // handle both object and string
+            .filter(Boolean);
+        }
+
+        // Normalize productTags
+        const normalizedProductTags = Array.isArray(apiData.productTags)
+          ? apiData.productTags
+              .map((pt) => ({
+                parent: pt?.parent || "",
+                tags: Array.isArray(pt?.tags)
+                  ? pt.tags.map((t) => t?.tag || t).filter(Boolean)
+                  : [],
+                id: pt?.id,
+              }))
+              .filter((pt) => pt.parent)
+          : [];
+
+        // Normalize serviceTags
+        const normalizedServiceTags = Array.isArray(apiData.serviceTags)
+          ? apiData.serviceTags
+              .map((st) => ({
+                parent: st?.parent || "",
+                tags: Array.isArray(st?.tags)
+                  ? st.tags.map((t) => t?.tag || t).filter(Boolean)
+                  : [],
+                id: st?.id,
+              }))
+              .filter((st) => st.parent)
+          : [];
+
+        setIndustryData({
+          ...apiData,
+          categories: normalizedCategories,
+          productTags: normalizedProductTags,
+          serviceTags: normalizedServiceTags,
+        });
+
+        // Reset selected category
         const newCategory = {
           groupId: "",
-          main: result.data.industry,
+          main: apiData.industry || industryName,
           sub: "",
           productTags: [],
           serviceTags: [],
         };
+
         setSelectedCategory(newCategory);
-        onChange({ brandCategories: newCategory });
+
+        onChange({
+          brandCategories: { ...newCategory, child: "" },
+          franchiseTags: {},
+        });
+      } else {
+        console.error("API returned no data");
+        setIndustryData(null);
       }
     } catch (error) {
-      console.error('Error fetching industry details:', error);
+      console.error("Error fetching industry details:", error);
+      setIndustryData(null);
     } finally {
       setLoadingIndustryDetails(false);
     }
@@ -444,23 +566,140 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     onChange({ fico: updatedFico });
     setSavedFicoModels(updatedFico);
   };
-  const franchiseTypes = [
-    "Single Unit",
-    "Multi Unit ",
-    "Master Franchise",
-    "City Franchise",
-    "Area Franchise",
-    "District Franchise",
-    "State Franchise",
-  ];
+ const franchiseTypes = {
+  "CHANNEL PARTNERS": {
+    "CHANNEL PARTNERS": [
+      "AUTHORIZED CHANNEL PARTNER",
+      "CHANNEL PARTNERS",
+      "AREA CHANNEL PARTNERS",
+      "CITY CHANNEL PARTNERS",
+      "DISTRICT CHANNEL PARTNERS",
+      "STATE CHANNEL PARTNERS",
+      "IMPLEMENTATION PARTNER",
+      "MASTER CHANNEL PARTNER",
+      "REFERRAL CHANNEL PARTNER",
+      "STRATEGIC ALLIANCE PARTNER",
+      "VALUE-ADDED RESELLER (VAR)",
+    ],
+  },
+
+  "DEALERS & DISTRIBUTORS": {
+    "C&F Agent": ["C&F Agent"],
+
+    DEALER: [
+      "AUTHORIZED DEALER",
+      "DEALER",
+      "AREA DEALER",
+      "CITY DEALER",
+      "DISTRICT DEALER",
+      "STATE DEALER",
+    ],
+
+    DISTRIBUTOR: [
+      "DISTRIBUTOR",
+      "AREA DISTRIBUTOR",
+      "CITY DISTRIBUTOR",
+      "DISTRICT DISTRIBUTOR",
+      "STATE DISTRIBUTOR",
+      "EXCLUSIVE DISTRIBUTOR",
+      "MASTER DISTRIBUTOR",
+      "REGIONAL DISTRIBUTOR",
+      "RETAIL DISTRIBUTOR",
+    ],
+
+    "IMPORTER / EXPORTER": [
+      "EXPORTER",
+      "IMPORTER",
+    ],
+
+    STOCKIST: [
+      "STOCKIST",
+      "AREA STOCKIST",
+      "CITY STOCKIST",
+      "DISTRICT STOCKIST",
+      "STATE STOCKIST",
+      "SUPER STOCKIST",
+    ],
+
+    "WHOLESALE SELLER": [
+      "WHOLESALE SELLER",
+      "AREA WHOLESALE SELLER",
+      "CITY WHOLESALE SELLER",
+      "DISTRICT WHOLESALE SELLER",
+      "STATE WHOLESALE SELLER",
+    ],
+  },
+
+ "FRANCHISE BUSINESS": {
+  "CLOUD KITCHEN": ["CLOUD KITCHEN"],
+
+  "COMPANY OWNED COMPANY OPERATED (COCO)": [
+    "COCO - Area Franchise",
+    "COCO - City Franchise",
+    "COCO - District Franchise",
+    "COCO - Master Franchise",
+    "COCO - Multi Unit",
+    "COCO - Single Unit",
+    "COCO - State Franchise",
+  ],
+
+  "COMPANY OWNED FRANCHISE OPERATED (COFO)": [
+    "COFO - Area Franchise",
+    "COFO - City Franchise",
+    "COFO - District Franchise",
+    "COFO - Master Franchise",
+    "COFO - Multi Unit",
+    "COFO - Single Unit",
+    "COFO - State Franchise",
+  ],
+
+  "FRANCHISE INVESTED COMPANY OPERATED (FICO)": [
+    "FICO - Area Franchise",
+    "FICO - City Franchise",
+    "FICO - District Franchise",
+    "FICO - Master Franchise",
+    "FICO - Multi Unit",
+    "FICO - Single Unit",
+    "FICO - State Franchise",
+  ],
+
+  "FRANCHISE OWNED COMPANY OPERATED (FOCO)": [
+    "FOCO - Area Franchise",
+    "FOCO - City Franchise",
+    "FOCO - District Franchise",
+    "FOCO - Master Franchise",
+    "FOCO - Multi Unit",
+    "FOCO - Single Unit",
+    "FOCO - State Franchise",
+  ],
+
+  "FRANCHISE OWNED FRANCHISE OPERATED (FOFO)": [
+    "FOFO - Area Franchise",
+    "FOFO - City Franchise",
+    "FOFO - District Franchise",
+    "FOFO - Master Franchise",
+    "FOFO - Multi Unit",
+    "FOFO - Single Unit",
+    "FOFO - State Franchise",
+  ],
+
+  KIOSK: ["KIOSK"],
+
+  "SERVICE PARTNERS": [
+    "SERVICE PARTNERS",
+    "SERVICE PARTNERS - Area Franchise",
+    "SERVICE PARTNERS - City Franchise",
+    "SERVICE PARTNERS - District Franchise",
+    "SERVICE PARTNERS - State Franchise",
+  ],
+
+  "SHOP IN SHOP": ["SHOP IN SHOP"],
+}
+};
   const franchiseModels = [
-    "FOFO ",
-    "FOCO ",
-    "FICO ",
-    "COCO ",
-    "KIOSK",
-    "SHOP IN SHOP",
-    "CLOUD KITCHEN",
+    "FRANCHISE BUSINESS",
+    "DEALERS & DISTRIBUTORS",
+    "CHANNEL PARTNERS",
   ];
   // Service tag groups will be populated from API data
   const [serviceTagGroups, setServiceTagGroups] = useState({});
@@ -515,6 +754,8 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
         groups[serviceTagGroup.parent] = serviceTagGroup.tags;
       });
       setServiceTagGroups(groups);
+    } else {
+      setServiceTagGroups({});
     }
   }, [industryData]);
   // Drawer handlers
@@ -556,7 +797,18 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
       productTags: updatedProductTags,
     };
     setSelectedCategory(newCategory);
-    onChange({ brandCategories: newCategory });
+
+    // Transform productTags to child string for validation
+    const allProductTags = updatedProductTags.flatMap((g) => g.tags);
+    const childString = allProductTags.join(", ");
+
+    onChange({
+      brandCategories: {
+        ...newCategory,
+        child: childString, // Add child field for validation
+      },
+    });
+
     errors.productTags = "";
     setDrawerOpen(false);
   };
@@ -601,22 +853,33 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     errors.serviceTags = "";
     setServiceTagDrawerOpen(false);
   };
-  const handleMainCategoryChange = (e) => {
-    const mainCategory = e.target.value;
-   
-    // Fetch industry details when an industry is selected
-    fetchIndustryDetails(mainCategory);
-   
+ const handleMainCategoryChange = (e) => {
+    const selectedIndustry = e.target.value;
+    console.log("Selected Industry:", selectedIndustry); // Debugging line
+
+    if (!selectedIndustry) return;
+
+    fetchIndustryDetails(selectedIndustry); // ← Fetch details for the actual industry
+
     const newCategory = {
       groupId: "",
-      main: mainCategory,
+      main: selectedIndustry,
       sub: "",
       productTags: [],
       serviceTags: [],
     };
+
     setSelectedCategory(newCategory);
-    onChange({ brandCategories: newCategory });
-    errors.mainCategory = "";
+    setTempProductTags([]);
+    setTempServiceTags([]);
+    setServiceTagGroups({});
+
+    onChange({
+      brandCategories: { ...newCategory, child: "" },
+      franchiseTags: {},
+    });
+
+    if (errors.mainCategory) errors.mainCategory = "";
   };
  
   const handleSubCategoryChange = (e) => {
@@ -684,72 +947,169 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
           mb: 2,
         }}
       >
-        <Grid item xs={12} sm={4}>
+       <Grid item xs={12} sm={4}>
           <FormControl
             fullWidth
             size="medium"
             error={Boolean(errors.mainCategory)}
           >
             <InputLabel id="industries-label">Industries</InputLabel>
-            <Select
-              labelId="industries-label"
-              id="industries-select"
-              value={selectedCategory.main || ""}
-              label="Industries"
-              onChange={handleMainCategoryChange}
-              sx={{ minHeight: 56 }}
-              MenuProps={{
-                PaperProps: { sx: { maxHeight: 320 } },
-              }}
-              disabled={loading}
+           <Select
+  labelId="industries-label"
+  id="industries-select"
+  value={selectedCategory.main || ""}
+  label="Industries"
+  onChange={handleMainCategoryChange}
+  sx={{ minHeight: 56 }}
+  MenuProps={{
+    PaperProps: { sx: { maxHeight: 400 } },
+    disableAutoFocusItem: true,
+  }}
+  disabled={loading}
+  onClose={() => setIndustrySearch("")}
+>
+  {/* ✅ Search Box */}
+  <DropdownSearchBox
+    value={industrySearch}
+    onChange={setIndustrySearch}
+    onClear={() => setIndustrySearch("")}
+    placeholder="Search industries…"
+  />
+
+  {/* Menu Items */}
+  {loading ? (
+    <MenuItem value="" disabled>Loading industries...</MenuItem>
+  ) : industriesWithHeadings.length === 0 ? (
+    <MenuItem value="" disabled>No industries available</MenuItem>
+  ) : (
+    (() => {
+      const lower = industrySearch.toLowerCase().trim();
+      const filtered = industriesWithHeadings.flatMap((group, groupIndex) => {
+        const matchedIndustries = (group.industries || []).filter(
+          (name) => name.toLowerCase().includes(lower)
+        );
+        if (lower && matchedIndustries.length === 0) return [];
+        return [
+          <MenuItem
+            key={`heading-${groupIndex}`}
+            sx={{
+              fontWeight: 700,
+              backgroundColor: "#f8f8f8",
+              color: "#ff9800",
+              fontSize: "0.75rem",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              textAlign: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+              cursor: "default",
+              mt: groupIndex > 0 ? 1 : 0,
+              opacity: 1,
+            }}
+          >
+            {group.heading}
+          </MenuItem>,
+          ...matchedIndustries.map((industryName, idx) => (
+            <MenuItem
+              key={`industry-${groupIndex}-${idx}`}
+              value={industryName}
+              sx={{ pl: 3 }}
             >
-              {loading ? (
-                <MenuItem value="" disabled>Loading industries...</MenuItem>
-              ) : (
-                industries.map((industry) => (
-                  <MenuItem key={industry} value={industry}>
-                    {industry}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
+              {/* ✅ Highlight matched text */}
+              {lower ? (() => {
+                const i = industryName.toLowerCase().indexOf(lower);
+                if (i === -1) return industryName;
+                return (
+                  <>
+                    {industryName.slice(0, i)}
+                    <span style={{ fontWeight: 700, color: "#ff9800" }}>
+                      {industryName.slice(i, i + lower.length)}
+                    </span>
+                    {industryName.slice(i + lower.length)}
+                  </>
+                );
+              })() : industryName}
+            </MenuItem>
+          )),
+        ];
+      });
+      return filtered.length > 0 ? filtered : (
+        <MenuItem disabled>
+          <Typography variant="body2" color="text.secondary">No results found</Typography>
+        </MenuItem>
+      );
+    })()
+  )}
+</Select>
             {errors.mainCategory && (
               <FormHelperText error>{errors.mainCategory}</FormHelperText>
             )}
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={4}>
+       <Grid item xs={12} sm={4}>
           <FormControl
             fullWidth
             size="medium"
             error={Boolean(errors.subCategory)}
-           
           >
             <InputLabel id="main-cat-label">Main Category</InputLabel>
-            <Select
-              labelId="main-cat-label"
-              id="main-cat-select"
-              value={selectedCategory.sub || ""}
-              label="Main Category"
-              onChange={handleSubCategoryChange}
-              disabled={!selectedCategory.main || loadingIndustryDetails}
-              sx={{ minHeight: 56 }}
-              MenuProps={{
-                PaperProps: { sx: { maxHeight: 320 } },
-              }}
-            >
-              {loadingIndustryDetails ? (
-                <MenuItem value="" disabled>Loading categories...</MenuItem>
-              ) : (
-                industryData?.categories?.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
+           <Select
+  value={selectedCategory.sub || ""}
+  label="Main Category"
+  onChange={handleSubCategoryChange}
+  disabled={!selectedCategory.main || loadingIndustryDetails}
+  MenuProps={{
+    PaperProps: { sx: { maxHeight: 400 } },
+    disableAutoFocusItem: true,
+  }}
+  onClose={() => setCategorySearch("")}
+>
+  {/* ✅ Search Box */}
+  <DropdownSearchBox
+    value={categorySearch}
+    onChange={setCategorySearch}
+    onClear={() => setCategorySearch("")}
+    placeholder="Search categories…"
+  />
+
+  {loadingIndustryDetails ? (
+    <MenuItem value="" disabled>Loading categories...</MenuItem>
+  ) : !industryData?.categories?.length ? (
+    <MenuItem value="" disabled>No categories available</MenuItem>
+  ) : (
+    (() => {
+      const lower = categorySearch.toLowerCase().trim();
+      const filtered = industryData.categories.filter((cat) =>
+        cat.toLowerCase().includes(lower)
+      );
+      return filtered.length > 0 ? (
+        filtered.map((category, index) => (
+          <MenuItem key={`${category}-${index}`} value={category}>
+            {lower ? (() => {
+              const i = category.toLowerCase().indexOf(lower);
+              if (i === -1) return category;
+              return (
+                <>
+                  {category.slice(0, i)}
+                  <span style={{ fontWeight: 700, color: "#ff9800" }}>
+                    {category.slice(i, i + lower.length)}
+                  </span>
+                  {category.slice(i + lower.length)}
+                </>
+              );
+            })() : category}
+          </MenuItem>
+        ))
+      ) : (
+        <MenuItem disabled>
+          <Typography variant="body2" color="text.secondary">No results found</Typography>
+        </MenuItem>
+      );
+    })()
+  )}
+</Select>
             {errors.subCategory && (
-              <FormHelperText error >{errors.subCategory}</FormHelperText>
+              <FormHelperText error>{errors.subCategory}</FormHelperText>
             )}
           </FormControl>
         </Grid>
@@ -1825,14 +2185,14 @@ Franchise Tags
         }}
       >
         {/* Column 1 - Franchise Model */}
-        <Grid item>
+       <Grid item>
           <FormControl
             fullWidth
             error={!!errors.franchiseModel}
             required
             size="medium"
           >
-            <InputLabel>Franchise Model</InputLabel>
+            <InputLabel>Business Opportunites</InputLabel>
             <Select
               value={currentFicoModel.franchiseModel}
               onChange={handleFicoChange}
@@ -1851,26 +2211,103 @@ Franchise Tags
           </FormControl>
         </Grid>
         {/* Column 2 - Franchise Type */}
-        <Grid item>
+          <Grid item>
           <FormControl
             fullWidth
             error={!!errors.franchiseType}
             required
             size="medium"
           >
-            <InputLabel>Franchise Type</InputLabel>
+            <InputLabel>Business Model</InputLabel>
             <Select
-              value={currentFicoModel.franchiseType}
-              onChange={handleFicoChange}
-              name="franchiseType"
-              label="Franchise Type*"
-            >
-              {franchiseTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
+  value={currentFicoModel.franchiseType}
+  onChange={handleFicoChange}
+  name="franchiseType"
+  label="Business Model & Type"
+  disabled={!currentFicoModel.franchiseModel}
+  MenuProps={{
+    PaperProps: { sx: { maxHeight: 400 } },
+    disableAutoFocusItem: true,
+  }}
+  onClose={() => setFranchiseTypeSearch("")}
+>
+  {/* ✅ Search Box */}
+  <DropdownSearchBox
+    value={franchiseTypeSearch}
+    onChange={setFranchiseTypeSearch}
+    onClear={() => setFranchiseTypeSearch("")}
+    placeholder="Search model type…"
+  />
+
+  {!currentFicoModel.franchiseModel ? (
+    <MenuItem disabled>
+      <Typography variant="body2" color="text.secondary">
+        Select a Business Network first
+      </Typography>
+    </MenuItem>
+  ) : (
+    (() => {
+      const lower = franchiseTypeSearch.toLowerCase().trim();
+      const groups = franchiseTypes[currentFicoModel.franchiseModel] || {};
+      const result = [];
+
+      Object.entries(groups).forEach(([groupLabel, items]) => {
+        const matchedItems = items.filter((type) =>
+          type.toLowerCase().includes(lower)
+        );
+        if (lower && matchedItems.length === 0) return;
+
+        result.push(
+          <MenuItem
+            key={`group-${groupLabel}`}
+            disabled
+            sx={{
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              color: "#ff9800 !important",
+              backgroundColor: "#f8f8f8",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              textAlign: "center",
+              justifyContent: "center",
+              opacity: "1 !important",
+              pointerEvents: "none",
+              mt: 0.5,
+            }}
+          >
+            {groupLabel}
+          </MenuItem>
+        );
+
+        matchedItems.forEach((type) => {
+          result.push(
+            <MenuItem key={type} value={type} sx={{ pl: 3 }}>
+              {lower ? (() => {
+                const i = type.toLowerCase().indexOf(lower);
+                if (i === -1) return type;
+                return (
+                  <>
+                    {type.slice(0, i)}
+                    <span style={{ fontWeight: 700, color: "#ff9800" }}>
+                      {type.slice(i, i + lower.length)}
+                    </span>
+                    {type.slice(i + lower.length)}
+                  </>
+                );
+              })() : type}
+            </MenuItem>
+          );
+        });
+      });
+
+      return result.length > 0 ? result : (
+        <MenuItem disabled>
+          <Typography variant="body2" color="text.secondary">No results found</Typography>
+        </MenuItem>
+      );
+    })()
+  )}
+</Select>
             {errors.franchiseType && (
               <FormHelperText error>{errors.franchiseType}</FormHelperText>
             )}
