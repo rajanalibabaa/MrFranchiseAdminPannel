@@ -137,7 +137,7 @@ const InvestorTableOutlet = ({ investors, searchTerm, onInvestorDelete }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.delete(
-        `http://localhost:5000/api/v1/investor/deleteInvestor/${selectedInvestor.uuid}`,
+        `https://mrfranchisebackend.mrfranchise.in/api/v1/investor/deleteInvestor/${selectedInvestor.uuid}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -119,7 +119,7 @@ const handleSubmit = () => {
   console.log("Submitting Payment for Package:", PackageName);
   console.log("Brand ID:", Id);
 
-  axios.put(`http://localhost:5000/api/v1/leadPackageUpdate/${Id}`, {
+  axios.put(`https://mrfranchisebackend.mrfranchise.in/api/v1/leadPackageUpdate/${Id}`, {
     packageName: PackageName
   })
   .then(res => {

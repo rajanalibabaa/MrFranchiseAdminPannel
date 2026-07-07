@@ -41,7 +41,7 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
       setLoading(true);
 
       const res = await axios.get(
-        "http://localhost:5000/api/v1/admin/plans/getAllPlans",
+        "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/getAllPlans",
       );
 
       const formatted = res.data.data
@@ -97,7 +97,7 @@ const PackagePlansTable = ({ range, onEdit, refresh }) => {
       }
 
       await axios.delete(
-        `http://localhost:5000/api/v1/admin/plans/${deleteId}`,
+        `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/${deleteId}`,
       );
 
       alert("Deleted");

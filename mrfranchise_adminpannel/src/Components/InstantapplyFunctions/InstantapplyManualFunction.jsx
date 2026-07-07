@@ -36,7 +36,7 @@ import axios from "axios";
 // - Otherwise, just hardcode it below.
 const API_BASE_URL =
   (typeof process !== "undefined" && process.env && process.env.REACT_APP_API_URL) ||
-  "http://localhost:5000";
+  "https://mrfranchisebackend.mrfranchise.in";
 
 const INDUSTRY_ENDPOINT = `${API_BASE_URL}/api/v1/admin/getIndustryByIndustryName`;
 const SUBMIT_ENDPOINT = `${API_BASE_URL}/api/v1/instantapply/postApplication`;

@@ -194,7 +194,7 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
     try {
       if (editId !== null) {
         await axios.put(
-          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/${editId}`,
           {
             packageIndex: index,
             deletePackage: true,
@@ -248,13 +248,13 @@ const CreatePackagePlan = ({ onClose, editData, editId, onSuccess }) => {
 
       if (editId === null) {
         await axios.post(
-          "http://localhost:5000/api/v1/admin/plans/create",
+          "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/create",
           payload
         );
         alert("Plan Created Successfully");
       } else {
         await axios.put(
-          `http://localhost:5000/api/v1/admin/plans/${editId}`,
+          `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/${editId}`,
           payload
         );
         alert("Plan Updated Successfully");

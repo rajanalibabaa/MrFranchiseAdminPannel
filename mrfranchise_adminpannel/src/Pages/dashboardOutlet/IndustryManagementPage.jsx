@@ -55,7 +55,7 @@
 //       setLoading(true);
 //       setError(null);
 //       const response = await axios.get(
-//         "http://localhost:5000/api/v1/admin/getAllIndustry"
+//         "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/getAllIndustry"
 //       );
 //       if (response.data.success) {
 //         setIndustries(response.data.data);
@@ -202,7 +202,7 @@
 //         } : undefined
 //       };
 //       const response = await axios.delete(
-//         `http://localhost:5000/api/v1/admin/deleteIndustryById/${selectedIndustry.uuid}`,
+//         `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/deleteIndustryById/${selectedIndustry.uuid}`,
 //         { data: payload }
 //       );
 //       if (response.data.success) {
@@ -674,7 +674,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import IndustryModal from "../../Components/IndustryMangement/IndustryCreatemodel";
 
 // ── API base URLs ───────────────────────────────────────────────────────────
-const ADMIN_API_BASE = "http://localhost:5000/api/v1/admin";
+const ADMIN_API_BASE = "https://mrfranchisebackend.mrfranchise.in/api/v1/admin";
 
 // NOTE: adjust this prefix to match wherever you mounted FilterBlockRouter,
 // e.g. app.use("/api/v1/admin/filterblock", FilterBlockRouter)

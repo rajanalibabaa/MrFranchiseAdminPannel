@@ -46,7 +46,7 @@ const LeadMatchCMSPage = () => {
       setLoading(true);
 
       const response = await axios.get(
-        "http://localhost:5000/api/v1/getLeadMatch",
+        "https://mrfranchisebackend.mrfranchise.in/api/v1/getLeadMatch",
       );
 
       const allRules =
@@ -208,7 +208,7 @@ const LeadMatchCMSPage = () => {
         });
 
       await axios.put(
-        "http://localhost:5000/api/v1/updateLeadMatch",
+        "https://mrfranchisebackend.mrfranchise.in/api/v1/updateLeadMatch",
         {
           packageType: activeTab,
 

@@ -239,7 +239,7 @@
 //             tags: service.tags.map(t => t.tag)
 //           })),
 //         };
-//         await axios.post("http://localhost:5000/api/v1/admin/createIndustryManagement", payload);
+//         await axios.post("https://mrfranchisebackend.mrfranchise.in/api/v1/admin/createIndustryManagement", payload);
 //         alert("Industry Data Saved Successfully!");
 //       } else {
 //         // Update - compute diffs
@@ -390,7 +390,7 @@
 
 //         const payload = { newUpdate, ...(Object.keys(remove).length > 0 && { remove }) };
 
-//         await axios.put(`http://localhost:5000/api/v1/admin/updateIndustryById/${initialData.uuid}`, payload);
+//         await axios.put(`https://mrfranchisebackend.mrfranchise.in/api/v1/admin/updateIndustryById/${initialData.uuid}`, payload);
 //         alert("Industry Data Updated Successfully!");
 //       }
 //       onSaveSuccess();
@@ -975,7 +975,7 @@ const HEADING_OPTIONS = ["Franchise", "Channel Partner"];
         };
 
         await axios.post(
-          "http://localhost:5000/api/v1/admin/createIndustryManagement",
+          "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/createIndustryManagement",
           payload
         );
         alert("Industry created successfully!");
@@ -1101,7 +1101,7 @@ const HEADING_OPTIONS = ["Franchise", "Channel Partner"];
         };
 
         await axios.put(
-          `http://localhost:5000/api/v1/admin/updateIndustryById/${initialData.uuid}`,
+          `https://mrfranchisebackend.mrfranchise.in/api/v1/admin/updateIndustryById/${initialData.uuid}`,
           payload
         );
         alert("Industry updated successfully!");

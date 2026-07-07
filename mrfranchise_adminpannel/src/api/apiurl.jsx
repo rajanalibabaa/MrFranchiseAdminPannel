@@ -1,6 +1,6 @@
 
-const BASE_URL = "http://localhost:5000/api/v1/admin" 
-const BASE_URL_2 = "http://localhost:5000/api/v1" 
+const BASE_URL = "https://mrfranchisebackend.mrfranchise.in/api/v1/admin" 
+const BASE_URL_2 = "https://mrfranchisebackend.mrfranchise.in/api/v1" 
 
 export const Api = {
   admin: {
