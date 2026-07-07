@@ -666,6 +666,7 @@ import {
   AccordionDetails, List, ListItem, ListItemText, Divider, IconButton,
   Checkbox, FormControlLabel, FormGroup, Dialog as MuiDialog,
   DialogTitle, DialogContent, DialogActions, Alert, CircularProgress,
+  TextField,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -680,6 +681,9 @@ const ADMIN_API_BASE = "http://localhost:5000/api/v1/admin";
 const FILTER_BLOCK_API_BASE = `${ADMIN_API_BASE}`;
 
 // ── Small reusable "Block" checkbox ─────────────────────────────────────────
+// NOTE: onChange here no longer triggers the API directly.
+// It just tells the parent "the user wants to flip this checkbox",
+// and the parent opens the confirm dialog instead.
 const BlockCheckbox = ({ checked, onChange, loading, label = "Block" }) => (
   <FormControlLabel
     onClick={(e) => e.stopPropagation()}
@@ -711,6 +715,19 @@ const emptyBlockConfig = {
   serviceTags: [],
 };
 
+// Shape of the confirm-block dialog state.
+// mode: 'simple' | 'parent' | 'tag'
+const emptyConfirmDialog = {
+  open: false,
+  mode: null,        // 'simple' | 'parent' | 'tag'
+  type: null,        // 'headings' | 'industries' | 'categories' | 'productTags' | 'serviceTags'
+  value: null,        // for 'simple' mode: the string value (heading/industry/category name)
+  parentName: null,   // for 'parent' / 'tag' mode
+  tagName: null,       // for 'tag' mode only
+  isChecked: null,     // true = blocking (checking), false = unblocking (unchecking)
+  displayName: "",     // the name the user must type to confirm
+};
+
 const IndustryManagementPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -723,6 +740,12 @@ const IndustryManagementPage = () => {
   const [blockConfig, setBlockConfig] = useState(emptyBlockConfig);
   const [blockLoadingKeys, setBlockLoadingKeys] = useState(new Set());
   const [blockError, setBlockError] = useState(null);
+
+  // ── Confirm-block dialog state ────────────────────────────────────────────
+  const [confirmDialog, setConfirmDialog] = useState(emptyConfirmDialog);
+  const [confirmInput, setConfirmInput] = useState("");
+  const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+  const [confirmDialogError, setConfirmDialogError] = useState(null);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -959,8 +982,11 @@ const IndustryManagementPage = () => {
       (g) => g.parent === parentName && (g.tags || []).includes(tagName)
     );
 
+  // ── Actual API-calling toggle functions (unchanged logic, just renamed
+  //    "execute*" so it's clear these only run AFTER confirmation) ───────────
+
   // Toggle a plain string value (headings / industries / categories)
-  const toggleSimpleBlock = async (type, value, isChecked) => {
+  const executeSimpleBlock = async (type, value, isChecked) => {
     const key = `${type}:${value}`;
     if (isKeyLoading(key)) return;
     setKeyLoading(key, true);
@@ -1000,7 +1026,7 @@ const IndustryManagementPage = () => {
   };
 
   // Toggle "block entire parent" for productTags / serviceTags
-  const toggleParentBlock = async (type, parentName, isChecked) => {
+  const executeParentBlock = async (type, parentName, isChecked) => {
     const key = `${type}:${parentName}:__parent__`;
     if (isKeyLoading(key)) return;
     setKeyLoading(key, true);
@@ -1040,7 +1066,7 @@ const IndustryManagementPage = () => {
   };
 
   // Toggle a single tag under a parent for productTags / serviceTags
-  const toggleTagBlock = async (type, parentName, tagName, isChecked) => {
+  const executeTagBlock = async (type, parentName, tagName, isChecked) => {
     const key = `${type}:${parentName}:${tagName}`;
     if (isKeyLoading(key)) return;
     setKeyLoading(key, true);
@@ -1090,6 +1116,85 @@ const IndustryManagementPage = () => {
       setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
     } finally {
       setKeyLoading(key, false);
+    }
+  };
+
+  // ── Confirm-block dialog: OPEN handlers ─────────────────────────────────────
+  // These replace the old direct calls. Clicking a checkbox now only opens
+  // the dialog — no axios call happens here at all.
+
+  const requestSimpleBlockToggle = (type, value, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "simple",
+      type,
+      value,
+      isChecked,
+      displayName: value,
+    });
+    setConfirmInput("");
+    setConfirmDialogError(null);
+  };
+
+  const requestParentBlockToggle = (type, parentName, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "parent",
+      type,
+      parentName,
+      isChecked,
+      displayName: parentName,
+    });
+    setConfirmInput("");
+    setConfirmDialogError(null);
+  };
+
+  const requestTagBlockToggle = (type, parentName, tagName, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "tag",
+      type,
+      parentName,
+      tagName,
+      isChecked,
+      displayName: tagName,
+    });
+    setConfirmInput("");
+    setConfirmDialogError(null);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    if (confirmSubmitting) return; // don't allow closing mid-request
+    setConfirmDialog(emptyConfirmDialog);
+    setConfirmInput("");
+    setConfirmDialogError(null);
+  };
+
+  // Called only when the user typed the exact name and clicked Confirm.
+  const handleConfirmBlockSubmit = async () => {
+    if (confirmInput.trim() !== confirmDialog.displayName) {
+      setConfirmDialogError("The name you typed doesn't match. Please type it exactly.");
+      return;
+    }
+
+    setConfirmSubmitting(true);
+    setConfirmDialogError(null);
+
+    try {
+      if (confirmDialog.mode === "simple") {
+        await executeSimpleBlock(confirmDialog.type, confirmDialog.value, confirmDialog.isChecked);
+      } else if (confirmDialog.mode === "parent") {
+        await executeParentBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.isChecked);
+      } else if (confirmDialog.mode === "tag") {
+        await executeTagBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.tagName, confirmDialog.isChecked);
+      }
+    } finally {
+      setConfirmSubmitting(false);
+      setConfirmDialog(emptyConfirmDialog);
+      setConfirmInput("");
     }
   };
 
@@ -1259,7 +1364,7 @@ const IndustryManagementPage = () => {
             <BlockCheckbox
               checked={isSimpleBlocked("industries", item.industry)}
               loading={isKeyLoading(`industries:${item.industry}`)}
-              onChange={(checked) => toggleSimpleBlock("industries", item.industry, checked)}
+              onChange={(checked) => requestSimpleBlockToggle("industries", item.industry, checked)}
             />
             <IconButton
               onClick={(e) => { e.stopPropagation(); handleEditClick(item, headingName); }}
@@ -1296,7 +1401,7 @@ const IndustryManagementPage = () => {
                 <BlockCheckbox
                   checked={isSimpleBlocked("categories", cat.category)}
                   loading={isKeyLoading(`categories:${cat.category}`)}
-                  onChange={(checked) => toggleSimpleBlock("categories", cat.category, checked)}
+                  onChange={(checked) => requestSimpleBlockToggle("categories", cat.category, checked)}
                 />
               </ListItem>
             ))}
@@ -1320,7 +1425,7 @@ const IndustryManagementPage = () => {
                   label="Block parent"
                   checked={isParentBlocked("productTags", pt.parent)}
                   loading={isKeyLoading(`productTags:${pt.parent}:__parent__`)}
-                  onChange={(checked) => toggleParentBlock("productTags", pt.parent, checked)}
+                  onChange={(checked) => requestParentBlockToggle("productTags", pt.parent, checked)}
                 />
               </Box>
               {pt.tags?.length > 0 ? (
@@ -1335,7 +1440,7 @@ const IndustryManagementPage = () => {
                       <BlockCheckbox
                         checked={isTagBlocked("productTags", pt.parent, t.tag)}
                         loading={isKeyLoading(`productTags:${pt.parent}:${t.tag}`)}
-                        onChange={(checked) => toggleTagBlock("productTags", pt.parent, t.tag, checked)}
+                        onChange={(checked) => requestTagBlockToggle("productTags", pt.parent, t.tag, checked)}
                       />
                     </ListItem>
                   ))}
@@ -1364,7 +1469,7 @@ const IndustryManagementPage = () => {
                   label="Block parent"
                   checked={isParentBlocked("serviceTags", st.parent)}
                   loading={isKeyLoading(`serviceTags:${st.parent}:__parent__`)}
-                  onChange={(checked) => toggleParentBlock("serviceTags", st.parent, checked)}
+                  onChange={(checked) => requestParentBlockToggle("serviceTags", st.parent, checked)}
                 />
               </Box>
               {st.tags?.length > 0 ? (
@@ -1379,7 +1484,7 @@ const IndustryManagementPage = () => {
                       <BlockCheckbox
                         checked={isTagBlocked("serviceTags", st.parent, tag.tag)}
                         loading={isKeyLoading(`serviceTags:${st.parent}:${tag.tag}`)}
-                        onChange={(checked) => toggleTagBlock("serviceTags", st.parent, tag.tag, checked)}
+                        onChange={(checked) => requestTagBlockToggle("serviceTags", st.parent, tag.tag, checked)}
                       />
                     </ListItem>
                   ))}
@@ -1407,6 +1512,19 @@ const IndustryManagementPage = () => {
   }
 
   const totalIndustries = headings.reduce((acc, h) => acc + (h.industries?.length || 0), 0);
+
+  // Human-readable label for the confirm dialog, e.g. "industry", "category", "product tag"
+  const confirmTypeLabel = (() => {
+    if (!confirmDialog.type) return "item";
+    const map = {
+      headings: "heading",
+      industries: "industry",
+      categories: "category",
+      productTags: confirmDialog.mode === "tag" ? "product tag" : "product",
+      serviceTags: confirmDialog.mode === "tag" ? "service tag" : "service",
+    };
+    return map[confirmDialog.type] || "item";
+  })();
 
   // ── Main render ──────────────────────────────────────────────────────────────
   return (
@@ -1457,7 +1575,7 @@ const IndustryManagementPage = () => {
                 <BlockCheckbox
                   checked={isSimpleBlocked("headings", headingObj.heading)}
                   loading={isKeyLoading(`headings:${headingObj.heading}`)}
-                  onChange={(checked) => toggleSimpleBlock("headings", headingObj.heading, checked)}
+                  onChange={(checked) => requestSimpleBlockToggle("headings", headingObj.heading, checked)}
                 />
               </Box>
 
@@ -1484,6 +1602,64 @@ const IndustryManagementPage = () => {
           onSaveSuccess={handleSaveSuccess}
         />
       </Dialog>
+
+      {/* ── Confirm-block dialog: this is the ONLY place that triggers
+           the update/removeblocks API call for checkboxes. ──────────────── */}
+      <MuiDialog
+        open={confirmDialog.open}
+        onClose={handleCloseConfirmDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {confirmDialog.isChecked ? "Confirm block" : "Confirm unblock"}
+        </DialogTitle>
+        <DialogContent>
+          {confirmDialogError && (
+            <Alert severity="error" sx={{ mb: 2 }}>{confirmDialogError}</Alert>
+          )}
+
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            You're about to {confirmDialog.isChecked ? "block" : "unblock"} the {confirmTypeLabel}{" "}
+            <strong>"{confirmDialog.displayName}"</strong>.
+            {confirmDialog.mode === "tag" && confirmDialog.parentName && (
+              <> (under <strong>{confirmDialog.parentName}</strong>)</>
+            )}
+            {" "}To confirm, type its exact name below.
+          </Typography>
+
+          <TextField
+            fullWidth
+            autoFocus
+            size="small"
+            label={`Type "${confirmDialog.displayName}" to confirm`}
+            value={confirmInput}
+            onChange={(e) => setConfirmInput(e.target.value)}
+            disabled={confirmSubmitting}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleConfirmBlockSubmit();
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog} disabled={confirmSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmBlockSubmit}
+            variant="contained"
+            color={confirmDialog.isChecked ? "error" : "primary"}
+            disabled={confirmSubmitting || confirmInput.trim() !== confirmDialog.displayName}
+            startIcon={confirmSubmitting ? <CircularProgress size={18} /> : null}
+          >
+            {confirmSubmitting
+              ? "Saving..."
+              : confirmDialog.isChecked
+              ? "Confirm block"
+              : "Confirm unblock"}
+          </Button>
+        </DialogActions>
+      </MuiDialog>
 
       {/* Delete Dialog */}
       <MuiDialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog} maxWidth="md" fullWidth>
