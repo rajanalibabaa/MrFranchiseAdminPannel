@@ -659,7 +659,7 @@
 // };
 
 // export default IndustryManagementPage;
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import axios from "axios";
 import {
   Button, Box, Dialog, Typography, Accordion, AccordionSummary,
@@ -681,10 +681,7 @@ const ADMIN_API_BASE = "http://localhost:5000/api/v1/admin";
 const FILTER_BLOCK_API_BASE = `${ADMIN_API_BASE}`;
 
 // ── Small reusable "Block" checkbox ─────────────────────────────────────────
-// NOTE: onChange here no longer triggers the API directly.
-// It just tells the parent "the user wants to flip this checkbox",
-// and the parent opens the confirm dialog instead.
-const BlockCheckbox = ({ checked, onChange, loading, label = "Block" }) => (
+const BlockCheckbox = memo(({ checked, onChange, loading, label = "Block" }) => (
   <FormControlLabel
     onClick={(e) => e.stopPropagation()}
     control={
@@ -705,7 +702,7 @@ const BlockCheckbox = ({ checked, onChange, loading, label = "Block" }) => (
     }
     sx={{ mr: 2, ml: 0 }}
   />
-);
+));
 
 const emptyBlockConfig = {
   headings: [],
@@ -728,631 +725,124 @@ const emptyConfirmDialog = {
   displayName: "",     // the name the user must type to confirm
 };
 
-const IndustryManagementPage = () => {
-  const [openModal, setOpenModal] = useState(false);
-  const [modalData, setModalData] = useState(null);
-  // headings: [{ heading: string, industries: [...] }]
-  const [headings, setHeadings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// ─────────────────────────────────────────────────────────────────────────
+// ConfirmBlockDialog
+//
+// THIS is the fix for the slow typing.
+//
+// Previously `confirmInput` was a piece of state on the giant parent page,
+// so every keystroke re-rendered the whole accordion tree (all headings,
+// industries, categories, product/service tags). MUI recomputes `sx` styles
+// on every render, so that re-render work is what made typing feel laggy.
+//
+// Now the text field's value lives ONLY inside this small child component.
+// Typing a character only re-renders this dialog, not the parent page.
+// The parent is only told the final value once, when the user clicks
+// "Confirm" (or presses Enter).
+// ─────────────────────────────────────────────────────────────────────────
+const ConfirmBlockDialog = memo(function ConfirmBlockDialog({
+  confirmDialog,
+  confirmTypeLabel,
+  submitting,
+  onClose,
+  onSubmit, // (typedValue) => void
+}) {
+  const [input, setInput] = useState("");
+  const [localError, setLocalError] = useState(null);
 
-  // ── Filter-block (checkbox blocking) state ────────────────────────────────
-  const [blockConfig, setBlockConfig] = useState(emptyBlockConfig);
-  const [blockLoadingKeys, setBlockLoadingKeys] = useState(new Set());
-  const [blockError, setBlockError] = useState(null);
-
-  // ── Confirm-block dialog state ────────────────────────────────────────────
-  const [confirmDialog, setConfirmDialog] = useState(emptyConfirmDialog);
-  const [confirmInput, setConfirmInput] = useState("");
-  const [confirmSubmitting, setConfirmSubmitting] = useState(false);
-  const [confirmDialogError, setConfirmDialogError] = useState(null);
-
-  // Delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState(null);
-  const [deleteMode, setDeleteMode] = useState("partial"); // 'full' | 'partial'
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedProductParents, setSelectedProductParents] = useState([]);
-  const [selectedProductTags, setSelectedProductTags] = useState([]);
-  const [selectedServiceParents, setSelectedServiceParents] = useState([]);
-  const [selectedServiceTags, setSelectedServiceTags] = useState([]);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState(null);
-  const [deleteError, setDeleteError] = useState(null);
-
+  // Reset the local input whenever a *different* dialog is opened.
   useEffect(() => {
-    fetchIndustries();
-    fetchBlockConfig();
-  }, []);
-
-  const fetchIndustries = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.get(
-        `${ADMIN_API_BASE}/getAllIndustry`
-      );
-      if (response.data.success) {
-        setHeadings(response.data.data || []);
-      } else {
-        // Don't treat "no data" as a blocking error — just set empty
-        setHeadings([]);
-      }
-    } catch (err) {
-      console.error("Error fetching industries:", err);
-      // 404 just means no data yet, not a real error
-      if (err.response?.status === 404) {
-        setHeadings([]);
-      } else {
-        setError("Error fetching industries. Please try again.");
-      }
-    } finally {
-      setLoading(false);
+    if (confirmDialog.open) {
+      setInput("");
+      setLocalError(null);
     }
-  };
+  }, [confirmDialog.open, confirmDialog.displayName]);
 
-  const fetchBlockConfig = async () => {
-    try {
-      setBlockError(null);
-      const response = await axios.get(`${FILTER_BLOCK_API_BASE}/getblocks`);
-      if (response.data.success) {
-        const data = response.data.data || {};
-        setBlockConfig({
-          headings: data.headings || [],
-          industries: data.industries || [],
-          categories: data.categories || [],
-          productTags: data.productTags || [],
-          serviceTags: data.serviceTags || [],
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching filter block config:", err);
-      setBlockError("Error fetching block settings. Checkboxes may be out of sync.");
-    }
-  };
-
-  const handleCreate = () => {
-    setModalData(null);
-    setOpenModal(true);
-  };
-
-  const handleEditClick = (industry, headingName) => {
-    // Pass heading name along so the form can use it if needed
-    setModalData({ ...industry, heading: headingName });
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setModalData(null);
-  };
-
-  const handleSaveSuccess = () => {
-    fetchIndustries();
-  };
-
-  const handleDeleteClick = (industry) => {
-    setSelectedIndustry(industry);
-    setSelectedCategories([]);
-    setSelectedProductParents([]);
-    setSelectedProductTags([]);
-    setSelectedServiceParents([]);
-    setSelectedServiceTags([]);
-    setDeleteMode("partial");
-    setDeleteDialogOpen(true);
-    setDeleteSuccess(null);
-    setDeleteError(null);
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setSelectedIndustry(null);
-    setDeleteSuccess(null);
-    setDeleteError(null);
-  };
-
-  // ── Toggle helpers (delete-selection checkboxes) ────────────────────────────
-  const handleCategoryToggle = (categoryId) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  const handleProductParentToggle = (productId) => {
-    setSelectedProductParents((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
-  const handleProductTagToggle = (productId, tagId) => {
-    setSelectedProductTags((prev) => {
-      const existing = prev.find((t) => t.productId === productId);
-      if (existing) {
-        const hasTag = existing.ids.includes(tagId);
-        return prev
-          .map((t) =>
-            t.productId === productId
-              ? { ...t, ids: hasTag ? t.ids.filter((id) => id !== tagId) : [...t.ids, tagId] }
-              : t
-          )
-          .filter((t) => t.ids.length > 0);
-      }
-      return [...prev, { productId, ids: [tagId] }];
-    });
-  };
-
-  const handleServiceParentToggle = (serviceId) => {
-    setSelectedServiceParents((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
-    );
-  };
-
-  const handleServiceTagToggle = (serviceId, tagId) => {
-    setSelectedServiceTags((prev) => {
-      const existing = prev.find((t) => t.serviceId === serviceId);
-      if (existing) {
-        const hasTag = existing.ids.includes(tagId);
-        return prev
-          .map((t) =>
-            t.serviceId === serviceId
-              ? { ...t, ids: hasTag ? t.ids.filter((id) => id !== tagId) : [...t.ids, tagId] }
-              : t
-          )
-          .filter((t) => t.ids.length > 0);
-      }
-      return [...prev, { serviceId, ids: [tagId] }];
-    });
-  };
-
-  // ── Delete submit ────────────────────────────────────────────────────────────
-  const handleDelete = async () => {
-    if (!selectedIndustry) return;
-    try {
-      setDeleteLoading(true);
-      setDeleteError(null);
-
-      const payload =
-        deleteMode === "full"
-          ? { deleteIndustry: "true" }
-          : {
-              deleteIndustry: "false",
-              remove: {
-                categories: selectedCategories,
-                productTags: {
-                  products: selectedProductParents,
-                  tags: selectedProductTags,
-                },
-                serviceTags: {
-                  services: selectedServiceParents,
-                  tags: selectedServiceTags,
-                },
-              },
-            };
-
-      const response = await axios.delete(
-        `${ADMIN_API_BASE}/deleteIndustryById/${selectedIndustry.uuid}`,
-        { data: payload }
-      );
-
-      if (response.data.success) {
-        setDeleteSuccess(response.data.message || "Deleted successfully!");
-        setTimeout(() => {
-          handleCloseDeleteDialog();
-          fetchIndustries();
-        }, 1500);
-      } else {
-        setDeleteError(response.data.message || "Failed to delete");
-      }
-    } catch (err) {
-      console.error("Delete error:", err);
-      setDeleteError(err.response?.data?.message || err.message || "Something went wrong");
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  // ── Filter-block (checkbox blocking) logic ──────────────────────────────────
-
-  const isKeyLoading = (key) => blockLoadingKeys.has(key);
-
-  const setKeyLoading = (key, isLoading) => {
-    setBlockLoadingKeys((prev) => {
-      const next = new Set(prev);
-      if (isLoading) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-  };
-
-  // headings / industries / categories are plain string arrays
-  const isSimpleBlocked = (type, value) => (blockConfig[type] || []).includes(value);
-
-  // productTags / serviceTags are [{ parent, tags: [] }]
-  const isParentBlocked = (type, parentName) =>
-    (blockConfig[type] || []).some((g) => g.parent === parentName);
-
-  const isTagBlocked = (type, parentName, tagName) =>
-    (blockConfig[type] || []).some(
-      (g) => g.parent === parentName && (g.tags || []).includes(tagName)
-    );
-
-  // ── Actual API-calling toggle functions (unchanged logic, just renamed
-  //    "execute*" so it's clear these only run AFTER confirmation) ───────────
-
-  // Toggle a plain string value (headings / industries / categories)
-  const executeSimpleBlock = async (type, value, isChecked) => {
-    const key = `${type}:${value}`;
-    if (isKeyLoading(key)) return;
-    setKeyLoading(key, true);
-    setBlockError(null);
-
-    // optimistic update
-    setBlockConfig((prev) => {
-      const list = prev[type] || [];
-      const updated = isChecked
-        ? Array.from(new Set([...list, value]))
-        : list.filter((v) => v !== value);
-      return { ...prev, [type]: updated };
-    });
-
-    try {
-      const endpoint = isChecked ? "updateblocks" : "removeblocks";
-      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
-        [type]: [value],
-      });
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update block list");
-      }
-    } catch (err) {
-      console.error(`Error toggling ${type} block for "${value}":`, err);
-      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
-      // revert optimistic update
-      setBlockConfig((prev) => {
-        const list = prev[type] || [];
-        const reverted = isChecked
-          ? list.filter((v) => v !== value)
-          : Array.from(new Set([...list, value]));
-        return { ...prev, [type]: reverted };
-      });
-    } finally {
-      setKeyLoading(key, false);
-    }
-  };
-
-  // Toggle "block entire parent" for productTags / serviceTags
-  const executeParentBlock = async (type, parentName, isChecked) => {
-    const key = `${type}:${parentName}:__parent__`;
-    if (isKeyLoading(key)) return;
-    setKeyLoading(key, true);
-    setBlockError(null);
-
-    const prevConfigSnapshot = blockConfig[type] || [];
-
-    // optimistic update
-    setBlockConfig((prev) => {
-      const list = prev[type] || [];
-      if (isChecked) {
-        const exists = list.some((g) => g.parent === parentName);
-        const updated = exists ? list : [...list, { parent: parentName, tags: [] }];
-        return { ...prev, [type]: updated };
-      }
-      // unchecking a parent drops the whole group (tags included)
-      const updated = list.filter((g) => g.parent !== parentName);
-      return { ...prev, [type]: updated };
-    });
-
-    try {
-      const endpoint = isChecked ? "updateblocks" : "removeblocks";
-      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
-        [type]: [{ parent: parentName, tags: [] }],
-      });
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update block list");
-      }
-    } catch (err) {
-      console.error(`Error toggling ${type} parent block for "${parentName}":`, err);
-      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
-      // revert to snapshot taken before optimistic update
-      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
-    } finally {
-      setKeyLoading(key, false);
-    }
-  };
-
-  // Toggle a single tag under a parent for productTags / serviceTags
-  const executeTagBlock = async (type, parentName, tagName, isChecked) => {
-    const key = `${type}:${parentName}:${tagName}`;
-    if (isKeyLoading(key)) return;
-    setKeyLoading(key, true);
-    setBlockError(null);
-
-    const prevConfigSnapshot = blockConfig[type] || [];
-
-    // optimistic update
-    setBlockConfig((prev) => {
-      const list = prev[type] || [];
-      const idx = list.findIndex((g) => g.parent === parentName);
-
-      if (isChecked) {
-        if (idx === -1) {
-          return { ...prev, [type]: [...list, { parent: parentName, tags: [tagName] }] };
-        }
-        const updatedTags = Array.from(new Set([...(list[idx].tags || []), tagName]));
-        const updated = [...list];
-        updated[idx] = { ...updated[idx], tags: updatedTags };
-        return { ...prev, [type]: updated };
-      }
-
-      // unchecking: remove tag, drop the group entirely if no tags remain
-      if (idx === -1) return prev;
-      const remainingTags = (list[idx].tags || []).filter((t) => t !== tagName);
-      let updated;
-      if (remainingTags.length === 0) {
-        updated = list.filter((g) => g.parent !== parentName);
-      } else {
-        updated = [...list];
-        updated[idx] = { ...updated[idx], tags: remainingTags };
-      }
-      return { ...prev, [type]: updated };
-    });
-
-    try {
-      const endpoint = isChecked ? "updateblocks" : "removeblocks";
-      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
-        [type]: [{ parent: parentName, tags: [tagName] }],
-      });
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update block list");
-      }
-    } catch (err) {
-      console.error(`Error toggling ${type} tag block for "${parentName}/${tagName}":`, err);
-      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
-      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
-    } finally {
-      setKeyLoading(key, false);
-    }
-  };
-
-  // ── Confirm-block dialog: OPEN handlers ─────────────────────────────────────
-  // These replace the old direct calls. Clicking a checkbox now only opens
-  // the dialog — no axios call happens here at all.
-
-  const requestSimpleBlockToggle = (type, value, isChecked) => {
-    setConfirmDialog({
-      ...emptyConfirmDialog,
-      open: true,
-      mode: "simple",
-      type,
-      value,
-      isChecked,
-      displayName: value,
-    });
-    setConfirmInput("");
-    setConfirmDialogError(null);
-  };
-
-  const requestParentBlockToggle = (type, parentName, isChecked) => {
-    setConfirmDialog({
-      ...emptyConfirmDialog,
-      open: true,
-      mode: "parent",
-      type,
-      parentName,
-      isChecked,
-      displayName: parentName,
-    });
-    setConfirmInput("");
-    setConfirmDialogError(null);
-  };
-
-  const requestTagBlockToggle = (type, parentName, tagName, isChecked) => {
-    setConfirmDialog({
-      ...emptyConfirmDialog,
-      open: true,
-      mode: "tag",
-      type,
-      parentName,
-      tagName,
-      isChecked,
-      displayName: tagName,
-    });
-    setConfirmInput("");
-    setConfirmDialogError(null);
-  };
-
-  const handleCloseConfirmDialog = () => {
-    if (confirmSubmitting) return; // don't allow closing mid-request
-    setConfirmDialog(emptyConfirmDialog);
-    setConfirmInput("");
-    setConfirmDialogError(null);
-  };
-
-  // Called only when the user typed the exact name and clicked Confirm.
-  const handleConfirmBlockSubmit = async () => {
-    if (confirmInput.trim() !== confirmDialog.displayName) {
-      setConfirmDialogError("The name you typed doesn't match. Please type it exactly.");
+  const handleSubmit = () => {
+    if (input.trim() !== confirmDialog.displayName) {
+      setLocalError("The name you typed doesn't match. Please type it exactly.");
       return;
     }
-
-    setConfirmSubmitting(true);
-    setConfirmDialogError(null);
-
-    try {
-      if (confirmDialog.mode === "simple") {
-        await executeSimpleBlock(confirmDialog.type, confirmDialog.value, confirmDialog.isChecked);
-      } else if (confirmDialog.mode === "parent") {
-        await executeParentBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.isChecked);
-      } else if (confirmDialog.mode === "tag") {
-        await executeTagBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.tagName, confirmDialog.isChecked);
-      }
-    } finally {
-      setConfirmSubmitting(false);
-      setConfirmDialog(emptyConfirmDialog);
-      setConfirmInput("");
-    }
+    onSubmit(input.trim());
   };
 
-  // ── Delete dialog content ────────────────────────────────────────────────────
-  const renderDeleteContent = () => {
-    if (!selectedIndustry) return null;
+  return (
+    <MuiDialog open={confirmDialog.open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        {confirmDialog.isChecked ? "Confirm block" : "Confirm unblock"}
+      </DialogTitle>
+      <DialogContent>
+        {localError && (
+          <Alert severity="error" sx={{ mb: 2 }}>{localError}</Alert>
+        )}
 
-    if (deleteMode === "full") {
-      return (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Are you sure you want to delete the entire industry "
-          {selectedIndustry.industry}"? This action cannot be undone.
-        </Alert>
-      );
-    }
-
-    return (
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>
-          Select items to delete from "{selectedIndustry.industry}":
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          You're about to {confirmDialog.isChecked ? "block" : "unblock"} the {confirmTypeLabel}{" "}
+          <strong>"{confirmDialog.displayName}"</strong>.
+          {confirmDialog.mode === "tag" && confirmDialog.parentName && (
+            <> (under <strong>{confirmDialog.parentName}</strong>)</>
+          )}
+          {" "}To confirm, type its exact name below.
         </Typography>
 
-        {/* Categories */}
-        {selectedIndustry.categories?.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>Categories:</Typography>
-            <FormGroup>
-              {selectedIndustry.categories.map((cat, index) => (
-                <FormControlLabel
-                  key={cat.id || index}
-                  control={
-                    <Checkbox
-                      checked={selectedCategories.includes(cat.id)}
-                      onChange={() => handleCategoryToggle(cat.id)}
-                      size="small"
-                    />
-                  }
-                  label={cat.category}
-                />
-              ))}
-            </FormGroup>
-          </Box>
-        )}
+        <TextField
+          fullWidth
+          autoFocus
+          size="small"
+          label={`Type "${confirmDialog.displayName}" to confirm`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={submitting}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSubmit();
+          }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          color={confirmDialog.isChecked ? "error" : "primary"}
+          disabled={submitting || input.trim() !== confirmDialog.displayName}
+          startIcon={submitting ? <CircularProgress size={18} /> : null}
+        >
+          {submitting
+            ? "Saving..."
+            : confirmDialog.isChecked
+            ? "Confirm block"
+            : "Confirm unblock"}
+        </Button>
+      </DialogActions>
+    </MuiDialog>
+  );
+});
 
-        {/* Product Tags */}
-        {selectedIndustry.productTags?.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>Product Tags:</Typography>
-            {selectedIndustry.productTags.map((product, pIndex) => (
-              <Box key={product.id || pIndex} sx={{ ml: 2, mb: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={selectedProductParents.includes(product.id)}
-                      onChange={() => handleProductParentToggle(product.id)}
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                      {product.parent} (Entire parent)
-                    </Typography>
-                  }
-                />
-                {product.tags?.length > 0 && (
-                  <Box sx={{ ml: 3 }}>
-                    {product.tags.map((tag, tIndex) => (
-                      <FormControlLabel
-                        key={tag.id || tIndex}
-                        control={
-                          <Checkbox
-                            checked={selectedProductTags.some(
-                              (pt) => pt.productId === product.id && pt.ids.includes(tag.id)
-                            )}
-                            onChange={() => handleProductTagToggle(product.id, tag.id)}
-                            size="small"
-                          />
-                        }
-                        label={
-                          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                            {tag.tag}
-                          </Typography>
-                        }
-                      />
-                    ))}
-                  </Box>
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        {/* Service Tags */}
-        {selectedIndustry.serviceTags?.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>Service Tags:</Typography>
-            {selectedIndustry.serviceTags.map((service, sIndex) => (
-              <Box key={service.id || sIndex} sx={{ ml: 2, mb: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={selectedServiceParents.includes(service.id)}
-                      onChange={() => handleServiceParentToggle(service.id)}
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                      {service.parent} (Entire parent)
-                    </Typography>
-                  }
-                />
-                {service.tags?.length > 0 && (
-                  <Box sx={{ ml: 3 }}>
-                    {service.tags.map((tag, tIndex) => (
-                      <FormControlLabel
-                        key={tag.id || tIndex}
-                        control={
-                          <Checkbox
-                            checked={selectedServiceTags.some(
-                              (st) => st.serviceId === service.id && st.ids.includes(tag.id)
-                            )}
-                            onChange={() => handleServiceTagToggle(service.id, tag.id)}
-                            size="small"
-                          />
-                        }
-                        label={
-                          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                            {tag.tag}
-                          </Typography>
-                        }
-                      />
-                    ))}
-                  </Box>
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        {!selectedIndustry.categories?.length &&
-          !selectedIndustry.productTags?.length &&
-          !selectedIndustry.serviceTags?.length && (
-            <Typography variant="body2" color="text.secondary">
-              No items available for partial deletion.
-            </Typography>
-          )}
-      </Box>
-    );
-  };
-
-  // ── Render industry accordion ────────────────────────────────────────────────
-  const renderIndustry = (item, index, headingName) => (
-    <Accordion
-      key={item.uuid || index}
-      sx={{ mb: 2, boxShadow: 2 }}
-      defaultExpanded={false}
-    >
+// ─────────────────────────────────────────────────────────────────────────
+// IndustryAccordionItem
+//
+// Memoized so that unrelated state changes on the parent (like the confirm
+// dialog opening, or confirmInput changing before the fix) don't force this
+// (potentially large) subtree to re-render. It only re-renders when its own
+// props actually change.
+// ─────────────────────────────────────────────────────────────────────────
+const IndustryAccordionItem = memo(function IndustryAccordionItem({
+  item,
+  headingName,
+  isSimpleBlocked,
+  isParentBlocked,
+  isTagBlocked,
+  isKeyLoading,
+  onEditClick,
+  onDeleteClick,
+  requestSimpleBlockToggle,
+  requestParentBlockToggle,
+  requestTagBlockToggle,
+}) {
+  return (
+    <Accordion sx={{ mb: 2, boxShadow: 2 }} defaultExpanded={false}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ width: "97%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -1367,14 +857,14 @@ const IndustryManagementPage = () => {
               onChange={(checked) => requestSimpleBlockToggle("industries", item.industry, checked)}
             />
             <IconButton
-              onClick={(e) => { e.stopPropagation(); handleEditClick(item, headingName); }}
+              onClick={(e) => { e.stopPropagation(); onEditClick(item, headingName); }}
               color="primary"
               size="small"
             >
               <EditIcon />
             </IconButton>
             <IconButton
-              onClick={(e) => { e.stopPropagation(); handleDeleteClick(item); }}
+              onClick={(e) => { e.stopPropagation(); onDeleteClick(item); }}
               color="error"
               size="small"
             >
@@ -1500,6 +990,595 @@ const IndustryManagementPage = () => {
       </AccordionDetails>
     </Accordion>
   );
+});
+
+const IndustryManagementPage = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+  // headings: [{ heading: string, industries: [...] }]
+  const [headings, setHeadings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ── Filter-block (checkbox blocking) state ────────────────────────────────
+  const [blockConfig, setBlockConfig] = useState(emptyBlockConfig);
+  const [blockLoadingKeys, setBlockLoadingKeys] = useState(new Set());
+  const [blockError, setBlockError] = useState(null);
+
+  // ── Confirm-block dialog state ────────────────────────────────────────────
+  // NOTE: confirmInput no longer lives here — it lives inside
+  // <ConfirmBlockDialog>, which is why typing is fast now.
+  const [confirmDialog, setConfirmDialog] = useState(emptyConfirmDialog);
+  const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState(null);
+  const [deleteMode, setDeleteMode] = useState("partial"); // 'full' | 'partial'
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedProductParents, setSelectedProductParents] = useState([]);
+  const [selectedProductTags, setSelectedProductTags] = useState([]);
+  const [selectedServiceParents, setSelectedServiceParents] = useState([]);
+  const [selectedServiceTags, setSelectedServiceTags] = useState([]);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
+
+  useEffect(() => {
+    fetchIndustries();
+    fetchBlockConfig();
+  }, []);
+
+  const fetchIndustries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        `${ADMIN_API_BASE}/getAllIndustry`
+      );
+      if (response.data.success) {
+        setHeadings(response.data.data || []);
+      } else {
+        setHeadings([]);
+      }
+    } catch (err) {
+      console.error("Error fetching industries:", err);
+      if (err.response?.status === 404) {
+        setHeadings([]);
+      } else {
+        setError("Error fetching industries. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBlockConfig = async () => {
+    try {
+      setBlockError(null);
+      const response = await axios.get(`${FILTER_BLOCK_API_BASE}/getblocks`);
+      if (response.data.success) {
+        const data = response.data.data || {};
+        setBlockConfig({
+          headings: data.headings || [],
+          industries: data.industries || [],
+          categories: data.categories || [],
+          productTags: data.productTags || [],
+          serviceTags: data.serviceTags || [],
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching filter block config:", err);
+      setBlockError("Error fetching block settings. Checkboxes may be out of sync.");
+    }
+  };
+
+  const handleCreate = () => {
+    setModalData(null);
+    setOpenModal(true);
+  };
+
+  const handleEditClick = useCallback((industry, headingName) => {
+    setModalData({ ...industry, heading: headingName });
+    setOpenModal(true);
+  }, []);
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setModalData(null);
+  };
+
+  const handleSaveSuccess = () => {
+    fetchIndustries();
+  };
+
+  const handleDeleteClick = useCallback((industry) => {
+    setSelectedIndustry(industry);
+    setSelectedCategories([]);
+    setSelectedProductParents([]);
+    setSelectedProductTags([]);
+    setSelectedServiceParents([]);
+    setSelectedServiceTags([]);
+    setDeleteMode("partial");
+    setDeleteDialogOpen(true);
+    setDeleteSuccess(null);
+    setDeleteError(null);
+  }, []);
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedIndustry(null);
+    setDeleteSuccess(null);
+    setDeleteError(null);
+  };
+
+  // ── Toggle helpers (delete-selection checkboxes) ────────────────────────────
+  const handleCategoryToggle = (categoryId) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const handleProductParentToggle = (productId) => {
+    setSelectedProductParents((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleProductTagToggle = (productId, tagId) => {
+    setSelectedProductTags((prev) => {
+      const existing = prev.find((t) => t.productId === productId);
+      if (existing) {
+        const hasTag = existing.ids.includes(tagId);
+        return prev
+          .map((t) =>
+            t.productId === productId
+              ? { ...t, ids: hasTag ? t.ids.filter((id) => id !== tagId) : [...t.ids, tagId] }
+              : t
+          )
+          .filter((t) => t.ids.length > 0);
+      }
+      return [...prev, { productId, ids: [tagId] }];
+    });
+  };
+
+  const handleServiceParentToggle = (serviceId) => {
+    setSelectedServiceParents((prev) =>
+      prev.includes(serviceId)
+        ? prev.filter((id) => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  const handleServiceTagToggle = (serviceId, tagId) => {
+    setSelectedServiceTags((prev) => {
+      const existing = prev.find((t) => t.serviceId === serviceId);
+      if (existing) {
+        const hasTag = existing.ids.includes(tagId);
+        return prev
+          .map((t) =>
+            t.serviceId === serviceId
+              ? { ...t, ids: hasTag ? t.ids.filter((id) => id !== tagId) : [...t.ids, tagId] }
+              : t
+          )
+          .filter((t) => t.ids.length > 0);
+      }
+      return [...prev, { serviceId, ids: [tagId] }];
+    });
+  };
+
+  // ── Delete submit ────────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    if (!selectedIndustry) return;
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+
+      const payload =
+        deleteMode === "full"
+          ? { deleteIndustry: "true" }
+          : {
+              deleteIndustry: "false",
+              remove: {
+                categories: selectedCategories,
+                productTags: {
+                  products: selectedProductParents,
+                  tags: selectedProductTags,
+                },
+                serviceTags: {
+                  services: selectedServiceParents,
+                  tags: selectedServiceTags,
+                },
+              },
+            };
+
+      const response = await axios.delete(
+        `${ADMIN_API_BASE}/deleteIndustryById/${selectedIndustry.uuid}`,
+        { data: payload }
+      );
+
+      if (response.data.success) {
+        setDeleteSuccess(response.data.message || "Deleted successfully!");
+        setTimeout(() => {
+          handleCloseDeleteDialog();
+          fetchIndustries();
+        }, 1500);
+      } else {
+        setDeleteError(response.data.message || "Failed to delete");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setDeleteError(err.response?.data?.message || err.message || "Something went wrong");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // ── Filter-block (checkbox blocking) logic ──────────────────────────────────
+
+  const isKeyLoading = useCallback((key) => blockLoadingKeys.has(key), [blockLoadingKeys]);
+
+  const setKeyLoading = (key, isLoading) => {
+    setBlockLoadingKeys((prev) => {
+      const next = new Set(prev);
+      if (isLoading) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  const isSimpleBlocked = useCallback(
+    (type, value) => (blockConfig[type] || []).includes(value),
+    [blockConfig]
+  );
+
+  const isParentBlocked = useCallback(
+    (type, parentName) => (blockConfig[type] || []).some((g) => g.parent === parentName),
+    [blockConfig]
+  );
+
+  const isTagBlocked = useCallback(
+    (type, parentName, tagName) =>
+      (blockConfig[type] || []).some(
+        (g) => g.parent === parentName && (g.tags || []).includes(tagName)
+      ),
+    [blockConfig]
+  );
+
+  // ── Actual API-calling toggle functions (run AFTER confirmation) ───────────
+
+  const executeSimpleBlock = async (type, value, isChecked) => {
+    const key = `${type}:${value}`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      const updated = isChecked
+        ? Array.from(new Set([...list, value]))
+        : list.filter((v) => v !== value);
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [value],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} block for "${value}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      setBlockConfig((prev) => {
+        const list = prev[type] || [];
+        const reverted = isChecked
+          ? list.filter((v) => v !== value)
+          : Array.from(new Set([...list, value]));
+        return { ...prev, [type]: reverted };
+      });
+    } finally {
+      setKeyLoading(key, false);
+    }
+  };
+
+  const executeParentBlock = async (type, parentName, isChecked) => {
+    const key = `${type}:${parentName}:__parent__`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    const prevConfigSnapshot = blockConfig[type] || [];
+
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      if (isChecked) {
+        const exists = list.some((g) => g.parent === parentName);
+        const updated = exists ? list : [...list, { parent: parentName, tags: [] }];
+        return { ...prev, [type]: updated };
+      }
+      const updated = list.filter((g) => g.parent !== parentName);
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [{ parent: parentName, tags: [] }],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} parent block for "${parentName}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
+    } finally {
+      setKeyLoading(key, false);
+    }
+  };
+
+  const executeTagBlock = async (type, parentName, tagName, isChecked) => {
+    const key = `${type}:${parentName}:${tagName}`;
+    if (isKeyLoading(key)) return;
+    setKeyLoading(key, true);
+    setBlockError(null);
+
+    const prevConfigSnapshot = blockConfig[type] || [];
+
+    setBlockConfig((prev) => {
+      const list = prev[type] || [];
+      const idx = list.findIndex((g) => g.parent === parentName);
+
+      if (isChecked) {
+        if (idx === -1) {
+          return { ...prev, [type]: [...list, { parent: parentName, tags: [tagName] }] };
+        }
+        const updatedTags = Array.from(new Set([...(list[idx].tags || []), tagName]));
+        const updated = [...list];
+        updated[idx] = { ...updated[idx], tags: updatedTags };
+        return { ...prev, [type]: updated };
+      }
+
+      if (idx === -1) return prev;
+      const remainingTags = (list[idx].tags || []).filter((t) => t !== tagName);
+      let updated;
+      if (remainingTags.length === 0) {
+        updated = list.filter((g) => g.parent !== parentName);
+      } else {
+        updated = [...list];
+        updated[idx] = { ...updated[idx], tags: remainingTags };
+      }
+      return { ...prev, [type]: updated };
+    });
+
+    try {
+      const endpoint = isChecked ? "updateblocks" : "removeblocks";
+      const response = await axios.patch(`${FILTER_BLOCK_API_BASE}/${endpoint}`, {
+        [type]: [{ parent: parentName, tags: [tagName] }],
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update block list");
+      }
+    } catch (err) {
+      console.error(`Error toggling ${type} tag block for "${parentName}/${tagName}":`, err);
+      setBlockError(err.response?.data?.message || err.message || "Failed to update block settings");
+      setBlockConfig((prev) => ({ ...prev, [type]: prevConfigSnapshot }));
+    } finally {
+      setKeyLoading(key, false);
+    }
+  };
+
+  // ── Confirm-block dialog: OPEN handlers ─────────────────────────────────────
+  const requestSimpleBlockToggle = useCallback((type, value, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "simple",
+      type,
+      value,
+      isChecked,
+      displayName: value,
+    });
+  }, []);
+
+  const requestParentBlockToggle = useCallback((type, parentName, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "parent",
+      type,
+      parentName,
+      isChecked,
+      displayName: parentName,
+    });
+  }, []);
+
+  const requestTagBlockToggle = useCallback((type, parentName, tagName, isChecked) => {
+    setConfirmDialog({
+      ...emptyConfirmDialog,
+      open: true,
+      mode: "tag",
+      type,
+      parentName,
+      tagName,
+      isChecked,
+      displayName: tagName,
+    });
+  }, []);
+
+  const handleCloseConfirmDialog = useCallback(() => {
+    setConfirmDialog((prev) => (confirmSubmitting ? prev : emptyConfirmDialog));
+  }, [confirmSubmitting]);
+
+  // Called only when the ConfirmBlockDialog verifies the typed text matches.
+  const handleConfirmBlockSubmit = useCallback(async () => {
+    setConfirmSubmitting(true);
+    try {
+      if (confirmDialog.mode === "simple") {
+        await executeSimpleBlock(confirmDialog.type, confirmDialog.value, confirmDialog.isChecked);
+      } else if (confirmDialog.mode === "parent") {
+        await executeParentBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.isChecked);
+      } else if (confirmDialog.mode === "tag") {
+        await executeTagBlock(confirmDialog.type, confirmDialog.parentName, confirmDialog.tagName, confirmDialog.isChecked);
+      }
+    } finally {
+      setConfirmSubmitting(false);
+      setConfirmDialog(emptyConfirmDialog);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDialog]);
+
+  // ── Delete dialog content ────────────────────────────────────────────────────
+  const renderDeleteContent = () => {
+    if (!selectedIndustry) return null;
+
+    if (deleteMode === "full") {
+      return (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Are you sure you want to delete the entire industry "
+          {selectedIndustry.industry}"? This action cannot be undone.
+        </Alert>
+      );
+    }
+
+    return (
+      <Box>
+        <Typography variant="subtitle1" gutterBottom>
+          Select items to delete from "{selectedIndustry.industry}":
+        </Typography>
+
+        {selectedIndustry.categories?.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Categories:</Typography>
+            <FormGroup>
+              {selectedIndustry.categories.map((cat, index) => (
+                <FormControlLabel
+                  key={cat.id || index}
+                  control={
+                    <Checkbox
+                      checked={selectedCategories.includes(cat.id)}
+                      onChange={() => handleCategoryToggle(cat.id)}
+                      size="small"
+                    />
+                  }
+                  label={cat.category}
+                />
+              ))}
+            </FormGroup>
+          </Box>
+        )}
+
+        {selectedIndustry.productTags?.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Product Tags:</Typography>
+            {selectedIndustry.productTags.map((product, pIndex) => (
+              <Box key={product.id || pIndex} sx={{ ml: 2, mb: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedProductParents.includes(product.id)}
+                      onChange={() => handleProductParentToggle(product.id)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                      {product.parent} (Entire parent)
+                    </Typography>
+                  }
+                />
+                {product.tags?.length > 0 && (
+                  <Box sx={{ ml: 3 }}>
+                    {product.tags.map((tag, tIndex) => (
+                      <FormControlLabel
+                        key={tag.id || tIndex}
+                        control={
+                          <Checkbox
+                            checked={selectedProductTags.some(
+                              (pt) => pt.productId === product.id && pt.ids.includes(tag.id)
+                            )}
+                            onChange={() => handleProductTagToggle(product.id, tag.id)}
+                            size="small"
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                            {tag.tag}
+                          </Typography>
+                        }
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        {selectedIndustry.serviceTags?.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Service Tags:</Typography>
+            {selectedIndustry.serviceTags.map((service, sIndex) => (
+              <Box key={service.id || sIndex} sx={{ ml: 2, mb: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedServiceParents.includes(service.id)}
+                      onChange={() => handleServiceParentToggle(service.id)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                      {service.parent} (Entire parent)
+                    </Typography>
+                  }
+                />
+                {service.tags?.length > 0 && (
+                  <Box sx={{ ml: 3 }}>
+                    {service.tags.map((tag, tIndex) => (
+                      <FormControlLabel
+                        key={tag.id || tIndex}
+                        control={
+                          <Checkbox
+                            checked={selectedServiceTags.some(
+                              (st) => st.serviceId === service.id && st.ids.includes(tag.id)
+                            )}
+                            onChange={() => handleServiceTagToggle(service.id, tag.id)}
+                            size="small"
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                            {tag.tag}
+                          </Typography>
+                        }
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        {!selectedIndustry.categories?.length &&
+          !selectedIndustry.productTags?.length &&
+          !selectedIndustry.serviceTags?.length && (
+            <Typography variant="body2" color="text.secondary">
+              No items available for partial deletion.
+            </Typography>
+          )}
+      </Box>
+    );
+  };
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
@@ -1513,7 +1592,6 @@ const IndustryManagementPage = () => {
 
   const totalIndustries = headings.reduce((acc, h) => acc + (h.industries?.length || 0), 0);
 
-  // Human-readable label for the confirm dialog, e.g. "industry", "category", "product tag"
   const confirmTypeLabel = (() => {
     if (!confirmDialog.type) return "item";
     const map = {
@@ -1534,7 +1612,6 @@ const IndustryManagementPage = () => {
           Create Industry
         </Button>
 
-        {/* Show errors inline, never block the whole page */}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -1555,7 +1632,6 @@ const IndustryManagementPage = () => {
         ) : (
           headings.map((headingObj, hIndex) => (
             <Box key={hIndex} sx={{ mb: 4 }}>
-              {/* Heading label */}
               <Box
                 sx={{
                   display: "flex",
@@ -1579,9 +1655,22 @@ const IndustryManagementPage = () => {
                 />
               </Box>
 
-              {headingObj.industries?.map((item, index) =>
-                renderIndustry(item, index, headingObj.heading)
-              )}
+              {headingObj.industries?.map((item, index) => (
+                <IndustryAccordionItem
+                  key={item.uuid || index}
+                  item={item}
+                  headingName={headingObj.heading}
+                  isSimpleBlocked={isSimpleBlocked}
+                  isParentBlocked={isParentBlocked}
+                  isTagBlocked={isTagBlocked}
+                  isKeyLoading={isKeyLoading}
+                  onEditClick={handleEditClick}
+                  onDeleteClick={handleDeleteClick}
+                  requestSimpleBlockToggle={requestSimpleBlockToggle}
+                  requestParentBlockToggle={requestParentBlockToggle}
+                  requestTagBlockToggle={requestTagBlockToggle}
+                />
+              ))}
             </Box>
           ))
         )}
@@ -1603,63 +1692,14 @@ const IndustryManagementPage = () => {
         />
       </Dialog>
 
-      {/* ── Confirm-block dialog: this is the ONLY place that triggers
-           the update/removeblocks API call for checkboxes. ──────────────── */}
-      <MuiDialog
-        open={confirmDialog.open}
+      {/* Confirm-block dialog — owns its own text input state, so typing is fast */}
+      <ConfirmBlockDialog
+        confirmDialog={confirmDialog}
+        confirmTypeLabel={confirmTypeLabel}
+        submitting={confirmSubmitting}
         onClose={handleCloseConfirmDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {confirmDialog.isChecked ? "Confirm block" : "Confirm unblock"}
-        </DialogTitle>
-        <DialogContent>
-          {confirmDialogError && (
-            <Alert severity="error" sx={{ mb: 2 }}>{confirmDialogError}</Alert>
-          )}
-
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            You're about to {confirmDialog.isChecked ? "block" : "unblock"} the {confirmTypeLabel}{" "}
-            <strong>"{confirmDialog.displayName}"</strong>.
-            {confirmDialog.mode === "tag" && confirmDialog.parentName && (
-              <> (under <strong>{confirmDialog.parentName}</strong>)</>
-            )}
-            {" "}To confirm, type its exact name below.
-          </Typography>
-
-          <TextField
-            fullWidth
-            autoFocus
-            size="small"
-            label={`Type "${confirmDialog.displayName}" to confirm`}
-            value={confirmInput}
-            onChange={(e) => setConfirmInput(e.target.value)}
-            disabled={confirmSubmitting}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleConfirmBlockSubmit();
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirmDialog} disabled={confirmSubmitting}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmBlockSubmit}
-            variant="contained"
-            color={confirmDialog.isChecked ? "error" : "primary"}
-            disabled={confirmSubmitting || confirmInput.trim() !== confirmDialog.displayName}
-            startIcon={confirmSubmitting ? <CircularProgress size={18} /> : null}
-          >
-            {confirmSubmitting
-              ? "Saving..."
-              : confirmDialog.isChecked
-              ? "Confirm block"
-              : "Confirm unblock"}
-          </Button>
-        </DialogActions>
-      </MuiDialog>
+        onSubmit={handleConfirmBlockSubmit}
+      />
 
       {/* Delete Dialog */}
       <MuiDialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog} maxWidth="md" fullWidth>
