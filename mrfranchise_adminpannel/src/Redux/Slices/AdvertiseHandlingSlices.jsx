@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const BASE_URL = "https://mrfranchisebackend.mrfranchise.in/api/v1/brandadvertise/payment";
+const BASE_URL = "http://localhost:5000/api/v1/brandadvertise/payment";
 
 const getErrorMessage = (err) => {
   if (!err) return "Unknown error";

@@ -50,7 +50,7 @@ const LeadMatchingRulePerBrand = () => {
       setLoading(true);
 
       const response = await axios.get(
-        `https://mrfranchisebackend.mrfranchise.in/api/v1/leadMatchingRulePerBrand/get/${brandId}`,
+        `http://localhost:5000/api/v1/leadMatchingRulePerBrand/get/${brandId}`,
       );
 
 const data = response?.data?.data;
@@ -215,7 +215,7 @@ const allRules = data?.rules || [];
         });
 
       await axios.put(
-        `https://mrfranchisebackend.mrfranchise.in/api/v1/leadMatchingRulePerBrand/update/${brandId}`,
+        `http://localhost:5000/api/v1/leadMatchingRulePerBrand/update/${brandId}`,
         {
           packageType: activeTab,
 

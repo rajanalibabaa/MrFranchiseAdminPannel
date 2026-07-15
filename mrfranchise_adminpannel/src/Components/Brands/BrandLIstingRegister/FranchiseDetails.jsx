@@ -181,7 +181,7 @@ const FranchiseDetails = ({ data = {}, errors = {}, onChange = () => {} }) => {
     fetchIndustries();
     // fetchIndustryDetails()
   }, []);
-  const apiBaseUrl = "https://mrfranchisebackend.mrfranchise.in" || "";
+  const apiBaseUrl = "http://localhost:5000" || "";
 
   // Fetch industries list
   const fetchIndustries = async () => {

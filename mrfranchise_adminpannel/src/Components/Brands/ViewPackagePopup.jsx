@@ -746,7 +746,7 @@ const ViewPackagePopup = ({ open, onClose, data }) => {
   const handleUpdatePackage = async () => {
     try {
       setLoading(true);
-      const response = await axios.put(`https://mrfranchisebackend.mrfranchise.in/api/v1/brand-packages-plans/update-cms/${packageData._id}`, packageData);
+      const response = await axios.put(`http://localhost:5000/api/v1/brand-packages-plans/update-cms/${packageData._id}`, packageData);
       toast.success(response.data.message || "Package updated successfully!");
       onClose();
     } catch (error) {

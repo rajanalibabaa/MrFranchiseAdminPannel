@@ -204,7 +204,7 @@ const FranchiseDetailsEdit = ({
   
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  const apiBaseUrl = "https://mrfranchisebackend.mrfranchise.in" || "";
+  const apiBaseUrl = "http://localhost:5000" || "";
 
   // Fetch industries on component mount
   useEffect(() => {

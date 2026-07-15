@@ -10,7 +10,7 @@ import axios from "axios";
 // ======================================================
 
 const API =
-  "https://mrfranchisebackend.mrfranchise.in/api/v1/payment/allpayment/history";
+  "http://localhost:5000/api/v1/payment/allpayment/history";
 
 // ======================================================
 // FETCH TABLE DATA

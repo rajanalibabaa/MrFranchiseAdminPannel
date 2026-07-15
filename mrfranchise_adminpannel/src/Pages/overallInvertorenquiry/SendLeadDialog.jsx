@@ -277,7 +277,7 @@ const SendLeadDialog = ({ open, onClose, investorData }) => {
 
       try {
         const response = await axios.post(
-          "https://mrfranchisebackend.mrfranchise.in/api/v1/lead-match-enquiry",
+          "http://localhost:5000/api/v1/lead-match-enquiry",
           { investorUuid: investorData.uuid },
           { signal: abortRef.current.signal }
         );
@@ -400,7 +400,7 @@ investmentRange: investorData.investmentRange,
       console.log("Sending Leads Payload:", payload);
 
      const response = await axios.post(
-        "https://mrfranchisebackend.mrfranchise.in/api/v1/lead-match-send-to-brands",
+        "http://localhost:5000/api/v1/lead-match-send-to-brands",
         payload
       );
 

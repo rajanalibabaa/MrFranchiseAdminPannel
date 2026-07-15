@@ -196,7 +196,7 @@ const ExcelUploadForm = () => {
       for (let i = 0; i < preparedData.length; i++) {
         const record = preparedData[i];
         try {
-          const res = await fetch(`https://mrfranchisebackend.mrfranchise.in/api/createlead`, {
+          const res = await fetch(`http://localhost:5000/api/createlead`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

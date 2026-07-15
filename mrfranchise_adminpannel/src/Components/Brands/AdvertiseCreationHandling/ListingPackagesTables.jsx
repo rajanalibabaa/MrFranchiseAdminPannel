@@ -23,7 +23,7 @@ const ListingPackagesTable = ({ refresh }) => {
       setLoading(true);
 
       const res = await axios.get(
-        "https://mrfranchisebackend.mrfranchise.in/api/v1/admin/plans/getAllPlans"
+        "http://localhost:5000/api/v1/admin/plans/getAllPlans"
       );
       console.log("res",res)
 
